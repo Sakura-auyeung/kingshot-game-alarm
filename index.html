@@ -8,17 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <style>
-        /* 載入所有自訂字體 */
-        @font-face {
-            font-family: 'MarshmallowFont';
-            src: url('./HanyiSentyMarshmallow.ttf') format('truetype');
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'DonutFont';
-            src: url('./SentyDonut.ttf') format('truetype');
-            font-display: swap;
-        }
+        /* 只載入你最喜歡的兩款神仙字體：貓啃什錦黑 & jf粉圓體 */
         @font-face {
             font-family: 'MaokenFont';
             src: url('./MaokenAssortedSans-TC.ttf') format('truetype');
@@ -29,64 +19,53 @@
             src: url('./jf-openhuninn-2.1.ttf') format('truetype');
             font-display: swap;
         }
-        @font-face {
-            font-family: 'KoseFont';
-            src: url('./Kosefont-JP.ttf') format('truetype');
-            font-display: swap;
-        }
-        @font-face {
-            font-family: 'KosePFont';
-            src: url('./KosefontP-JP.ttf') format('truetype');
-            font-display: swap;
-        }
 
         :root {
             /* San-X 療癒可可棕主色調 */
             --cocoa: #5C3D2E;
             --cocoa-light: #8C6A58;
-            --cream-bg: #FFFDF6;
-            --dot-color: #F3E5C8;
+            --cream-bg: #FFFDF8;
 
-            /* Howard：蘇打天空藍 */
-            --bg-h: #EEF7FF;
-            --border-h: #A6D4FA;
-            --card-h: linear-gradient(135deg, #6EB5FF 0%, #5299E8 100%);
-            --shadow-h: rgba(82, 153, 232, 0.25);
+            /* Zoey（主號）：蜂蜜布丁黃 (鬆弛熊) */
+            --bg-z: rgba(255, 249, 224, 0.95);
+            --border-z: #F7D774;
+            --card-z: linear-gradient(135deg, #F7B733 0%, #E69A15 100%);
+            --shadow-z: rgba(230, 154, 21, 0.25);
 
-            /* Zoey：草莓櫻花粉 */
-            --bg-z: #FFF0F4;
-            --border-z: #F8B4C8;
-            --card-z: linear-gradient(135deg, #FF7EA5 0%, #EB5A87 100%);
-            --shadow-z: rgba(235, 90, 135, 0.25);
+            /* Howard：草莓櫻花粉 (小白熊) */
+            --bg-h: rgba(255, 240, 244, 0.95);
+            --border-h: #F8B4C8;
+            --card-h: linear-gradient(135deg, #FF7EA5 0%, #EB5A87 100%);
+            --shadow-h: rgba(235, 90, 135, 0.25);
 
-            /* Patrick：蜂蜜布丁黃 */
-            --bg-p: #FFF9E2;
-            --border-p: #F7D774;
-            --card-p: linear-gradient(135deg, #F7B733 0%, #E69A15 100%);
-            --shadow-p: rgba(230, 154, 21, 0.25);
+            /* Patrick：清新抹茶薄荷綠 (茶小熊) */
+            --bg-p: rgba(236, 250, 240, 0.95);
+            --border-p: #9CE0B4;
+            --card-p: linear-gradient(135deg, #58C984 0%, #38A866 100%);
+            --shadow-p: rgba(56, 168, 102, 0.25);
 
-            /* 預設字體組合 */
+            /* 標題：貓啃什錦黑（可切換粉圓體）；內文與計時：統一 jf粉圓體 */
             --font-title: 'MaokenFont', 'HuninnFont', "PingFang HK", sans-serif;
             --font-body: 'HuninnFont', -apple-system, BlinkMacSystemFont, "PingFang HK", sans-serif;
-            --font-num: 'HuninnFont', ui-monospace, SFMono-Regular, Menlo, monospace;
         }
 
         * {
             box-sizing: border-box;
         }
 
-        /* San-X 風格奶油波點背景 */
+        /* 全頁彩色手繪蠟筆圓點背景 (bg_dot_2.jpg) */
         body {
             font-family: var(--font-body);
             background-color: var(--cream-bg);
-            background-image:
-                radial-gradient(var(--dot-color) 2.2px, transparent 2.2px),
-                radial-gradient(#FCE8EC 2.2px, var(--cream-bg) 2.2px);
-            background-size: 36px 36px;
-            background-position: 0 0, 18px 18px;
+            background-image: url('./bg_dot_2.jpg');
+            background-repeat: repeat;
+            background-size: 280px 280px;
             margin: 0;
-            padding: 22px 18px 40px 18px;
+            padding: 20px 18px 115px 18px;
             color: var(--cocoa);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
         }
 
@@ -95,20 +74,66 @@
             color: var(--cocoa);
         }
 
+        /* 日本官網同款 SHAKI!! 熱鬆餅開場動畫遮罩 */
+        .loading-splash {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #FFF066;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.45s ease, visibility 0.45s ease;
+        }
+        .loading-splash.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .loading-stage {
+            position: relative;
+            width: 240px;
+            height: 240px;
+        }
+        .loading-frame {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .loading-frame.frame-1 { opacity: 1; }
+        .loading-frame.frame-2 { opacity: 0; }
+        .loading-splash.shaki .loading-frame.frame-1 { opacity: 0; }
+        .loading-splash.shaki .loading-frame.frame-2 {
+            opacity: 1;
+            animation: shakiPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .loading-text {
+            font-family: var(--font-title);
+            font-size: 20px;
+            letter-spacing: 3px;
+            color: var(--cocoa);
+            margin-top: 8px;
+        }
+
         /* 頂部可愛橫幅列 */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             max-width: 1220px;
-            margin: 0 auto 20px auto;
-            padding: 12px 18px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid #F0DFC8;
-            border-radius: 24px;
-            box-shadow: 0 6px 18px rgba(92, 61, 46, 0.07);
+            margin: 0 auto 22px auto;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2.5px solid #F2DFC4;
+            border-radius: 26px;
+            box-shadow: 0 6px 20px rgba(92, 61, 46, 0.08);
             flex-wrap: wrap;
             gap: 10px;
+            position: relative;
+            z-index: 5;
         }
 
         .title-group {
@@ -118,17 +143,19 @@
             flex-wrap: wrap;
         }
 
-        .header-mascot {
-            width: 38px;
-            height: 38px;
+        .header-mascot-img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
             flex-shrink: 0;
+            filter: drop-shadow(0 2px 4px rgba(92, 61, 46, 0.16));
             animation: gentleFloat 3s ease-in-out infinite;
         }
 
         h1 {
             font-family: var(--font-title);
             font-weight: normal;
-            font-size: 26px;
+            font-size: 27px;
             margin: 0;
             letter-spacing: 1px;
             color: var(--cocoa);
@@ -169,6 +196,9 @@
             font-weight: 600;
             font-size: 12.5px;
             color: #FFF;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
             box-shadow: 0 3px 8px rgba(92, 61, 46, 0.14);
             transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s;
         }
@@ -180,34 +210,42 @@
             transform: scale(0.97);
         }
 
+        .btn-icon-svg {
+            width: 14px;
+            height: 14px;
+            object-fit: contain;
+        }
+
         .btn-refresh-profile { background: linear-gradient(135deg, #5CD685, #38B864); }
         .btn-refresh-profile:disabled { opacity: 0.65; cursor: wait; }
         .btn-font-title { background: linear-gradient(135deg, #C07CEB, #A155D4); }
-        .btn-font-body { background: linear-gradient(135deg, #7D83EB, #5D64D4); }
-        .btn-test { background: linear-gradient(135deg, #FFAE42, #F28B18); }
+        .btn-pancake { background: linear-gradient(135deg, #F7B733, #E69A15); }
+        .btn-test { background: linear-gradient(135deg, #FF9966, #F27935); }
         .btn-event-toggle { background: #B8A99A; }
-        .btn-event-toggle.active { background: linear-gradient(135deg, #FF9966, #FF6B5B); }
+        .btn-event-toggle.active { background: linear-gradient(135deg, #FF85A1, #EB5A87); }
         .btn-toggle { background: linear-gradient(135deg, #5AA9FF, #3B88E8); }
 
         /* 3欄手賬卡片視圖 */
         .grid-view {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 18px;
+            gap: 20px;
             max-width: 1220px;
             margin: 0 auto;
+            position: relative;
+            z-index: 4;
         }
 
         .account-column {
-            border-radius: 24px;
-            padding: 16px;
-            border: 3px solid #FFFFFF;
-            box-shadow: 0 8px 22px rgba(92, 61, 46, 0.08);
+            border-radius: 26px;
+            padding: 16px 16px 34px 16px;
+            border: 3.5px solid #FFFFFF;
+            box-shadow: 0 10px 24px rgba(92, 61, 46, 0.09);
             display: flex;
             flex-direction: column;
             gap: 14px;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
 
         /* 內層虛線手賬縫邊 */
@@ -215,31 +253,35 @@
             content: "";
             position: absolute;
             top: 6px; left: 6px; right: 6px; bottom: 6px;
-            border-radius: 18px;
-            border: 1.5px dashed rgba(92, 61, 46, 0.16);
+            border-radius: 20px;
+            border: 1.5px dashed rgba(92, 61, 46, 0.18);
             pointer-events: none;
         }
 
-        .account-column.h { background-color: var(--bg-h); outline: 2px solid var(--border-h); }
         .account-column.z { background-color: var(--bg-z); outline: 2px solid var(--border-z); }
+        .account-column.h { background-color: var(--bg-h); outline: 2px solid var(--border-h); }
         .account-column.p { background-color: var(--bg-p); outline: 2px solid var(--border-p); }
 
-        /* 角落角色插圖貼紙 */
-        .corner-sticker {
+        /* 角落角色站立全身公仔貼紙 (chara_stand_1-1, 2-1, 4-1) */
+        .corner-stand-sticker {
             position: absolute;
-            bottom: 8px;
-            right: 10px;
-            width: 58px;
-            height: 58px;
-            opacity: 0.88;
+            bottom: -18px;
+            right: -10px;
+            width: 96px;
+            height: 96px;
+            object-fit: contain;
             pointer-events: none;
-            z-index: 1;
-            filter: drop-shadow(0 2px 4px rgba(92, 61, 46, 0.15));
+            z-index: 6;
+            filter: drop-shadow(0 4px 7px rgba(92, 61, 46, 0.22));
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .account-column:hover .corner-stand-sticker {
+            transform: translateY(-4px) rotate(-4deg) scale(1.06);
         }
 
         /* 遊戲角色名片貼紙 */
         .profile-card {
-            background: rgba(255, 255, 255, 0.96);
+            background: rgba(255, 255, 255, 0.97);
             border-radius: 18px;
             padding: 11px 13px;
             display: flex;
@@ -267,19 +309,17 @@
             display: block;
         }
 
-        .avatar-mini-badge {
+        .avatar-chara-badge {
             position: absolute;
-            bottom: -4px;
-            right: -4px;
-            width: 22px;
-            height: 22px;
+            bottom: -6px;
+            right: -6px;
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
             background: #FFF;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            box-shadow: 0 2px 4px rgba(92, 61, 46, 0.18);
+            padding: 2px;
+            box-shadow: 0 2px 5px rgba(92, 61, 46, 0.22);
         }
 
         .profile-details {
@@ -301,6 +341,17 @@
             color: var(--cocoa);
             line-height: 1.15;
             letter-spacing: 0.5px;
+        }
+
+        .main-crown-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #FFD43B, #FAB005);
+            color: var(--cocoa);
+            border: 1px solid #FFF;
+            box-shadow: 0 2px 4px rgba(92, 61, 46, 0.12);
         }
 
         .profile-alliance {
@@ -327,14 +378,14 @@
             border-radius: 999px;
         }
         .stat-pill.tg {
-            background: #E6F3FF;
-            color: #2B6CB0;
-            border: 1px solid #BEE3F8;
+            background: #FFF3D6;
+            color: #9C5A00;
+            border: 1px solid #F7D774;
         }
         .stat-pill.power {
-            background: #FFF2E2;
-            color: #C05621;
-            border: 1px solid #FBD38D;
+            background: #FFF0F4;
+            color: #B8325A;
+            border: 1px solid #F8B4C8;
         }
 
         .profile-meta {
@@ -380,6 +431,30 @@
             padding: 0 2px;
         }
 
+        .section-title-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 使用 bg_epi_num.svg 作為可愛小花朵計數徽章 */
+        .flower-count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background-image: url('./bg_epi_num.svg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 800;
+            color: #FFFFFF;
+            text-shadow: 0 1px 1px rgba(92, 61, 46, 0.45);
+        }
+
         .btn-add {
             background: #5CD685;
             color: white;
@@ -408,7 +483,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            border: 2px solid rgba(255, 255, 255, 0.65);
+            border: 2px solid rgba(255, 255, 255, 0.72);
             position: relative;
             transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -416,8 +491,8 @@
             transform: translateY(-2px);
         }
 
-        .h .timer-card { background: var(--card-h); box-shadow: 0 4px 12px var(--shadow-h); }
         .z .timer-card { background: var(--card-z); box-shadow: 0 4px 12px var(--shadow-z); }
+        .h .timer-card { background: var(--card-h); box-shadow: 0 4px 12px var(--shadow-h); }
         .p .timer-card { background: var(--card-p); box-shadow: 0 4px 12px var(--shadow-p); }
 
         .timer-card.master-card {
@@ -444,22 +519,22 @@
 
         .timer-title {
             font-size: 12px;
-            opacity: 0.95;
+            opacity: 0.96;
             font-weight: 600;
         }
 
         .timer-display {
-            font-size: 20px;
+            font-size: 21px;
             font-weight: 700;
-            font-family: var(--font-num);
+            font-family: var(--font-body);
             font-variant-numeric: tabular-nums;
             letter-spacing: 0.5px;
-            text-shadow: 0 1px 2px rgba(92, 61, 46, 0.18);
+            text-shadow: 0 1px 2px rgba(92, 61, 46, 0.22);
         }
 
         .timer-sub {
             font-size: 11px;
-            opacity: 0.9;
+            opacity: 0.92;
         }
 
         .timer-inputs {
@@ -472,13 +547,13 @@
         .time-input {
             width: 27px;
             height: 26px;
-            border: 1.5px solid rgba(255, 255, 255, 0.8);
+            border: 1.5px solid rgba(255, 255, 255, 0.85);
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.96);
             text-align: center;
             font-size: 13px;
             font-weight: 700;
-            font-family: var(--font-num);
+            font-family: var(--font-body);
             color: var(--cocoa);
             padding: 0;
         }
@@ -491,7 +566,7 @@
 
         .btn-action {
             background: rgba(255, 255, 255, 0.28);
-            border: 1.5px solid rgba(255, 255, 255, 0.55);
+            border: 1.5px solid rgba(255, 255, 255, 0.6);
             color: white;
             padding: 5px 10px;
             border-radius: 999px;
@@ -506,7 +581,7 @@
         .btn-del {
             background: none;
             border: none;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.85);
             font-size: 14px;
             cursor: pointer;
             padding: 0 3px;
@@ -518,7 +593,7 @@
             flex-wrap: wrap;
             gap: 4px;
             padding-top: 6px;
-            border-top: 1px dashed rgba(255, 255, 255, 0.45);
+            border-top: 1px dashed rgba(255, 255, 255, 0.5);
         }
 
         .btn-preset {
@@ -538,9 +613,9 @@
 
         /* 職位預約白卡 */
         .job-section {
-            background: rgba(255, 255, 255, 0.94);
+            background: rgba(255, 255, 255, 0.96);
             border-radius: 18px;
-            padding: 12px;
+            padding: 12px 12px 16px 12px;
             display: flex;
             flex-direction: column;
             gap: 9px;
@@ -548,6 +623,7 @@
             box-shadow: 0 4px 10px rgba(92, 61, 46, 0.05);
             position: relative;
             z-index: 2;
+            margin-right: 42px;
         }
 
         .job-section-title {
@@ -566,27 +642,28 @@
             font-size: 13px;
             font-weight: 600;
             color: var(--cocoa);
+            gap: 4px;
         }
 
         .btn-shift {
             background: #FFA24C;
             color: white;
             border: none;
-            padding: 4px 8px;
+            padding: 4px 7px;
             border-radius: 999px;
             font-size: 11px;
             font-weight: 600;
             cursor: pointer;
-            margin-left: 4px;
+            margin-left: 2px;
         }
         .btn-shift:hover { background: #EB8931; }
 
         select {
-            padding: 4px 8px;
+            padding: 4px 7px;
             border-radius: 999px;
             border: 1.5px solid #DFCBB5;
             background: #FFFDF9;
-            font-size: 12.5px;
+            font-size: 12px;
             font-weight: 600;
             color: var(--cocoa);
         }
@@ -596,6 +673,8 @@
             display: none;
             max-width: 1220px;
             margin: 0 auto;
+            position: relative;
+            z-index: 4;
         }
 
         .timeline-grid {
@@ -608,7 +687,7 @@
             background: rgba(255, 255, 255, 0.96);
             border-radius: 24px;
             padding: 16px;
-            border: 2px solid #F0DFC8;
+            border: 2.5px solid #F0DFC8;
             box-shadow: 0 6px 18px rgba(92, 61, 46, 0.07);
         }
 
@@ -637,8 +716,8 @@
             color: var(--cocoa);
         }
 
-        .timeline-item.h { background-color: var(--bg-h); border-color: var(--border-h); }
         .timeline-item.z { background-color: var(--bg-z); border-color: var(--border-z); }
+        .timeline-item.h { background-color: var(--bg-h); border-color: var(--border-h); }
         .timeline-item.p { background-color: var(--bg-p); border-color: var(--border-p); }
 
         .tag {
@@ -654,6 +733,36 @@
         .tag-sunlight { background: #FF6F61; }
         .tag-job-s { background: #EB5A87; }
         .tag-job-t { background: #5299E8; }
+
+        /* 頁尾雲朵與雙色黃波浪花邊 (bg_cloud_pc.png + bg_frill.png) */
+        .footer-clouds {
+            position: fixed;
+            bottom: 12px;
+            left: 0;
+            width: 100%;
+            height: 76px;
+            background-image: url('./bg_cloud_pc.png');
+            background-repeat: repeat-x;
+            background-position: bottom center;
+            background-size: auto 76px;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.92;
+        }
+
+        .footer-frill {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 16px;
+            background-image: url('./bg_frill.png');
+            background-repeat: repeat-x;
+            background-position: top center;
+            background-size: 64px 16px;
+            pointer-events: none;
+            z-index: 2;
+        }
 
         /* 網頁內鬧鐘彈窗遮罩 */
         .alarm-modal-overlay {
@@ -730,7 +839,12 @@
 
         @keyframes gentleFloat {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-3px); }
+            50% { transform: translateY(-4px); }
+        }
+        @keyframes shakiPop {
+            0% { transform: scale(0.92) translateY(6px); }
+            60% { transform: scale(1.04) translateY(-3px); }
+            100% { transform: scale(1) translateY(0); }
         }
         @keyframes ring {
             0%, 100% { transform: rotate(0deg); }
@@ -752,33 +866,31 @@
 </head>
 <body>
 
+    <!-- 日本官網同款熱鬆餅 SHAKI!! 開場載入動畫 -->
+    <div class="loading-splash" id="loadingSplash">
+        <div class="loading-stage">
+            <img class="loading-frame frame-1" src="./img_op_1.png" alt="">
+            <img class="loading-frame frame-2" src="./img_op_2.png" alt="SHAKI!!">
+        </div>
+        <div class="loading-text">LOADING...</div>
+    </div>
+
     <div class="header">
         <div class="title-group">
-            <!-- 可愛原創小熊鬧鐘 SVG 徽章 -->
-            <svg class="header-mascot" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="16" cy="18" r="9" fill="#C68B59" stroke="#5C3D2E" stroke-width="3"/>
-                <circle cx="16" cy="18" r="4.5" fill="#F7D5B4"/>
-                <circle cx="48" cy="18" r="9" fill="#C68B59" stroke="#5C3D2E" stroke-width="3"/>
-                <circle cx="48" cy="18" r="4.5" fill="#F7D5B4"/>
-                <ellipse cx="32" cy="36" rx="22" ry="19" fill="#D99B66" stroke="#5C3D2E" stroke-width="3"/>
-                <ellipse cx="32" cy="41" rx="9" ry="7" fill="#FFF8EE"/>
-                <circle cx="24" cy="33" r="2.6" fill="#5C3D2E"/>
-                <circle cx="40" cy="33" r="2.6" fill="#5C3D2E"/>
-                <ellipse cx="32" cy="38.5" rx="3" ry="2" fill="#5C3D2E"/>
-                <path d="M29 43 Q32 45.5 35 43" stroke="#5C3D2E" stroke-width="2.2" stroke-linecap="round"/>
-                <circle cx="19" cy="39" r="3.2" fill="#FF9EB5" opacity="0.7"/>
-                <circle cx="45" cy="39" r="3.2" fill="#FF9EB5" opacity="0.7"/>
-            </svg>
+            <!-- 頂部標題旁的鬆弛熊角色圖 -->
+            <img class="header-mascot-img" src="./chara_face_1-1.png" alt="鬆弛熊">
             <h1>多帳戶鬧鐘助手</h1>
             <span class="sync-badge" id="syncBadge">⏳ 連線雲端中...</span>
         </div>
         <div class="header-btns">
             <button class="pill-btn btn-refresh-profile" id="refreshProfileBtn" onclick="refreshAllProfiles()">🔄 刷新戰力</button>
             <button class="pill-btn btn-font-title" id="titleFontBtn" onclick="cycleTitleFont()">🔤 標題：貓啃什錦黑</button>
-            <button class="pill-btn btn-font-body" id="bodyFontBtn" onclick="cycleBodyFont()">📝 內文：jf粉圓體</button>
+            <button class="pill-btn btn-pancake" onclick="replaySplash()">🥞 開場動畫</button>
             <button class="pill-btn btn-event-toggle active" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光：顯示</button>
             <button class="pill-btn btn-test" onclick="testAlarm()">🔔 測試鈴聲</button>
-            <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">切換時間線</button>
+            <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">
+                <img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換時間線
+            </button>
         </div>
     </div>
 
@@ -804,6 +916,10 @@
             </div>
         </div>
     </div>
+
+    <!-- 頁尾雲朵與蝴蝶結波浪花邊 -->
+    <div class="footer-clouds"></div>
+    <div class="footer-frill"></div>
 
     <!-- 網頁內鬧鐘彈出視窗 -->
     <div class="alarm-modal-overlay" id="alarmModalOverlay">
@@ -834,28 +950,17 @@
 
         const STORAGE_KEY = "multi_account_alarm_local_backup";
         const PROFILE_STORAGE_KEY = "multi_account_profiles_backup";
-        const TITLE_FONT_KEY = "multi_account_title_font_v2";
-        const BODY_FONT_KEY = "multi_account_body_font_v2";
+        const TITLE_FONT_KEY = "multi_account_title_font_v3";
         const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
 
+        // Zoey（主號，黃色鬆弛熊）、Howard（粉色小白熊）、Patrick（綠色茶小熊）
         const accounts = [
-            { id: 'h', name: 'h', badgeEmoji: '🐻' },
-            { id: 'z', name: 'z', badgeEmoji: '🌸' },
-            { id: 'p', name: 'p', badgeEmoji: '🐥' }
+            { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png', standFile: 'chara_stand_1-1.png' },
+            { id: 'h', name: 'h', isMain: false, faceFile: 'chara_face_2-1.png', standFile: 'chara_stand_2-1.png' },
+            { id: 'p', name: 'p', isMain: false, faceFile: 'chara_face_4-1.png', standFile: 'chara_stand_4-1.png' }
         ];
 
         let profiles = {
-            h: {
-                queryName: 'Howard',
-                queryAlliance: '777',
-                name: 'Howard',
-                alliance: '777',
-                levelLabel: 'TG6',
-                power: 279000000,
-                powerRank: null,
-                avatar: '',
-                lastFetched: null
-            },
             z: {
                 queryName: 'Zoey',
                 queryAlliance: 'TER',
@@ -865,6 +970,17 @@
                 power: 430453250,
                 powerRank: 44,
                 avatar: 'https://got-global-avatar.akamaized.net/avatar/2026/11/07/v9JxWg_1794050377.png',
+                lastFetched: null
+            },
+            h: {
+                queryName: 'Howard',
+                queryAlliance: '777',
+                name: 'Howard',
+                alliance: '777',
+                levelLabel: 'TG6',
+                power: 279000000,
+                powerRank: null,
+                avatar: '',
                 lastFetched: null
             },
             p: {
@@ -880,24 +996,13 @@
             }
         };
 
+        // 只保留你最喜歡的兩款神仙字體（內文與計時統一為 jf粉圓體）
         const titleFonts = [
             { label: '貓啃什錦黑', family: "'MaokenFont', 'HuninnFont', sans-serif" },
-            { label: '棉花糖', family: "'MarshmallowFont', 'HuninnFont', sans-serif" },
-            { label: '甜甜圈', family: "'DonutFont', 'HuninnFont', sans-serif" },
-            { label: 'jf粉圓體', family: "'HuninnFont', sans-serif" },
-            { label: 'KosefontP', family: "'KosePFont', 'HuninnFont', sans-serif" },
-            { label: '系統黑體', family: "-apple-system, BlinkMacSystemFont, 'PingFang HK', sans-serif" }
-        ];
-
-        const bodyFonts = [
-            { label: 'jf粉圓體', family: "'HuninnFont', 'PingFang HK', sans-serif" },
-            { label: 'KosefontP', family: "'KosePFont', 'HuninnFont', sans-serif" },
-            { label: 'Kosefont', family: "'KoseFont', 'HuninnFont', sans-serif" },
-            { label: '系統黑體', family: "-apple-system, BlinkMacSystemFont, 'PingFang HK', sans-serif" }
+            { label: 'jf粉圓體', family: "'HuninnFont', sans-serif" }
         ];
 
         let titleFontIdx = 0;
-        let bodyFontIdx = 0;
         let showSunlightEvent = true;
 
         let store = {
@@ -936,59 +1041,26 @@
         let popupWin = null;
         let isInitialLoadDone = false;
 
-        // 三帳戶專屬療癒角落小貼紙 SVG
-        function getCornerStickerSvg(accId) {
-            if (accId === 'h') {
-                // 小熊與星星貼紙
-                return `
-                <svg class="corner-sticker" viewBox="0 0 64 64" fill="none">
-                    <circle cx="18" cy="20" r="8" fill="#B5835A" stroke="#5C3D2E" stroke-width="2.5"/>
-                    <circle cx="46" cy="20" r="8" fill="#B5835A" stroke="#5C3D2E" stroke-width="2.5"/>
-                    <ellipse cx="32" cy="36" rx="20" ry="17" fill="#C9966B" stroke="#5C3D2E" stroke-width="2.5"/>
-                    <ellipse cx="32" cy="40" rx="8" ry="6" fill="#FFFDF6"/>
-                    <circle cx="25" cy="33" r="2.2" fill="#5C3D2E"/>
-                    <circle cx="39" cy="33" r="2.2" fill="#5C3D2E"/>
-                    <ellipse cx="32" cy="38" rx="2.5" ry="1.8" fill="#5C3D2E"/>
-                    <path d="M52 10 L54 14 L58 15 L55 18 L56 22 L52 20 L48 22 L49 18 L46 15 L50 14 Z" fill="#FFE066" stroke="#5C3D2E" stroke-width="1.5"/>
-                </svg>`;
-            } else if (accId === 'z') {
-                // 小白熊、紅鈕扣與櫻花貼紙
-                return `
-                <svg class="corner-sticker" viewBox="0 0 64 64" fill="none">
-                    <circle cx="18" cy="20" r="8" fill="#FFFFFF" stroke="#5C3D2E" stroke-width="2.5"/>
-                    <circle cx="18" cy="20" r="4" fill="#FFD1DC"/>
-                    <circle cx="46" cy="20" r="8" fill="#FFFFFF" stroke="#5C3D2E" stroke-width="2.5"/>
-                    <circle cx="46" cy="20" r="4" fill="#FFD1DC"/>
-                    <ellipse cx="32" cy="36" rx="20" ry="17" fill="#FFFFFF" stroke="#5C3D2E" stroke-width="2.5"/>
-                    <circle cx="25" cy="33" r="2.2" fill="#5C3D2E"/>
-                    <circle cx="39" cy="33" r="2.2" fill="#5C3D2E"/>
-                    <ellipse cx="32" cy="38" rx="2.5" ry="1.8" fill="#5C3D2E"/>
-                    <circle cx="20" cy="38" r="3" fill="#FF9EB5" opacity="0.75"/>
-                    <circle cx="44" cy="38" r="3" fill="#FF9EB5" opacity="0.75"/>
-                    <circle cx="32" cy="48" r="4" fill="#FF5A79" stroke="#5C3D2E" stroke-width="1.8"/>
-                </svg>`;
-            } else {
-                // 小黃雞與蜂蜜罐貼紙
-                return `
-                <svg class="corner-sticker" viewBox="0 0 64 64" fill="none">
-                    <path d="M29 14 Q32 8 35 14" stroke="#5C3D2E" stroke-width="2.5" stroke-linecap="round"/>
-                    <ellipse cx="32" cy="35" rx="19" ry="18" fill="#FFE066" stroke="#5C3D2E" stroke-width="2.5"/>
-                    <circle cx="24" cy="32" r="2.2" fill="#5C3D2E"/>
-                    <circle cx="40" cy="32" r="2.2" fill="#5C3D2E"/>
-                    <ellipse cx="32" cy="37" rx="4" ry="2.6" fill="#FF9F43" stroke="#5C3D2E" stroke-width="1.8"/>
-                    <circle cx="19" cy="37" r="3" fill="#FF9EB5" opacity="0.65"/>
-                    <circle cx="45" cy="37" r="3" fill="#FF9EB5" opacity="0.65"/>
-                </svg>`;
-            }
+        // 播放日本官網 SHAKI!! 熱鬆餅開場動畫
+        function playSplashAnimation() {
+            const splash = document.getElementById('loadingSplash');
+            if (!splash) return;
+            splash.classList.remove('hidden', 'shaki');
+            setTimeout(() => {
+                splash.classList.add('shaki');
+            }, 550);
+            setTimeout(() => {
+                splash.classList.add('hidden');
+            }, 1350);
+        }
+
+        function replaySplash() {
+            playSplashAnimation();
         }
 
         function initFontThemes() {
             const savedTitle = localStorage.getItem(TITLE_FONT_KEY);
             if (savedTitle !== null) titleFontIdx = parseInt(savedTitle, 10) % titleFonts.length;
-
-            const savedBody = localStorage.getItem(BODY_FONT_KEY);
-            if (savedBody !== null) bodyFontIdx = parseInt(savedBody, 10) % bodyFonts.length;
-
             applyFonts();
         }
 
@@ -998,23 +1070,11 @@
             applyFonts();
         }
 
-        function cycleBodyFont() {
-            bodyFontIdx = (bodyFontIdx + 1) % bodyFonts.length;
-            localStorage.setItem(BODY_FONT_KEY, String(bodyFontIdx));
-            applyFonts();
-        }
-
         function applyFonts() {
             const tFont = titleFonts[titleFontIdx];
-            const bFont = bodyFonts[bodyFontIdx];
             document.documentElement.style.setProperty('--font-title', tFont.family);
-            document.documentElement.style.setProperty('--font-body', bFont.family);
-
             const tBtn = document.getElementById('titleFontBtn');
             if (tBtn) tBtn.innerText = `🔤 標題：${tFont.label}`;
-
-            const bBtn = document.getElementById('bodyFontBtn');
-            if (bBtn) bBtn.innerText = `📝 內文：${bFont.label}`;
         }
 
         function formatPower(num) {
@@ -1072,8 +1132,8 @@
             }
 
             const results = await Promise.all([
-                fetchSingleProfile('h'),
                 fetchSingleProfile('z'),
+                fetchSingleProfile('h'),
                 fetchSingleProfile('p')
             ]);
 
@@ -1098,7 +1158,7 @@
             const trimmedName = newName.trim();
             if (!trimmedName) return;
 
-            const newAlliance = prompt(`修改 [${trimmedName}] 的聯盟標籤（例如 777 或 TER）：`, cur.queryAlliance || '');
+            const newAlliance = prompt(`修改 [${trimmedName}] 的聯盟標籤（例如 TER 或 777）：`, cur.queryAlliance || '');
             if (newAlliance === null) return;
 
             profiles[accId].queryName = trimmedName;
@@ -1161,6 +1221,7 @@
         }
 
         function init() {
+            playSplashAnimation();
             initFontThemes();
             loadLocalBackup();
             loadLocalProfiles();
@@ -1454,7 +1515,7 @@
         function renderProfileHeader(acc) {
             const accId = acc.id;
             const p = profiles[accId] || {};
-            const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name || accId)}&background=F3E5C8&color=5C3D2E&bold=true`;
+            const fallbackAvatar = `./${acc.faceFile}`;
             const avatarSrc = p.avatar ? p.avatar : fallbackAvatar;
             const rankText = p.powerRank ? ` · 戰力#${p.powerRank}` : '';
             const syncTimeText = p.lastFetched
@@ -1465,11 +1526,12 @@
                 <div class="profile-card">
                     <div class="profile-avatar-wrap">
                         <img class="profile-avatar" src="${avatarSrc}" alt="${p.name || accId}" onerror="this.src='${fallbackAvatar}'">
-                        <span class="avatar-mini-badge">${acc.badgeEmoji}</span>
+                        <img class="avatar-chara-badge" src="./${acc.faceFile}" alt="">
                     </div>
                     <div class="profile-details">
                         <div class="profile-name-row">
                             <span class="profile-name">${p.name || accId}</span>
+                            ${acc.isMain ? `<span class="main-crown-badge">👑 主號</span>` : ''}
                             ${p.alliance ? `<span class="profile-alliance">[${p.alliance}]</span>` : ''}
                         </div>
                         <div class="profile-stats-row">
@@ -1487,13 +1549,21 @@
             const grid = document.getElementById('gridView');
             grid.innerHTML = accounts.map(acc => {
                 const data = store[acc.id];
+                const sCount = (data.soldiers || []).length;
+                const tCount = (data.tech || []).length;
+                const mCount = (data.master || []).length;
+                const sunCount = (data.sunlight || []).length;
+
                 return `
                 <div class="account-column ${acc.id}">
                     ${renderProfileHeader(acc)}
                     
                     <div class="section-block">
                         <div class="section-header">
-                            <span>⚔️ 士兵訓練</span>
+                            <div class="section-title-left">
+                                <span>⚔️ 士兵訓練</span>
+                                <span class="flower-count-badge">${sCount}</span>
+                            </div>
                             <button class="btn-add" onclick="addItem('${acc.id}', 'soldiers')">+</button>
                         </div>
                         <div>
@@ -1503,7 +1573,10 @@
 
                     <div class="section-block">
                         <div class="section-header">
-                            <span>🔬 科技研究</span>
+                            <div class="section-title-left">
+                                <span>🔬 科技研究</span>
+                                <span class="flower-count-badge">${tCount}</span>
+                            </div>
                             <button class="btn-add" onclick="addItem('${acc.id}', 'tech')">+</button>
                         </div>
                         <div>
@@ -1513,7 +1586,10 @@
 
                     <div class="section-block">
                         <div class="section-header">
-                            <span>📖 大師技能 (無須職位)</span>
+                            <div class="section-title-left">
+                                <span>📖 大師技能 (無須職位)</span>
+                                <span class="flower-count-badge">${mCount}</span>
+                            </div>
                             <button class="btn-add" onclick="addItem('${acc.id}', 'master')">+</button>
                         </div>
                         <div>
@@ -1524,7 +1600,10 @@
                     ${showSunlightEvent ? `
                     <div class="section-block">
                         <div class="section-header">
-                            <span>☀️ 沐光之旅 (8小時周期)</span>
+                            <div class="section-title-left">
+                                <span>☀️ 沐光之旅 (8小時周期)</span>
+                                <span class="flower-count-badge">${sunCount}</span>
+                            </div>
                             <button class="btn-add" onclick="addItem('${acc.id}', 'sunlight')">+</button>
                         </div>
                         <div>
@@ -1557,7 +1636,8 @@
                         </div>
                     </div>
 
-                    ${getCornerStickerSvg(acc.id)}
+                    <!-- 卡片右下角專屬站立全身貼紙 -->
+                    <img class="corner-stand-sticker" src="./${acc.standFile}" alt="">
                 </div>
             `}).join('');
         }
@@ -1995,11 +2075,11 @@
             if (grid.style.display === 'none') {
                 grid.style.display = 'grid';
                 timeline.style.display = 'none';
-                btn.innerText = '切換時間線';
+                btn.innerHTML = '<img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換時間線';
             } else {
                 grid.style.display = 'none';
                 timeline.style.display = 'block';
-                btn.innerText = '切換 3 欄視圖';
+                btn.innerHTML = '<img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換 3 欄視圖';
                 updateTimeline();
             }
         }
