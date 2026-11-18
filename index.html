@@ -21,7 +21,6 @@
         }
 
         :root {
-            /* San-X 療癒可可棕主色調 */
             --cocoa: #5C3D2E;
             --cocoa-light: #8C6A58;
             --cream-bg: #FFFDF8;
@@ -44,7 +43,6 @@
             --card-p: linear-gradient(135deg, #58C984 0%, #38A866 100%);
             --shadow-p: rgba(56, 168, 102, 0.25);
 
-            /* 標題：貓啃什錦黑（可切換粉圓體）；內文與計時：統一 jf粉圓體 */
             --font-title: 'MaokenFont', 'HuninnFont', "PingFang HK", sans-serif;
             --font-body: 'HuninnFont', -apple-system, BlinkMacSystemFont, "PingFang HK", sans-serif;
         }
@@ -53,7 +51,6 @@
             box-sizing: border-box;
         }
 
-        /* 全頁彩色手繪蠟筆圓點背景 (bg_dot_2.jpg) */
         body {
             font-family: var(--font-body);
             background-color: var(--cream-bg);
@@ -118,7 +115,6 @@
             margin-top: 8px;
         }
 
-        /* 頂部可愛橫幅列 */
         .header {
             display: flex;
             justify-content: space-between;
@@ -187,7 +183,6 @@
             flex-wrap: wrap;
         }
 
-        /* 糖果膠囊按鈕 */
         .pill-btn {
             border: 2px solid #FFF;
             padding: 7px 13px;
@@ -225,7 +220,6 @@
         .btn-event-toggle.active { background: linear-gradient(135deg, #FF85A1, #EB5A87); }
         .btn-toggle { background: linear-gradient(135deg, #5AA9FF, #3B88E8); }
 
-        /* 3欄手賬卡片視圖 */
         .grid-view {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -236,6 +230,7 @@
             z-index: 4;
         }
 
+        /* 允許公仔跨出欄外 */
         .account-column {
             border-radius: 26px;
             padding: 16px 16px 24px 16px;
@@ -245,10 +240,9 @@
             flex-direction: column;
             gap: 14px;
             position: relative;
-            overflow: visible;
+            overflow: visible !important;
         }
 
-        /* 內層虛線手賬縫邊 */
         .account-column::before {
             content: "";
             position: absolute;
@@ -262,28 +256,27 @@
         .account-column.h { background-color: var(--bg-h); outline: 2px solid var(--border-h); }
         .account-column.p { background-color: var(--bg-p); outline: 2px solid var(--border-p); }
 
-        /* 角落角色站立全身公仔貼紙：大隻並跨出欄外，完全不擋住職位白卡空間 */
+        /* 右下角跨出欄外的大隻立牌貼紙 */
         .corner-stand-sticker {
             position: absolute;
-            bottom: -24px;
-            right: -24px;
-            width: 122px;
-            height: 122px;
+            bottom: -32px;
+            right: -32px;
+            width: 135px;
+            height: 135px;
             object-fit: contain;
             pointer-events: none;
-            z-index: 8;
-            filter: drop-shadow(0 4px 8px rgba(92, 61, 46, 0.24));
+            z-index: 20;
+            filter: drop-shadow(0 5px 10px rgba(92, 61, 46, 0.28));
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .account-column:hover .corner-stand-sticker {
             transform: translateY(-4px) rotate(-4deg) scale(1.06);
         }
 
-        /* 遊戲角色名片貼紙 */
         .profile-card {
             background: rgba(255, 255, 255, 0.97);
             border-radius: 18px;
-            padding: 11px 13px;
+            padding: 10px 12px;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -299,9 +292,9 @@
         }
 
         .profile-avatar {
-            width: 58px;
-            height: 58px;
-            border-radius: 16px;
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
             object-fit: cover;
             background: #F5EFE6;
             border: 2.5px solid #FFF;
@@ -311,10 +304,10 @@
 
         .avatar-chara-badge {
             position: absolute;
-            bottom: -6px;
-            right: -6px;
-            width: 30px;
-            height: 30px;
+            bottom: -5px;
+            right: -5px;
+            width: 26px;
+            height: 26px;
             object-fit: contain;
             background: #FFF;
             border-radius: 50%;
@@ -337,61 +330,43 @@
         .profile-name {
             font-family: var(--font-title);
             font-weight: normal;
-            font-size: 24px;
+            font-size: 22px;
             color: var(--cocoa);
             line-height: 1.15;
             letter-spacing: 0.5px;
         }
 
         .main-crown-badge {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
-            padding: 2px 8px;
+            padding: 1px 7px;
             border-radius: 999px;
             background: linear-gradient(135deg, #FFD43B, #FAB005);
             color: var(--cocoa);
             border: 1px solid #FFF;
-            box-shadow: 0 2px 4px rgba(92, 61, 46, 0.12);
         }
 
         .profile-alliance {
             font-size: 11px;
             font-weight: 700;
-            padding: 2px 8px;
+            padding: 1px 7px;
             border-radius: 999px;
             background: var(--cocoa);
             color: #FFFDF6;
         }
 
+        /* 簡化並精簡戰力資訊行，不佔空間 */
         .profile-stats-row {
             display: flex;
             align-items: center;
             gap: 6px;
-            margin-top: 5px;
-            flex-wrap: wrap;
-            font-size: 12px;
+            margin-top: 3px;
+            font-size: 11.5px;
             font-weight: 600;
-        }
-
-        .stat-pill {
-            padding: 2px 9px;
-            border-radius: 999px;
-        }
-        .stat-pill.tg {
-            background: #FFF3D6;
-            color: #9C5A00;
-            border: 1px solid #F7D774;
-        }
-        .stat-pill.power {
-            background: #FFF0F4;
-            color: #B8325A;
-            border: 1px solid #F8B4C8;
-        }
-
-        .profile-meta {
-            font-size: 11px;
             color: var(--cocoa-light);
-            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .btn-edit-profile {
@@ -401,10 +376,10 @@
             background: #FAF4EB;
             border: 1px solid #EADBC8;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
+            width: 23px;
+            height: 23px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -418,7 +393,7 @@
             z-index: 2;
         }
 
-        /* 放大主標題，拿掉計時卡內的重複字眼後更清楚大器 */
+        /* 小花朵數字徽章移到標題右邊 */
         .section-header {
             font-family: var(--font-title);
             font-weight: normal;
@@ -435,22 +410,21 @@
         .section-title-left {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 8px;
         }
 
-        /* 使用 bg_epi_num.svg 作為可愛小花朵計數徽章（僅計算已開始的計時） */
         .flower-count-badge {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 26px;
-            height: 26px;
+            width: 25px;
+            height: 25px;
             background-image: url('./bg_epi_num.svg');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
             font-family: var(--font-body);
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 800;
             color: #FFFFFF;
             text-shadow: 0 1px 1px rgba(92, 61, 46, 0.45);
@@ -475,7 +449,6 @@
         }
         .btn-add:hover { transform: scale(1.15); }
 
-        /* 軟萌計時小卡片（移除重複名稱後更精煉緊湊） */
         .timer-card {
             color: white;
             border-radius: 16px;
@@ -607,7 +580,7 @@
             background: rgba(255, 255, 255, 0.38);
         }
 
-        /* 職位預約白卡：恢復完整 100% 寬度，文字不再擠壓換行 */
+        /* 職位預約白卡與內部文字放大 */
         .job-section {
             background: rgba(255, 255, 255, 0.96);
             border-radius: 18px;
@@ -634,7 +607,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 13.5px;
+            font-size: 14.5px;
             font-weight: 600;
             color: var(--cocoa);
             gap: 6px;
@@ -644,9 +617,9 @@
             background: #FFA24C;
             color: white;
             border: none;
-            padding: 4px 9px;
+            padding: 5px 10px;
             border-radius: 999px;
-            font-size: 11.5px;
+            font-size: 12.5px;
             font-weight: 600;
             cursor: pointer;
             margin-left: 3px;
@@ -654,16 +627,15 @@
         .btn-shift:hover { background: #EB8931; }
 
         select {
-            padding: 4px 9px;
+            padding: 5px 10px;
             border-radius: 999px;
             border: 1.5px solid #DFCBB5;
             background: #FFFDF9;
-            font-size: 12.5px;
+            font-size: 13.5px;
             font-weight: 600;
             color: var(--cocoa);
         }
 
-        /* 打直獨立拆分欄位視圖 */
         .timeline-view {
             display: none;
             max-width: 1220px;
@@ -729,7 +701,6 @@
         .tag-job-s { background: #EB5A87; }
         .tag-job-t { background: #5299E8; }
 
-        /* 頁尾雲朵與雙色黃波浪花邊 (bg_cloud_pc.png + bg_frill.png) */
         .footer-clouds {
             position: fixed;
             bottom: 12px;
@@ -759,7 +730,6 @@
             z-index: 2;
         }
 
-        /* 網頁內鬧鐘彈窗遮罩 */
         .alarm-modal-overlay {
             display: none;
             position: fixed;
@@ -856,13 +826,13 @@
 
         @media (max-width: 950px) {
             .grid-view, .timeline-grid { grid-template-columns: 1fr; }
-            .corner-stand-sticker { width: 105px; height: 105px; right: -12px; bottom: -18px; }
+            .corner-stand-sticker { width: 110px; height: 110px; right: -16px; bottom: -20px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 日本官網同款熱鬆餅 SHAKI!! 開場載入動畫 -->
+    <!-- 日本官網同款熱鬆餅 SHAKI!! 開場動畫 -->
     <div class="loading-splash" id="loadingSplash">
         <div class="loading-stage">
             <img class="loading-frame frame-1" src="./img_op_1.png" alt="">
@@ -873,7 +843,6 @@
 
     <div class="header">
         <div class="title-group">
-            <!-- 頂部標題旁的鬆弛熊角色圖 -->
             <img class="header-mascot-img" src="./chara_face_1-1.png" alt="鬆弛熊">
             <h1>多帳戶鬧鐘助手</h1>
             <span class="sync-badge" id="syncBadge">⏳ 連線雲端中...</span>
@@ -913,11 +882,10 @@
         </div>
     </div>
 
-    <!-- 頁尾雲朵與蝴蝶結波浪花邊 -->
     <div class="footer-clouds"></div>
     <div class="footer-frill"></div>
 
-    <!-- 網頁內鬧鐘彈出視窗 -->
+    <!-- 網頁內鬧鐘彈窗遮罩 -->
     <div class="alarm-modal-overlay" id="alarmModalOverlay">
         <div class="alarm-modal">
             <div class="alarm-modal-icon">⏰</div>
@@ -928,7 +896,6 @@
     </div>
 
     <script>
-        // --- 1. Firebase 專案設定 ---
         const firebaseConfig = {
             apiKey: "AIzaSyDjQS9NNkUwZ8bTeNb75WFp3at2jjKzWac",
             authDomain: "kingshot-game-alarm.firebaseapp.com",
@@ -949,7 +916,6 @@
         const TITLE_FONT_KEY = "multi_account_title_font_v3";
         const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
 
-        // Zoey（主號，黃色鬆弛熊）、Howard（粉色小白熊）、Patrick（綠色茶小熊）
         const accounts = [
             { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png', standFile: 'chara_stand_1-1.png' },
             { id: 'h', name: 'h', isMain: false, faceFile: 'chara_face_2-1.png', standFile: 'chara_stand_2-1.png' },
@@ -1002,26 +968,26 @@
 
         let store = {
             h: { 
-                soldiers: [{ id: 1, d: 0, h: 0, m: 18, endTime: null }], 
-                tech: [{ id: 2, d: 0, h: 2, m: 30, endTime: null }],
-                master: [{ id: 101, d: 0, h: 0, m: 10, endTime: null }],
-                sunlight: [{ id: 201, d: 0, h: 8, m: 0, endTime: null }],
+                soldiers: [], 
+                tech: [],
+                master: [],
+                sunlight: [],
                 soldierJobTime: '', soldierJobDate: null, 
                 techJobTime: '', techJobDate: null 
             },
             z: { 
-                soldiers: [{ id: 3, d: 0, h: 0, m: 18, endTime: null }], 
-                tech: [{ id: 4, d: 0, h: 2, m: 30, endTime: null }],
-                master: [{ id: 102, d: 0, h: 0, m: 10, endTime: null }],
-                sunlight: [{ id: 202, d: 0, h: 8, m: 0, endTime: null }],
+                soldiers: [], 
+                tech: [],
+                master: [],
+                sunlight: [],
                 soldierJobTime: '', soldierJobDate: null, 
                 techJobTime: '', techJobDate: null 
             },
             p: { 
-                soldiers: [{ id: 5, d: 0, h: 0, m: 18, endTime: null }], 
-                tech: [{ id: 6, d: 0, h: 2, m: 30, endTime: null }],
-                master: [{ id: 103, d: 0, h: 0, m: 10, endTime: null }],
-                sunlight: [{ id: 203, d: 0, h: 8, m: 0, endTime: null }],
+                soldiers: [], 
+                tech: [],
+                master: [],
+                sunlight: [],
                 soldierJobTime: '', soldierJobDate: null, 
                 techJobTime: '', techJobDate: null 
             }
@@ -1040,17 +1006,11 @@
             const splash = document.getElementById('loadingSplash');
             if (!splash) return;
             splash.classList.remove('hidden', 'shaki');
-            setTimeout(() => {
-                splash.classList.add('shaki');
-            }, 550);
-            setTimeout(() => {
-                splash.classList.add('hidden');
-            }, 1350);
+            setTimeout(() => { splash.classList.add('shaki'); }, 550);
+            setTimeout(() => { splash.classList.add('hidden'); }, 1350);
         }
 
-        function replaySplash() {
-            playSplashAnimation();
-        }
+        function replaySplash() { playSplashAnimation(); }
 
         function initFontThemes() {
             const savedTitle = localStorage.getItem(TITLE_FONT_KEY);
@@ -1248,7 +1208,6 @@
             }, (error) => {
                 badge.innerText = "🔴 雲端連線異常";
                 badge.className = "sync-badge error";
-                console.error("Firebase Error:", error);
             });
         }
 
@@ -1256,11 +1215,17 @@
             const serializedStore = {};
             accounts.forEach(acc => {
                 const accData = store[acc.id];
+                /* 濾掉尚未按開始的空白草稿，避免 F5 重整保留 */
+                const validSoldiers = (accData.soldiers || []).filter(i => i.endTime !== null);
+                const validTech = (accData.tech || []).filter(i => i.endTime !== null);
+                const validMaster = (accData.master || []).filter(i => i.endTime !== null);
+                const validSunlight = (accData.sunlight || []).filter(i => i.endTime !== null);
+
                 serializedStore[acc.id] = {
-                    soldiers: (accData.soldiers || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
-                    tech: (accData.tech || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
-                    master: (accData.master || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
-                    sunlight: (accData.sunlight || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
+                    soldiers: validSoldiers.map(i => ({ ...i, endTime: i.endTime.toISOString() })),
+                    tech: validTech.map(i => ({ ...i, endTime: i.endTime.toISOString() })),
+                    master: validMaster.map(i => ({ ...i, endTime: i.endTime.toISOString() })),
+                    sunlight: validSunlight.map(i => ({ ...i, endTime: i.endTime.toISOString() })),
                     soldierJobTime: accData.soldierJobTime || '',
                     soldierJobDate: accData.soldierJobDate ? accData.soldierJobDate.toISOString() : null,
                     techJobTime: accData.techJobTime || '',
@@ -1397,9 +1362,7 @@
                 const left = (screen.width - width) / 2;
                 const top = (screen.height - height) / 2;
 
-                if (popupWin && !popupWin.closed) {
-                    popupWin.close();
-                }
+                if (popupWin && !popupWin.closed) { popupWin.close(); }
 
                 popupWin = window.open(
                     "",
@@ -1465,18 +1428,9 @@
         function dismissAlarm() {
             document.getElementById('alarmModalOverlay').style.display = 'none';
             activeAlerts = [];
-
-            if (popupWin && !popupWin.closed) {
-                popupWin.close();
-            }
-            if (ringInterval) {
-                clearInterval(ringInterval);
-                ringInterval = null;
-            }
-            if (titleBlinkInterval) {
-                clearInterval(titleBlinkInterval);
-                titleBlinkInterval = null;
-            }
+            if (popupWin && !popupWin.closed) { popupWin.close(); }
+            if (ringInterval) { clearInterval(ringInterval); ringInterval = null; }
+            if (titleBlinkInterval) { clearInterval(titleBlinkInterval); titleBlinkInterval = null; }
             document.title = ORIGINAL_TITLE;
         }
 
@@ -1511,10 +1465,9 @@
             const p = profiles[accId] || {};
             const fallbackAvatar = `./${acc.faceFile}`;
             const avatarSrc = p.avatar ? p.avatar : fallbackAvatar;
-            const rankText = p.powerRank ? ` · 戰力#${p.powerRank}` : '';
-            const syncTimeText = p.lastFetched
-                ? `更新: ${formatTimeHM(new Date(p.lastFetched))}${rankText}`
-                : '點擊「刷新戰力」同步';
+            const rankText = p.powerRank ? `戰力#${p.powerRank}` : '';
+            const syncTimeText = p.lastFetched ? `更新: ${formatTimeHM(new Date(p.lastFetched))}` : '';
+            const statsJoined = [syncTimeText, rankText].filter(Boolean).join(' · ');
 
             return `
                 <div class="profile-card">
@@ -1529,17 +1482,15 @@
                             ${p.alliance ? `<span class="profile-alliance">[${p.alliance}]</span>` : ''}
                         </div>
                         <div class="profile-stats-row">
-                            <span class="stat-pill tg">${p.levelLabel || '--'}</span>
-                            <span class="stat-pill power">⚔️ ${formatPower(p.power)}</span>
+                            <span style="color:#B8325A; font-weight:700;">⚔️ ${formatPower(p.power)}</span>
+                            <span>${statsJoined}</span>
                         </div>
-                        <div class="profile-meta">${syncTimeText}</div>
                     </div>
                     <button class="btn-edit-profile" title="修改角色名或聯盟標籤" onclick="editAccountQuery('${accId}')">✏️</button>
                 </div>
             `;
         }
 
-        // 只計算「已提交開始倒數（endTime !== null）」的項目數量
         function getActiveCount(list) {
             return (list || []).filter(item => item.endTime !== null).length;
         }
@@ -1635,7 +1586,7 @@
                         </div>
                     </div>
 
-                    <!-- 卡片右下角跨出欄外的大隻立牌貼紙 -->
+                    <!-- 真正跨出欄外的立牌公仔 -->
                     <img class="corner-stand-sticker" src="./${acc.standFile}" alt="">
                 </div>
             `}).join('');
@@ -1758,7 +1709,7 @@
 
             store[accId][type].push({ id: ++nextId, d: defD, h: defH, m: defM, endTime: null });
             renderGrid();
-            saveState();
+            /* 不主動 saveState，確保按 F5 重整不會保留未開始的草稿 */
         }
 
         function deleteItem(accId, type, id) {
@@ -1788,7 +1739,7 @@
 
                 renderGrid();
                 recalculateJobs();
-                saveState();
+                saveState(); /* 只有正式點擊開始倒數的項目才會儲存 */
             }
         }
 
