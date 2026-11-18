@@ -8,6 +8,19 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <style>
+        /* 載入自訂字體 */
+        @font-face {
+            font-family: 'MarshmallowFont';
+            src: url('./HanyiSentyMarshmallow.ttf') format('truetype');
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'DonutFont';
+            src: url('./SentyDonut.ttf') format('truetype');
+            font-display: swap;
+        }
+
         :root {
             --bg-h: #e6f3ff;
             --border-h: #90caf9;
@@ -20,6 +33,11 @@
             --bg-p: #fff9c4;
             --border-p: #ffe082;
             --card-p: #fbc02d;
+
+            /* 動態字體變數（預設組合 A：標題棉花糖 + 內文甜甜圈） */
+            --font-title: 'MarshmallowFont', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-body: 'DonutFont', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-num: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
 
         * {
@@ -27,11 +45,15 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: var(--font-body);
             background-color: #f0f2f5;
             margin: 0;
             padding: 20px;
             color: #333;
+        }
+
+        button, select, input {
+            font-family: var(--font-body);
         }
 
         .header {
@@ -52,8 +74,10 @@
         }
 
         h1 {
-            font-size: 22px;
+            font-family: var(--font-title);
+            font-size: 25px;
             margin: 0;
+            letter-spacing: 0.5px;
         }
 
         .sync-badge {
@@ -78,6 +102,33 @@
             gap: 8px;
             flex-wrap: wrap;
         }
+
+        .btn-refresh-profile {
+            background-color: #34c759;
+            color: white;
+            border: none;
+            padding: 9px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .btn-refresh-profile:hover { background-color: #28a745; }
+        .btn-refresh-profile:disabled { opacity: 0.65; cursor: wait; }
+
+        .btn-font-toggle {
+            background-color: #af52de;
+            color: white;
+            border: none;
+            padding: 9px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .btn-font-toggle:hover { background-color: #9338c2; }
 
         .btn-test {
             background-color: #ff9500;
@@ -145,21 +196,110 @@
         .account-column.z { background-color: var(--bg-z); border-color: var(--border-z); }
         .account-column.p { background-color: var(--bg-p); border-color: var(--border-p); }
 
-        .account-title {
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            margin: 0;
-            padding-bottom: 6px;
-            border-bottom: 2px solid rgba(0,0,0,0.1);
+        /* 遊戲角色名片區 */
+        .profile-card {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            position: relative;
         }
 
+        .profile-avatar {
+            width: 54px;
+            height: 54px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: #ddd;
+            border: 2px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .profile-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .profile-name-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .profile-name {
+            font-family: var(--font-title);
+            font-size: 20px;
+            font-weight: bold;
+            color: #222;
+            line-height: 1.1;
+        }
+
+        .profile-alliance {
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 5px;
+            background: #2c2c2e;
+            color: #fff;
+        }
+
+        .profile-stats-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 5px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .stat-pill {
+            padding: 2px 7px;
+            border-radius: 6px;
+            background: #f2f2f7;
+            color: #333;
+        }
+
+        .stat-pill.tg {
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+
+        .stat-pill.power {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .profile-meta {
+            font-size: 11px;
+            color: #777;
+            margin-top: 4px;
+        }
+
+        .btn-edit-profile {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            opacity: 0.55;
+            padding: 2px 4px;
+        }
+        .btn-edit-profile:hover { opacity: 1; }
+
         .section-header {
+            font-family: var(--font-title);
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 15px;
             margin-bottom: 6px;
         }
 
@@ -217,21 +357,22 @@
         }
 
         .timer-title {
-            font-size: 12px;
-            opacity: 0.92;
+            font-size: 13px;
+            opacity: 0.95;
             font-weight: bold;
         }
 
         .timer-display {
             font-size: 19px;
             font-weight: bold;
-            font-family: monospace;
+            font-family: var(--font-num);
+            font-variant-numeric: tabular-nums;
             letter-spacing: 0.5px;
         }
 
         .timer-sub {
             font-size: 11px;
-            opacity: 0.85;
+            opacity: 0.88;
         }
 
         .timer-inputs {
@@ -249,6 +390,7 @@
             text-align: center;
             font-size: 13px;
             font-weight: bold;
+            font-family: var(--font-num);
             color: #333;
             padding: 0;
         }
@@ -315,6 +457,14 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
+        .job-section-title {
+            font-family: var(--font-title);
+            font-size: 15px;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 4px;
+        }
+
         .job-row {
             display: flex;
             align-items: center;
@@ -364,9 +514,10 @@
         }
 
         .timeline-column h3 {
+            font-family: var(--font-title);
             margin-top: 0;
             margin-bottom: 15px;
-            font-size: 16px;
+            font-size: 17px;
             text-align: center;
             padding-bottom: 8px;
             border-bottom: 2px solid #f0f0f0;
@@ -434,8 +585,9 @@
         }
 
         .alarm-modal h2 {
+            font-family: var(--font-title);
             margin: 0 0 10px 0;
-            font-size: 22px;
+            font-size: 24px;
             color: #ff2d55;
         }
 
@@ -498,9 +650,11 @@
             <span class="sync-badge" id="syncBadge">⏳ 連線雲端中...</span>
         </div>
         <div class="header-btns">
+            <button class="btn-refresh-profile" id="refreshProfileBtn" onclick="refreshAllProfiles()">🔄 刷新遊戲資料</button>
+            <button class="btn-font-toggle" id="fontToggleBtn" onclick="cycleFontTheme()">🔤 字體：A 棉花糖+甜甜圈</button>
             <button class="btn-event-toggle active" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光之旅：顯示中</button>
-            <button class="btn-test" onclick="testAlarm()">🔔 測試彈出視窗與鈴聲</button>
-            <button class="btn-toggle" onclick="toggleView()" id="toggleBtn">切換為獨立分類時間線</button>
+            <button class="btn-test" onclick="testAlarm()">🔔 測試鈴聲</button>
+            <button class="btn-toggle" onclick="toggleView()" id="toggleBtn">切換時間線</button>
         </div>
     </div>
 
@@ -551,9 +705,14 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        // 完整保留原有計時器資料庫路徑，確保進行中計時器不受影響
         const dbRef = db.ref("alarm_state_v1");
+        // 獨立儲存三帳戶遊戲角色名片快取
+        const profileDbRef = db.ref("account_profiles_v1");
 
         const STORAGE_KEY = "multi_account_alarm_local_backup";
+        const PROFILE_STORAGE_KEY = "multi_account_profiles_backup";
+        const FONT_THEME_KEY = "multi_account_font_theme_idx";
         const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
 
         const accounts = [
@@ -561,6 +720,52 @@
             { id: 'z', name: 'z' },
             { id: 'p', name: 'p' }
         ];
+
+        // 三帳戶預設遊戲資料與 API 查詢參數
+        let profiles = {
+            h: {
+                queryName: 'Howard',
+                queryAlliance: '777',
+                name: 'Howard',
+                alliance: '777',
+                levelLabel: 'TG6',
+                power: 279000000,
+                powerRank: null,
+                avatar: '',
+                lastFetched: null
+            },
+            z: {
+                queryName: 'Zoey',
+                queryAlliance: 'TER',
+                name: 'Zoey',
+                alliance: 'TER',
+                levelLabel: 'TG8',
+                power: 430453250,
+                powerRank: 44,
+                avatar: 'https://got-global-avatar.akamaized.net/avatar/2026/11/07/v9JxWg_1794050377.png',
+                lastFetched: null
+            },
+            p: {
+                queryName: 'Patrick',
+                queryAlliance: '777',
+                name: 'Patrick',
+                alliance: '777',
+                levelLabel: 'TG5-3',
+                power: 264500000,
+                powerRank: null,
+                avatar: '',
+                lastFetched: null
+            }
+        };
+
+        // 字體試用組合清單
+        const fontThemes = [
+            { label: 'A 棉花糖+甜甜圈', title: "'MarshmallowFont', sans-serif", body: "'DonutFont', sans-serif" },
+            { label: 'B 甜甜圈+棉花糖', title: "'DonutFont', sans-serif", body: "'MarshmallowFont', sans-serif" },
+            { label: 'C 全站棉花糖', title: "'MarshmallowFont', sans-serif", body: "'MarshmallowFont', sans-serif" },
+            { label: 'D 全站甜甜圈', title: "'DonutFont', sans-serif", body: "'DonutFont', sans-serif" }
+        ];
+        let currentFontIdx = 0;
 
         let showSunlightEvent = true;
 
@@ -600,6 +805,167 @@
         let popupWin = null;
         let isInitialLoadDone = false;
 
+        // --- 字體切換試用 ---
+        function initFontTheme() {
+            const saved = localStorage.getItem(FONT_THEME_KEY);
+            if (saved !== null) {
+                currentFontIdx = parseInt(saved, 10) % fontThemes.length;
+            }
+            applyFontTheme();
+        }
+
+        function cycleFontTheme() {
+            currentFontIdx = (currentFontIdx + 1) % fontThemes.length;
+            localStorage.setItem(FONT_THEME_KEY, String(currentFontIdx));
+            applyFontTheme();
+        }
+
+        function applyFontTheme() {
+            const theme = fontThemes[currentFontIdx];
+            document.documentElement.style.setProperty('--font-title', theme.title);
+            document.documentElement.style.setProperty('--font-body', theme.body);
+            const btn = document.getElementById('fontToggleBtn');
+            if (btn) btn.innerText = `🔤 字體：${theme.label}`;
+        }
+
+        // --- 遊戲角色資料 API 自動同步 ---
+        function formatPower(num) {
+            if (!num && num !== 0) return '--';
+            if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
+            if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return String(num);
+        }
+
+        function getDisplayAccountName(accId) {
+            return (profiles[accId] && profiles[accId].name) ? profiles[accId].name : accId;
+        }
+
+        async function fetchSingleProfile(accId) {
+            const p = profiles[accId];
+            if (!p || !p.queryName) return false;
+
+            const targetUrl = `https://kingdom-1177.vercel.app/api/governor-profile?name=${encodeURIComponent(p.queryName)}&alliance=${encodeURIComponent(p.queryAlliance || '')}`;
+            
+            // 先嘗試直接請求；若瀏覽器遭遇 CORS 限制則自動切換公開 CORS 代理備援
+            const candidateUrls = [
+                targetUrl,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+                `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
+            ];
+
+            for (const url of candidateUrls) {
+                try {
+                    const res = await fetch(url, { cache: 'no-store' });
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    if (data && data.ok && data.governor) {
+                        const gov = data.governor;
+                        profiles[accId] = {
+                            ...profiles[accId],
+                            name: gov.name || p.queryName,
+                            alliance: gov.alliance || p.queryAlliance,
+                            levelLabel: gov.levelLabel || (gov.tg ? `TG${gov.tg}` : `Lv.${gov.townCenter || ''}`),
+                            power: gov.power || 0,
+                            powerRank: gov.powerRank || null,
+                            avatar: gov.avatar || profiles[accId].avatar,
+                            lastFetched: new Date().toISOString()
+                        };
+                        return true;
+                    }
+                } catch (e) {
+                    // 嘗試下一個備援管道
+                }
+            }
+            return false;
+        }
+
+        async function refreshAllProfiles(silent = false) {
+            const btn = document.getElementById('refreshProfileBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ 同步遊戲資料中...';
+            }
+
+            const results = await Promise.all([
+                fetchSingleProfile('h'),
+                fetchSingleProfile('z'),
+                fetchSingleProfile('p')
+            ]);
+
+            if (results.some(ok => ok)) {
+                saveProfiles();
+                renderGrid();
+                updateTimeline();
+            } else if (!silent) {
+                alert('暫時無法連線至遊戲資料接口，請稍後再試（已保留上次同步的資料）。');
+            }
+
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = '🔄 刷新遊戲資料';
+            }
+        }
+
+        function editAccountQuery(accId) {
+            const cur = profiles[accId];
+            const newName = prompt(`修改 [${accId.toUpperCase()}] 的遊戲角色名稱（需與遊戲內完全一致）：`, cur.queryName);
+            if (newName === null) return;
+            const trimmedName = newName.trim();
+            if (!trimmedName) return;
+
+            const newAlliance = prompt(`修改 [${trimmedName}] 的聯盟標籤（例如 777 或 TER）：`, cur.queryAlliance || '');
+            if (newAlliance === null) return;
+
+            profiles[accId].queryName = trimmedName;
+            profiles[accId].queryAlliance = newAlliance.trim();
+            profiles[accId].name = trimmedName;
+            profiles[accId].alliance = newAlliance.trim();
+            saveProfiles();
+            renderGrid();
+            refreshAllProfiles(false);
+        }
+
+        function saveProfiles() {
+            try {
+                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
+            } catch (e) {}
+            profileDbRef.set(profiles).catch(err => console.error("Profile Sync Error:", err));
+        }
+
+        function loadLocalProfiles() {
+            try {
+                const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    accounts.forEach(acc => {
+                        if (parsed[acc.id]) {
+                            profiles[acc.id] = { ...profiles[acc.id], ...parsed[acc.id] };
+                        }
+                    });
+                }
+            } catch (e) {}
+        }
+
+        function setupProfileListener() {
+            profileDbRef.on("value", (snapshot) => {
+                const cloudProfiles = snapshot.val();
+                if (cloudProfiles) {
+                    accounts.forEach(acc => {
+                        if (cloudProfiles[acc.id]) {
+                            profiles[acc.id] = { ...profiles[acc.id], ...cloudProfiles[acc.id] };
+                        }
+                    });
+                    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
+                    renderGrid();
+                    updateTimeline();
+                } else {
+                    saveProfiles();
+                }
+            });
+        }
+
+        // --- 背景計時核心 ---
         function startBackgroundWorker() {
             try {
                 const workerCode = `setInterval(function() { postMessage('tick'); }, 1000);`;
@@ -612,14 +978,19 @@
         }
 
         function init() {
+            initFontTheme();
             loadLocalBackup();
+            loadLocalProfiles();
             updateSunlightBtnUI();
             renderGrid();
             setupFirebaseRealtimeListener();
+            setupProfileListener();
             startBackgroundWorker();
+            // 載入頁面時靜默刷新一次最新戰力與頭像
+            refreshAllProfiles(true);
         }
 
-        // --- Firebase 雲端即時監聽與寫入 ---
+        // --- Firebase 雲端即時監聽與寫入（計時器部分） ---
         function setupFirebaseRealtimeListener() {
             const badge = document.getElementById('syncBadge');
 
@@ -635,7 +1006,6 @@
                     renderGrid();
                     updateTimeline();
                 } else if (!isInitialLoadDone) {
-                    // 若雲端資料庫目前為空（首次啟動），將本機初始資料上傳建立結構
                     saveState();
                 }
                 isInitialLoadDone = true;
@@ -647,7 +1017,6 @@
         }
 
         function serializeState() {
-            // Firebase 不允許存 undefined，且需要將 Date 轉為 ISO 字串，空陣列補 null 防掉節點
             const serializedStore = {};
             accounts.forEach(acc => {
                 const accData = store[acc.id];
@@ -879,7 +1248,7 @@
         function testAlarm() {
             initAudioContext();
             const testKey = "test_" + Date.now();
-            triggerAlarmAlert(testKey, "【測試】[z] 士兵訓練所 已完成！");
+            triggerAlarmAlert(testKey, `【測試】[${getDisplayAccountName('z')}] 士兵訓練所 已完成！`);
         }
 
         function applyPreset(accId, type, id, d, h, m, autoStart = false) {
@@ -902,13 +1271,41 @@
             saveState();
         }
 
+        function renderProfileHeader(accId) {
+            const p = profiles[accId] || {};
+            const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name || accId)}&background=random&color=fff&bold=true`;
+            const avatarSrc = p.avatar ? p.avatar : fallbackAvatar;
+            const rankText = p.powerRank ? ` · 戰力#${p.powerRank}` : '';
+            const syncTimeText = p.lastFetched
+                ? `更新: ${formatTimeHM(new Date(p.lastFetched))}${rankText}`
+                : '點擊「刷新遊戲資料」同步';
+
+            return `
+                <div class="profile-card">
+                    <img class="profile-avatar" src="${avatarSrc}" alt="${p.name || accId}" onerror="this.src='${fallbackAvatar}'">
+                    <div class="profile-details">
+                        <div class="profile-name-row">
+                            <span class="profile-name">${p.name || accId}</span>
+                            ${p.alliance ? `<span class="profile-alliance">[${p.alliance}]</span>` : ''}
+                        </div>
+                        <div class="profile-stats-row">
+                            <span class="stat-pill tg">${p.levelLabel || '--'}</span>
+                            <span class="stat-pill power">⚔️ ${formatPower(p.power)}</span>
+                        </div>
+                        <div class="profile-meta">${syncTimeText}</div>
+                    </div>
+                    <button class="btn-edit-profile" title="修改角色名或聯盟標籤" onclick="editAccountQuery('${accId}')">✏️</button>
+                </div>
+            `;
+        }
+
         function renderGrid() {
             const grid = document.getElementById('gridView');
             grid.innerHTML = accounts.map(acc => {
                 const data = store[acc.id];
                 return `
                 <div class="account-column ${acc.id}">
-                    <div class="account-title">${acc.name}</div>
+                    ${renderProfileHeader(acc.id)}
                     
                     <div>
                         <div class="section-header">
@@ -953,7 +1350,7 @@
                     ` : ''}
 
                     <div class="job-section">
-                        <div style="font-size: 14px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 4px;">🏛️ 職位預約</div>
+                        <div class="job-section-title">🏛️ 職位預約</div>
                         
                         <div class="job-row">
                             <span>⚔️ 士兵職位:</span>
@@ -1158,6 +1555,7 @@
             };
 
             accounts.forEach(acc => {
+                const displayName = getDisplayAccountName(acc.id);
                 ['soldiers', 'tech', 'master', 'sunlight'].forEach(type => {
                     if (type === 'sunlight' && !showSunlightEvent) return;
 
@@ -1170,7 +1568,7 @@
                             if (diff <= 0) {
                                 if (disp) disp.innerText = "00:00 (完結)";
                                 const eventKey = `task_${item.id}_${item.endTime.getTime()}`;
-                                triggerAlarmAlert(eventKey, `[${acc.name}] ${typeName} #${idx + 1} 已經完成！`);
+                                triggerAlarmAlert(eventKey, `[${displayName}] ${typeName} #${idx + 1} 已經完成！`);
                             } else if (disp) {
                                 const d = Math.floor(diff / 86400);
                                 const h = Math.floor((diff % 86400) / 3600);
@@ -1184,12 +1582,12 @@
 
                 if (store[acc.id].soldierJobDate && now >= store[acc.id].soldierJobDate) {
                     const jobKey = `job_s_${acc.id}_${store[acc.id].soldierJobDate.getTime()}`;
-                    triggerAlarmAlert(jobKey, `[${acc.name}] ⚔️ 士兵職位預約時間 (${store[acc.id].soldierJobTime}) 到了！`);
+                    triggerAlarmAlert(jobKey, `[${displayName}] ⚔️ 士兵職位預約時間 (${store[acc.id].soldierJobTime}) 到了！`);
                 }
 
                 if (store[acc.id].techJobDate && now >= store[acc.id].techJobDate) {
                     const jobKey = `job_t_${acc.id}_${store[acc.id].techJobDate.getTime()}`;
-                    triggerAlarmAlert(jobKey, `[${acc.name}] 🔬 科技職位預約時間 (${store[acc.id].techJobTime}) 到了！`);
+                    triggerAlarmAlert(jobKey, `[${displayName}] 🔬 科技職位預約時間 (${store[acc.id].techJobTime}) 到了！`);
                 }
             });
 
@@ -1345,34 +1743,35 @@
             let techJobsList = [];
 
             accounts.forEach(acc => {
+                const displayName = getDisplayAccountName(acc.id);
                 (store[acc.id].soldiers || []).forEach((item, idx) => {
                     if (item.endTime) {
-                        tasksList.push({ acc: acc.name, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `士兵 #${idx + 1}`, tagClass: 'tag-soldier' });
+                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `士兵 #${idx + 1}`, tagClass: 'tag-soldier' });
                     }
                 });
                 (store[acc.id].tech || []).forEach((item, idx) => {
                     if (item.endTime) {
-                        tasksList.push({ acc: acc.name, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `科技 #${idx + 1}`, tagClass: 'tag-tech' });
+                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `科技 #${idx + 1}`, tagClass: 'tag-tech' });
                     }
                 });
                 (store[acc.id].master || []).forEach((item, idx) => {
                     if (item.endTime) {
-                        tasksList.push({ acc: acc.name, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `📖 大師技能 #${idx + 1}`, tagClass: 'tag-master' });
+                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `📖 大師技能 #${idx + 1}`, tagClass: 'tag-master' });
                     }
                 });
                 if (showSunlightEvent) {
                     (store[acc.id].sunlight || []).forEach((item, idx) => {
                         if (item.endTime) {
-                            tasksList.push({ acc: acc.name, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `☀️ 沐光之旅 #${idx + 1}`, tagClass: 'tag-sunlight' });
+                            tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `☀️ 沐光之旅 #${idx + 1}`, tagClass: 'tag-sunlight' });
                         }
                     });
                 }
 
                 if (store[acc.id].soldierJobDate) {
-                    soldierJobsList.push({ acc: acc.name, accId: acc.id, time: store[acc.id].soldierJobDate, timeStr: formatDateTime(store[acc.id].soldierJobDate), label: '⚔️ 士兵職位', tagClass: 'tag-job-s' });
+                    soldierJobsList.push({ acc: displayName, accId: acc.id, time: store[acc.id].soldierJobDate, timeStr: formatDateTime(store[acc.id].soldierJobDate), label: '⚔️ 士兵職位', tagClass: 'tag-job-s' });
                 }
                 if (store[acc.id].techJobDate) {
-                    techJobsList.push({ acc: acc.name, accId: acc.id, time: store[acc.id].techJobDate, timeStr: formatDateTime(store[acc.id].techJobDate), label: '🔬 科技職位', tagClass: 'tag-job-t' });
+                    techJobsList.push({ acc: displayName, accId: acc.id, time: store[acc.id].techJobDate, timeStr: formatDateTime(store[acc.id].techJobDate), label: '🔬 科技職位', tagClass: 'tag-job-t' });
                 }
             });
 
@@ -1410,11 +1809,11 @@
             if (grid.style.display === 'none') {
                 grid.style.display = 'grid';
                 timeline.style.display = 'none';
-                btn.innerText = '切換為獨立分類時間線';
+                btn.innerText = '切換時間線';
             } else {
                 grid.style.display = 'none';
                 timeline.style.display = 'block';
-                btn.innerText = '切換為 3 欄卡片視圖';
+                btn.innerText = '切換 3 欄視圖';
                 updateTimeline();
             }
         }
