@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>多帳戶鬧鐘與職位助手</title>
-    <!-- 引入 Firebase SDK (Compat 版本，完美支援單一 HTML 檔案直接運行) -->
+    <!-- 引入 Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <style>
@@ -34,9 +34,9 @@
             --border-p: #ffe082;
             --card-p: #fbc02d;
 
-            /* 動態字體變數（預設組合 A：標題棉花糖 + 內文甜甜圈） */
-            --font-title: 'MarshmallowFont', -apple-system, BlinkMacSystemFont, sans-serif;
-            --font-body: 'DonutFont', -apple-system, BlinkMacSystemFont, sans-serif;
+            /* 標題專用裝飾字體 vs 內文清晰字體 */
+            --font-title: 'MarshmallowFont', "PingFang HK", "Microsoft JhengHei", sans-serif;
+            --font-body: -apple-system, BlinkMacSystemFont, "PingFang HK", "Microsoft JhengHei", "Segoe UI", sans-serif;
             --font-num: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
 
@@ -50,6 +50,7 @@
             margin: 0;
             padding: 20px;
             color: #333;
+            -webkit-font-smoothing: antialiased;
         }
 
         button, select, input {
@@ -75,14 +76,16 @@
 
         h1 {
             font-family: var(--font-title);
-            font-size: 25px;
+            font-weight: normal; /* 避免瀏覽器對粗手寫字體二次加粗 */
+            font-size: 28px;
             margin: 0;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            color: #222;
         }
 
         .sync-badge {
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 600;
             padding: 4px 10px;
             border-radius: 20px;
             background: #e5e5ea;
@@ -107,10 +110,10 @@
             background-color: #34c759;
             color: white;
             border: none;
-            padding: 9px 14px;
+            padding: 8px 13px;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 13px;
             transition: background 0.2s;
         }
@@ -121,10 +124,10 @@
             background-color: #af52de;
             color: white;
             border: none;
-            padding: 9px 14px;
+            padding: 8px 13px;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 13px;
             transition: background 0.2s;
         }
@@ -134,10 +137,10 @@
             background-color: #ff9500;
             color: white;
             border: none;
-            padding: 9px 14px;
+            padding: 8px 13px;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 13px;
             transition: background 0.2s;
         }
@@ -147,10 +150,10 @@
             background-color: #8e8e93;
             color: white;
             border: none;
-            padding: 9px 14px;
+            padding: 8px 13px;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 13px;
             transition: background 0.2s;
         }
@@ -164,10 +167,10 @@
             background-color: #007aff;
             color: white;
             border: none;
-            padding: 9px 14px;
+            padding: 8px 13px;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 13px;
             transition: background 0.2s;
         }
@@ -198,7 +201,7 @@
 
         /* 遊戲角色名片區 */
         .profile-card {
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.94);
             border-radius: 10px;
             padding: 10px 12px;
             display: flex;
@@ -209,12 +212,12 @@
         }
 
         .profile-avatar {
-            width: 54px;
-            height: 54px;
+            width: 56px;
+            height: 56px;
             border-radius: 12px;
             object-fit: cover;
             background: #ddd;
-            border: 2px solid rgba(0,0,0,0.1);
+            border: 2px solid rgba(0,0,0,0.08);
             flex-shrink: 0;
         }
 
@@ -232,15 +235,16 @@
 
         .profile-name {
             font-family: var(--font-title);
-            font-size: 20px;
-            font-weight: bold;
+            font-weight: normal; /* 保持手寫字體原貌不糊邊 */
+            font-size: 24px;
             color: #222;
-            line-height: 1.1;
+            line-height: 1.15;
+            letter-spacing: 0.5px;
         }
 
         .profile-alliance {
-            font-size: 12px;
-            font-weight: bold;
+            font-size: 11px;
+            font-weight: 700;
             padding: 2px 6px;
             border-radius: 5px;
             background: #2c2c2e;
@@ -254,7 +258,7 @@
             margin-top: 5px;
             flex-wrap: wrap;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .stat-pill {
@@ -288,19 +292,21 @@
             border: none;
             cursor: pointer;
             font-size: 13px;
-            opacity: 0.55;
+            opacity: 0.5;
             padding: 2px 4px;
         }
         .btn-edit-profile:hover { opacity: 1; }
 
         .section-header {
             font-family: var(--font-title);
+            font-weight: normal;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-weight: bold;
-            font-size: 15px;
+            font-size: 18px;
+            letter-spacing: 0.5px;
             margin-bottom: 6px;
+            color: #222;
         }
 
         .btn-add {
@@ -311,6 +317,7 @@
             width: 22px;
             height: 22px;
             font-size: 15px;
+            font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -357,14 +364,14 @@
         }
 
         .timer-title {
-            font-size: 13px;
-            opacity: 0.95;
-            font-weight: bold;
+            font-size: 12px;
+            opacity: 0.92;
+            font-weight: 600;
         }
 
         .timer-display {
             font-size: 19px;
-            font-weight: bold;
+            font-weight: 700;
             font-family: var(--font-num);
             font-variant-numeric: tabular-nums;
             letter-spacing: 0.5px;
@@ -372,7 +379,7 @@
 
         .timer-sub {
             font-size: 11px;
-            opacity: 0.88;
+            opacity: 0.85;
         }
 
         .timer-inputs {
@@ -389,7 +396,7 @@
             border-radius: 4px;
             text-align: center;
             font-size: 13px;
-            font-weight: bold;
+            font-weight: 700;
             font-family: var(--font-num);
             color: #333;
             padding: 0;
@@ -409,7 +416,7 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 600;
             white-space: nowrap;
         }
         .btn-action:hover { background: rgba(255,255,255,0.4); }
@@ -439,7 +446,7 @@
             border-radius: 4px;
             padding: 2px 6px;
             font-size: 11px;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
             transition: background 0.15s;
         }
@@ -459,10 +466,11 @@
 
         .job-section-title {
             font-family: var(--font-title);
-            font-size: 15px;
-            font-weight: bold;
+            font-weight: normal;
+            font-size: 18px;
             border-bottom: 1px solid #ddd;
             padding-bottom: 4px;
+            color: #222;
         }
 
         .job-row {
@@ -470,7 +478,7 @@
             align-items: center;
             justify-content: space-between;
             font-size: 13px;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .btn-shift {
@@ -480,6 +488,7 @@
             padding: 3px 6px;
             border-radius: 4px;
             font-size: 11px;
+            font-weight: 600;
             cursor: pointer;
             margin-left: 4px;
         }
@@ -490,7 +499,7 @@
             border-radius: 6px;
             border: 1px solid #ccc;
             font-size: 13px;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         /* 打直獨立拆分欄位視圖 */
@@ -515,9 +524,10 @@
 
         .timeline-column h3 {
             font-family: var(--font-title);
+            font-weight: normal;
             margin-top: 0;
             margin-bottom: 15px;
-            font-size: 17px;
+            font-size: 19px;
             text-align: center;
             padding-bottom: 8px;
             border-bottom: 2px solid #f0f0f0;
@@ -531,7 +541,7 @@
             margin-bottom: 8px;
             border-radius: 8px;
             border-left: 6px solid;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 14px;
         }
 
@@ -586,8 +596,9 @@
 
         .alarm-modal h2 {
             font-family: var(--font-title);
+            font-weight: normal;
             margin: 0 0 10px 0;
-            font-size: 24px;
+            font-size: 26px;
             color: #ff2d55;
         }
 
@@ -596,8 +607,8 @@
             border-radius: 8px;
             padding: 12px;
             margin: 15px 0;
-            font-size: 16px;
-            font-weight: bold;
+            font-size: 15px;
+            font-weight: 600;
             color: #333;
             max-height: 200px;
             overflow-y: auto;
@@ -616,7 +627,7 @@
             padding: 12px 30px;
             border-radius: 10px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
             width: 100%;
         }
@@ -651,7 +662,7 @@
         </div>
         <div class="header-btns">
             <button class="btn-refresh-profile" id="refreshProfileBtn" onclick="refreshAllProfiles()">🔄 刷新遊戲資料</button>
-            <button class="btn-font-toggle" id="fontToggleBtn" onclick="cycleFontTheme()">🔤 字體：A 棉花糖+甜甜圈</button>
+            <button class="btn-font-toggle" id="fontToggleBtn" onclick="cycleFontTheme()">🔤 標題字體：棉花糖</button>
             <button class="btn-event-toggle active" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光之旅：顯示中</button>
             <button class="btn-test" onclick="testAlarm()">🔔 測試鈴聲</button>
             <button class="btn-toggle" onclick="toggleView()" id="toggleBtn">切換時間線</button>
@@ -700,1125 +711,4 @@
             projectId: "kingshot-game-alarm",
             storageBucket: "kingshot-game-alarm.firebasestorage.app",
             messagingSenderId: "935740408911",
-            appId: "1:935740408911:web:ca2acd5a82822be227d63a"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        // 完整保留原有計時器資料庫路徑，確保進行中計時器不受影響
-        const dbRef = db.ref("alarm_state_v1");
-        // 獨立儲存三帳戶遊戲角色名片快取
-        const profileDbRef = db.ref("account_profiles_v1");
-
-        const STORAGE_KEY = "multi_account_alarm_local_backup";
-        const PROFILE_STORAGE_KEY = "multi_account_profiles_backup";
-        const FONT_THEME_KEY = "multi_account_font_theme_idx";
-        const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
-
-        const accounts = [
-            { id: 'h', name: 'h' },
-            { id: 'z', name: 'z' },
-            { id: 'p', name: 'p' }
-        ];
-
-        // 三帳戶預設遊戲資料與 API 查詢參數
-        let profiles = {
-            h: {
-                queryName: 'Howard',
-                queryAlliance: '777',
-                name: 'Howard',
-                alliance: '777',
-                levelLabel: 'TG6',
-                power: 279000000,
-                powerRank: null,
-                avatar: '',
-                lastFetched: null
-            },
-            z: {
-                queryName: 'Zoey',
-                queryAlliance: 'TER',
-                name: 'Zoey',
-                alliance: 'TER',
-                levelLabel: 'TG8',
-                power: 430453250,
-                powerRank: 44,
-                avatar: 'https://got-global-avatar.akamaized.net/avatar/2026/11/07/v9JxWg_1794050377.png',
-                lastFetched: null
-            },
-            p: {
-                queryName: 'Patrick',
-                queryAlliance: '777',
-                name: 'Patrick',
-                alliance: '777',
-                levelLabel: 'TG5-3',
-                power: 264500000,
-                powerRank: null,
-                avatar: '',
-                lastFetched: null
-            }
-        };
-
-        // 字體試用組合清單
-        const fontThemes = [
-            { label: 'A 棉花糖+甜甜圈', title: "'MarshmallowFont', sans-serif", body: "'DonutFont', sans-serif" },
-            { label: 'B 甜甜圈+棉花糖', title: "'DonutFont', sans-serif", body: "'MarshmallowFont', sans-serif" },
-            { label: 'C 全站棉花糖', title: "'MarshmallowFont', sans-serif", body: "'MarshmallowFont', sans-serif" },
-            { label: 'D 全站甜甜圈', title: "'DonutFont', sans-serif", body: "'DonutFont', sans-serif" }
-        ];
-        let currentFontIdx = 0;
-
-        let showSunlightEvent = true;
-
-        let store = {
-            h: { 
-                soldiers: [{ id: 1, d: 0, h: 0, m: 18, endTime: null }], 
-                tech: [{ id: 2, d: 0, h: 2, m: 30, endTime: null }],
-                master: [{ id: 101, d: 0, h: 0, m: 10, endTime: null }],
-                sunlight: [{ id: 201, d: 0, h: 8, m: 0, endTime: null }],
-                soldierJobTime: '', soldierJobDate: null, 
-                techJobTime: '', techJobDate: null 
-            },
-            z: { 
-                soldiers: [{ id: 3, d: 0, h: 0, m: 18, endTime: null }], 
-                tech: [{ id: 4, d: 0, h: 2, m: 30, endTime: null }],
-                master: [{ id: 102, d: 0, h: 0, m: 10, endTime: null }],
-                sunlight: [{ id: 202, d: 0, h: 8, m: 0, endTime: null }],
-                soldierJobTime: '', soldierJobDate: null, 
-                techJobTime: '', techJobDate: null 
-            },
-            p: { 
-                soldiers: [{ id: 5, d: 0, h: 0, m: 18, endTime: null }], 
-                tech: [{ id: 6, d: 0, h: 2, m: 30, endTime: null }],
-                master: [{ id: 103, d: 0, h: 0, m: 10, endTime: null }],
-                sunlight: [{ id: 203, d: 0, h: 8, m: 0, endTime: null }],
-                soldierJobTime: '', soldierJobDate: null, 
-                techJobTime: '', techJobDate: null 
-            }
-        };
-
-        let triggeredEventKeys = new Set();
-        let nextId = 300;
-        let audioCtx = null;
-        let ringInterval = null;
-        let titleBlinkInterval = null;
-        let activeAlerts = [];
-        let popupWin = null;
-        let isInitialLoadDone = false;
-
-        // --- 字體切換試用 ---
-        function initFontTheme() {
-            const saved = localStorage.getItem(FONT_THEME_KEY);
-            if (saved !== null) {
-                currentFontIdx = parseInt(saved, 10) % fontThemes.length;
-            }
-            applyFontTheme();
-        }
-
-        function cycleFontTheme() {
-            currentFontIdx = (currentFontIdx + 1) % fontThemes.length;
-            localStorage.setItem(FONT_THEME_KEY, String(currentFontIdx));
-            applyFontTheme();
-        }
-
-        function applyFontTheme() {
-            const theme = fontThemes[currentFontIdx];
-            document.documentElement.style.setProperty('--font-title', theme.title);
-            document.documentElement.style.setProperty('--font-body', theme.body);
-            const btn = document.getElementById('fontToggleBtn');
-            if (btn) btn.innerText = `🔤 字體：${theme.label}`;
-        }
-
-        // --- 遊戲角色資料 API 自動同步 ---
-        function formatPower(num) {
-            if (!num && num !== 0) return '--';
-            if (num >= 1000000000) return (num / 1000000000).toFixed(2) + 'B';
-            if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
-            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-            return String(num);
-        }
-
-        function getDisplayAccountName(accId) {
-            return (profiles[accId] && profiles[accId].name) ? profiles[accId].name : accId;
-        }
-
-        async function fetchSingleProfile(accId) {
-            const p = profiles[accId];
-            if (!p || !p.queryName) return false;
-
-            const targetUrl = `https://kingdom-1177.vercel.app/api/governor-profile?name=${encodeURIComponent(p.queryName)}&alliance=${encodeURIComponent(p.queryAlliance || '')}`;
-            
-            // 先嘗試直接請求；若瀏覽器遭遇 CORS 限制則自動切換公開 CORS 代理備援
-            const candidateUrls = [
-                targetUrl,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-                `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
-            ];
-
-            for (const url of candidateUrls) {
-                try {
-                    const res = await fetch(url, { cache: 'no-store' });
-                    if (!res.ok) continue;
-                    const data = await res.json();
-                    if (data && data.ok && data.governor) {
-                        const gov = data.governor;
-                        profiles[accId] = {
-                            ...profiles[accId],
-                            name: gov.name || p.queryName,
-                            alliance: gov.alliance || p.queryAlliance,
-                            levelLabel: gov.levelLabel || (gov.tg ? `TG${gov.tg}` : `Lv.${gov.townCenter || ''}`),
-                            power: gov.power || 0,
-                            powerRank: gov.powerRank || null,
-                            avatar: gov.avatar || profiles[accId].avatar,
-                            lastFetched: new Date().toISOString()
-                        };
-                        return true;
-                    }
-                } catch (e) {
-                    // 嘗試下一個備援管道
-                }
-            }
-            return false;
-        }
-
-        async function refreshAllProfiles(silent = false) {
-            const btn = document.getElementById('refreshProfileBtn');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerText = '⏳ 同步遊戲資料中...';
-            }
-
-            const results = await Promise.all([
-                fetchSingleProfile('h'),
-                fetchSingleProfile('z'),
-                fetchSingleProfile('p')
-            ]);
-
-            if (results.some(ok => ok)) {
-                saveProfiles();
-                renderGrid();
-                updateTimeline();
-            } else if (!silent) {
-                alert('暫時無法連線至遊戲資料接口，請稍後再試（已保留上次同步的資料）。');
-            }
-
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = '🔄 刷新遊戲資料';
-            }
-        }
-
-        function editAccountQuery(accId) {
-            const cur = profiles[accId];
-            const newName = prompt(`修改 [${accId.toUpperCase()}] 的遊戲角色名稱（需與遊戲內完全一致）：`, cur.queryName);
-            if (newName === null) return;
-            const trimmedName = newName.trim();
-            if (!trimmedName) return;
-
-            const newAlliance = prompt(`修改 [${trimmedName}] 的聯盟標籤（例如 777 或 TER）：`, cur.queryAlliance || '');
-            if (newAlliance === null) return;
-
-            profiles[accId].queryName = trimmedName;
-            profiles[accId].queryAlliance = newAlliance.trim();
-            profiles[accId].name = trimmedName;
-            profiles[accId].alliance = newAlliance.trim();
-            saveProfiles();
-            renderGrid();
-            refreshAllProfiles(false);
-        }
-
-        function saveProfiles() {
-            try {
-                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
-            } catch (e) {}
-            profileDbRef.set(profiles).catch(err => console.error("Profile Sync Error:", err));
-        }
-
-        function loadLocalProfiles() {
-            try {
-                const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    accounts.forEach(acc => {
-                        if (parsed[acc.id]) {
-                            profiles[acc.id] = { ...profiles[acc.id], ...parsed[acc.id] };
-                        }
-                    });
-                }
-            } catch (e) {}
-        }
-
-        function setupProfileListener() {
-            profileDbRef.on("value", (snapshot) => {
-                const cloudProfiles = snapshot.val();
-                if (cloudProfiles) {
-                    accounts.forEach(acc => {
-                        if (cloudProfiles[acc.id]) {
-                            profiles[acc.id] = { ...profiles[acc.id], ...cloudProfiles[acc.id] };
-                        }
-                    });
-                    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
-                    renderGrid();
-                    updateTimeline();
-                } else {
-                    saveProfiles();
-                }
-            });
-        }
-
-        // --- 背景計時核心 ---
-        function startBackgroundWorker() {
-            try {
-                const workerCode = `setInterval(function() { postMessage('tick'); }, 1000);`;
-                const blob = new Blob([workerCode], { type: 'application/javascript' });
-                const worker = new Worker(URL.createObjectURL(blob));
-                worker.onmessage = function() { updateTimers(); };
-            } catch (e) {
-                setInterval(updateTimers, 1000);
-            }
-        }
-
-        function init() {
-            initFontTheme();
-            loadLocalBackup();
-            loadLocalProfiles();
-            updateSunlightBtnUI();
-            renderGrid();
-            setupFirebaseRealtimeListener();
-            setupProfileListener();
-            startBackgroundWorker();
-            // 載入頁面時靜默刷新一次最新戰力與頭像
-            refreshAllProfiles(true);
-        }
-
-        // --- Firebase 雲端即時監聽與寫入（計時器部分） ---
-        function setupFirebaseRealtimeListener() {
-            const badge = document.getElementById('syncBadge');
-
-            dbRef.on("value", (snapshot) => {
-                const cloudData = snapshot.val();
-                badge.innerText = "🟢 雲端已即時同步";
-                badge.className = "sync-badge connected";
-
-                if (cloudData && cloudData.store) {
-                    applySerializedState(cloudData);
-                    saveLocalBackup();
-                    updateSunlightBtnUI();
-                    renderGrid();
-                    updateTimeline();
-                } else if (!isInitialLoadDone) {
-                    saveState();
-                }
-                isInitialLoadDone = true;
-            }, (error) => {
-                badge.innerText = "🔴 雲端連線異常（請檢查資料庫規則）";
-                badge.className = "sync-badge error";
-                console.error("Firebase Error:", error);
-            });
-        }
-
-        function serializeState() {
-            const serializedStore = {};
-            accounts.forEach(acc => {
-                const accData = store[acc.id];
-                serializedStore[acc.id] = {
-                    soldiers: (accData.soldiers || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
-                    tech: (accData.tech || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
-                    master: (accData.master || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
-                    sunlight: (accData.sunlight || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
-                    soldierJobTime: accData.soldierJobTime || '',
-                    soldierJobDate: accData.soldierJobDate ? accData.soldierJobDate.toISOString() : null,
-                    techJobTime: accData.techJobTime || '',
-                    techJobDate: accData.techJobDate ? accData.techJobDate.toISOString() : null
-                };
-            });
-
-            return {
-                store: serializedStore,
-                nextId: nextId,
-                showSunlightEvent: showSunlightEvent,
-                triggered: Array.from(triggeredEventKeys),
-                updatedAt: Date.now()
-            };
-        }
-
-        function applySerializedState(parsed) {
-            if (!parsed || !parsed.store) return;
-            accounts.forEach(acc => {
-                const incoming = parsed.store[acc.id] || {};
-                ['soldiers', 'tech', 'master', 'sunlight'].forEach(type => {
-                    const list = incoming[type] ? Object.values(incoming[type]) : [];
-                    store[acc.id][type] = list.map(item => ({
-                        ...item,
-                        endTime: item.endTime ? new Date(item.endTime) : null
-                    }));
-                });
-                store[acc.id].soldierJobTime = incoming.soldierJobTime || '';
-                store[acc.id].soldierJobDate = incoming.soldierJobDate ? new Date(incoming.soldierJobDate) : null;
-                store[acc.id].techJobTime = incoming.techJobTime || '';
-                store[acc.id].techJobDate = incoming.techJobDate ? new Date(incoming.techJobDate) : null;
-            });
-
-            if (parsed.nextId) nextId = parsed.nextId;
-            if (typeof parsed.showSunlightEvent === 'boolean') showSunlightEvent = parsed.showSunlightEvent;
-            if (parsed.triggered) triggeredEventKeys = new Set(Object.values(parsed.triggered));
-        }
-
-        function saveState() {
-            const payload = serializeState();
-            saveLocalBackup(payload);
-
-            const badge = document.getElementById('syncBadge');
-            badge.innerText = "🔄 同步上傳中...";
-            dbRef.set(payload)
-                .then(() => {
-                    badge.innerText = "🟢 雲端已即時同步";
-                    badge.className = "sync-badge connected";
-                })
-                .catch(err => {
-                    badge.innerText = "🔴 寫入雲端失敗";
-                    badge.className = "sync-badge error";
-                });
-        }
-
-        function saveLocalBackup(payloadObj) {
-            try {
-                const dataToSave = payloadObj || serializeState();
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-            } catch (e) {}
-        }
-
-        function loadLocalBackup() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) {
-                    applySerializedState(JSON.parse(raw));
-                }
-            } catch (e) {}
-        }
-
-        // --- UI 與活動開關 ---
-        function toggleSunlightEvent() {
-            showSunlightEvent = !showSunlightEvent;
-            updateSunlightBtnUI();
-            renderGrid();
-            updateTimeline();
-            saveState();
-        }
-
-        function updateSunlightBtnUI() {
-            const btn = document.getElementById('sunlightToggleBtn');
-            if (!btn) return;
-            if (showSunlightEvent) {
-                btn.innerText = "☀️ 沐光之旅：顯示中";
-                btn.classList.add('active');
-            } else {
-                btn.innerText = "☀️ 沐光之旅：已隱藏";
-                btn.classList.remove('active');
-            }
-        }
-
-        function initAudioContext() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-
-        function playBeepOnce() {
-            try {
-                initAudioContext();
-                const now = audioCtx.currentTime;
-                
-                const osc1 = audioCtx.createOscillator();
-                const gain1 = audioCtx.createGain();
-                osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(880, now);
-                gain1.gain.setValueAtTime(0.35, now);
-                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-                osc1.connect(gain1);
-                gain1.connect(audioCtx.destination);
-                osc1.start(now);
-                osc1.stop(now + 0.25);
-
-                const osc2 = audioCtx.createOscillator();
-                const gain2 = audioCtx.createGain();
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(1174.66, now + 0.18);
-                gain2.gain.setValueAtTime(0.35, now + 0.18);
-                gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
-                osc2.connect(gain2);
-                gain2.connect(audioCtx.destination);
-                osc2.start(now + 0.18);
-                osc2.stop(now + 0.55);
-            } catch (e) {}
-        }
-
-        function openForcedPopup(messages) {
-            try {
-                const width = 420;
-                const height = 280;
-                const left = (screen.width - width) / 2;
-                const top = (screen.height - height) / 2;
-
-                if (popupWin && !popupWin.closed) {
-                    popupWin.close();
-                }
-
-                popupWin = window.open(
-                    "",
-                    "GameAlarmPopup",
-                    `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
-                );
-
-                if (popupWin) {
-                    const listHtml = messages.map(m => `<li style="margin:8px 0; font-size:17px;">${m}</li>`).join('');
-                    popupWin.document.open();
-                    popupWin.document.write(`
-                        <!DOCTYPE html>
-                        <html lang="zh-HK">
-                        <head><title>⏰ 時間到了！</title></head>
-                        <body style="font-family:sans-serif; background:#fff5f5; text-align:center; padding:20px; margin:0; border-top:8px solid #ff2d55;">
-                            <h2 style="color:#ff2d55; margin:5px 0 15px 0;">⏰ 鬧鐘時間到了！</h2>
-                            <ul style="list-style:none; padding:0; margin:0 0 20px 0; font-weight:bold; color:#333;">
-                                ${listHtml}
-                            </ul>
-                            <button onclick="window.opener && window.opener.dismissAlarm(); window.close();" 
-                                style="background:#ff2d55; color:white; border:none; padding:12px 28px; font-size:16px; font-weight:bold; border-radius:8px; cursor:pointer;">
-                                知道了（關閉鬧鐘）
-                            </button>
-                        </body>
-                        </html>
-                    `);
-                    popupWin.document.close();
-                    popupWin.focus();
-                }
-            } catch (e) {}
-        }
-
-        function triggerAlarmAlert(eventKey, message) {
-            if (triggeredEventKeys.has(eventKey)) return;
-            triggeredEventKeys.add(eventKey);
-            saveState();
-
-            if (!activeAlerts.includes(message)) {
-                activeAlerts.push(message);
-            }
-
-            const listEl = document.getElementById('alarmModalList');
-            listEl.innerHTML = activeAlerts.map(msg => `<div>${msg}</div>`).join('');
-            document.getElementById('alarmModalOverlay').style.display = 'flex';
-
-            openForcedPopup(activeAlerts);
-
-            try { window.focus(); } catch (e) {}
-            if (!titleBlinkInterval) {
-                let toggle = false;
-                titleBlinkInterval = setInterval(() => {
-                    document.title = toggle ? "【⏰ 時間到了！】" : "【🔔 快看鬧鐘！】";
-                    toggle = !toggle;
-                }, 600);
-            }
-
-            playBeepOnce();
-            if (!ringInterval) {
-                ringInterval = setInterval(playBeepOnce, 2000);
-            }
-        }
-
-        function dismissAlarm() {
-            document.getElementById('alarmModalOverlay').style.display = 'none';
-            activeAlerts = [];
-
-            if (popupWin && !popupWin.closed) {
-                popupWin.close();
-            }
-            if (ringInterval) {
-                clearInterval(ringInterval);
-                ringInterval = null;
-            }
-            if (titleBlinkInterval) {
-                clearInterval(titleBlinkInterval);
-                titleBlinkInterval = null;
-            }
-            document.title = ORIGINAL_TITLE;
-        }
-
-        function testAlarm() {
-            initAudioContext();
-            const testKey = "test_" + Date.now();
-            triggerAlarmAlert(testKey, `【測試】[${getDisplayAccountName('z')}] 士兵訓練所 已完成！`);
-        }
-
-        function applyPreset(accId, type, id, d, h, m, autoStart = false) {
-            const item = store[accId][type].find(i => i.id === id);
-            if (!item) return;
-
-            item.d = d;
-            item.h = h;
-            item.m = m;
-
-            if (autoStart) {
-                initAudioContext();
-                const now = new Date();
-                const totalSeconds = (d * 86400) + (h * 3600) + (m * 60);
-                item.endTime = new Date(now.getTime() + totalSeconds * 1000);
-                recalculateJobs();
-            }
-
-            renderGrid();
-            saveState();
-        }
-
-        function renderProfileHeader(accId) {
-            const p = profiles[accId] || {};
-            const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name || accId)}&background=random&color=fff&bold=true`;
-            const avatarSrc = p.avatar ? p.avatar : fallbackAvatar;
-            const rankText = p.powerRank ? ` · 戰力#${p.powerRank}` : '';
-            const syncTimeText = p.lastFetched
-                ? `更新: ${formatTimeHM(new Date(p.lastFetched))}${rankText}`
-                : '點擊「刷新遊戲資料」同步';
-
-            return `
-                <div class="profile-card">
-                    <img class="profile-avatar" src="${avatarSrc}" alt="${p.name || accId}" onerror="this.src='${fallbackAvatar}'">
-                    <div class="profile-details">
-                        <div class="profile-name-row">
-                            <span class="profile-name">${p.name || accId}</span>
-                            ${p.alliance ? `<span class="profile-alliance">[${p.alliance}]</span>` : ''}
-                        </div>
-                        <div class="profile-stats-row">
-                            <span class="stat-pill tg">${p.levelLabel || '--'}</span>
-                            <span class="stat-pill power">⚔️ ${formatPower(p.power)}</span>
-                        </div>
-                        <div class="profile-meta">${syncTimeText}</div>
-                    </div>
-                    <button class="btn-edit-profile" title="修改角色名或聯盟標籤" onclick="editAccountQuery('${accId}')">✏️</button>
-                </div>
-            `;
-        }
-
-        function renderGrid() {
-            const grid = document.getElementById('gridView');
-            grid.innerHTML = accounts.map(acc => {
-                const data = store[acc.id];
-                return `
-                <div class="account-column ${acc.id}">
-                    ${renderProfileHeader(acc.id)}
-                    
-                    <div>
-                        <div class="section-header">
-                            <span>⚔️ 士兵訓練</span>
-                            <button class="btn-add" onclick="addItem('${acc.id}', 'soldiers')">+</button>
-                        </div>
-                        <div>
-                            ${(data.soldiers || []).map(item => renderTimerCard(acc.id, 'soldiers', item)).join('')}
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="section-header">
-                            <span>🔬 科技研究</span>
-                            <button class="btn-add" onclick="addItem('${acc.id}', 'tech')">+</button>
-                        </div>
-                        <div>
-                            ${(data.tech || []).map(item => renderTimerCard(acc.id, 'tech', item)).join('')}
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="section-header">
-                            <span>📖 大師技能學習 (無須職位)</span>
-                            <button class="btn-add" onclick="addItem('${acc.id}', 'master')">+</button>
-                        </div>
-                        <div>
-                            ${(data.master || []).map(item => renderTimerCard(acc.id, 'master', item)).join('')}
-                        </div>
-                    </div>
-
-                    ${showSunlightEvent ? `
-                    <div>
-                        <div class="section-header">
-                            <span>☀️ 沐光之旅 (8小時周期)</span>
-                            <button class="btn-add" onclick="addItem('${acc.id}', 'sunlight')">+</button>
-                        </div>
-                        <div>
-                            ${(data.sunlight || []).map(item => renderTimerCard(acc.id, 'sunlight', item)).join('')}
-                        </div>
-                    </div>
-                    ` : ''}
-
-                    <div class="job-section">
-                        <div class="job-section-title">🏛️ 職位預約</div>
-                        
-                        <div class="job-row">
-                            <span>⚔️ 士兵職位:</span>
-                            <div>
-                                <select id="${acc.id}_soldier_job_select" onchange="manualJobChange('${acc.id}', 'soldier', this.value)">
-                                    ${generateJobOptions(data.soldierJobTime)}
-                                </select>
-                                <button class="btn-shift" onclick="shiftJobTime('${acc.id}', 'soldier')">+30分</button>
-                            </div>
-                        </div>
-
-                        <div class="job-row">
-                            <span>🔬 科技職位:</span>
-                            <div>
-                                <select id="${acc.id}_tech_job_select" onchange="manualJobChange('${acc.id}', 'tech', this.value)">
-                                    ${generateJobOptions(data.techJobTime)}
-                                </select>
-                                <button class="btn-shift" onclick="shiftJobTime('${acc.id}', 'tech')">+30分</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `}).join('');
-        }
-
-        function renderTimerCard(accId, type, item) {
-            const isRunning = item.endTime !== null;
-            let title = '';
-            let extraCardClass = '';
-            let presetsHtml = '';
-
-            if (type === 'soldiers') {
-                title = '士兵訓練所';
-            } else if (type === 'tech') {
-                title = '科技研究';
-            } else if (type === 'master') {
-                title = '📖 大師技能';
-                extraCardClass = 'master-card';
-                if (!isRunning) {
-                    presetsHtml = `
-                        <div class="preset-row">
-                            <span style="font-size:11px; opacity:0.85; margin-right:2px;">快捷:</span>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 0, 10, true)">10分</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 2, 0, true)">2時</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 10, 0, true)">10時</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 23, 0, true)">23時</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 3, 0, 0, true)">3天</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 5, 0, 0, true)">5天</button>
-                        </div>
-                    `;
-                }
-            } else if (type === 'sunlight') {
-                title = '☀️ 沐光之旅';
-                extraCardClass = 'sunlight-card';
-                if (!isRunning) {
-                    presetsHtml = `
-                        <div class="preset-row">
-                            <span style="font-size:11px; opacity:0.9; margin-right:2px;">周期快捷:</span>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'sunlight', ${item.id}, 0, 8, 0, true)">▶ 8小時整</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'sunlight', ${item.id}, 0, 8, 0, false)">填入8時(微調)</button>
-                        </div>
-                    `;
-                }
-            }
-            
-            return `
-            <div class="timer-card ${extraCardClass}" id="card_${item.id}">
-                <div class="timer-main-row">
-                    <div class="timer-info">
-                        <span class="timer-title">${title}</span>
-                        <div class="timer-display" id="disp_${item.id}">
-                            ${isRunning ? '--:--' : `${item.d}天 ${formatPad(item.h)}:${formatPad(item.m)}`}
-                        </div>
-                        <span class="timer-sub" id="sub_${item.id}">
-                            ${isRunning ? '完結: ' + formatDateTime(item.endTime) : '自訂或點下方快捷'}
-                        </span>
-                    </div>
-
-                    <div class="timer-actions">
-                        ${!isRunning ? `
-                            <div class="timer-inputs">
-                                <input type="text" class="time-input input-d" id="in_d_${item.id}" value="${item.d}" 
-                                    maxlength="2" 
-                                    onfocus="this.select()"
-                                    onkeydown="handleArrowNav(event, null, 'in_h_${item.id}', '${accId}', '${type}', ${item.id})"
-                                    onkeyup="autoJumpOnNumber(event, this, 'in_h_${item.id}')">天
-                                <input type="text" class="time-input input-h" id="in_h_${item.id}" value="${formatPad(item.h)}" 
-                                    maxlength="2" 
-                                    onfocus="this.select()"
-                                    onkeydown="handleArrowNav(event, 'in_d_${item.id}', 'in_m_${item.id}', '${accId}', '${type}', ${item.id})"
-                                    onkeyup="autoJumpOnNumber(event, this, 'in_m_${item.id}')">時
-                                <input type="text" class="time-input input-m" id="in_m_${item.id}" value="${formatPad(item.m)}" 
-                                    maxlength="2" 
-                                    onfocus="this.select()"
-                                    onkeydown="handleArrowNav(event, 'in_h_${item.id}', null, '${accId}', '${type}', ${item.id})">分
-                            </div>
-                            <button class="btn-action" onclick="startTimer('${accId}', '${type}', ${item.id})">▶ 開始</button>
-                        ` : `
-                            <button class="btn-action" onclick="stopTimer('${accId}', '${type}', ${item.id})">■ 重設</button>
-                        `}
-                        <button class="btn-del" onclick="deleteItem('${accId}', '${type}', ${item.id})">✕</button>
-                    </div>
-                </div>
-                ${presetsHtml}
-            </div>
-            `;
-        }
-
-        function handleArrowNav(event, prevFieldId, nextFieldId, accId, type, id) {
-            const parentCard = event.target.closest('.timer-card');
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                startTimer(accId, type, id);
-                return;
-            }
-            if (event.key === 'ArrowLeft' && prevFieldId && parentCard) {
-                event.preventDefault();
-                const prevInput = parentCard.querySelector('#' + prevFieldId);
-                if (prevInput) { prevInput.focus(); prevInput.select(); }
-            }
-            if (event.key === 'ArrowRight' && nextFieldId && parentCard) {
-                event.preventDefault();
-                const nextInput = parentCard.querySelector('#' + nextFieldId);
-                if (nextInput) { nextInput.focus(); nextInput.select(); }
-            }
-        }
-
-        function autoJumpOnNumber(event, currentInput, nextFieldId) {
-            const isNumberKey = (event.key >= '0' && event.key <= '9');
-            if (isNumberKey && currentInput.value.length >= 2 && nextFieldId) {
-                const parentCard = currentInput.closest('.timer-card');
-                if (parentCard) {
-                    const nextInput = parentCard.querySelector('#' + nextFieldId);
-                    if (nextInput) { nextInput.focus(); nextInput.select(); }
-                }
-            }
-        }
-
-        function formatPad(num) { return String(num).padStart(2, '0'); }
-        function formatTimeHM(date) { return !date ? '--:--' : `${formatPad(date.getHours())}:${formatPad(date.getMinutes())}`; }
-        function formatDateTime(date) { return !date ? '--:--' : `${date.getMonth() + 1}/${date.getDate()} ${formatTimeHM(date)}`; }
-
-        function addItem(accId, type) {
-            let defD = 0, defH = 0, defM = 18;
-            if (type === 'tech') { defH = 2; defM = 30; }
-            else if (type === 'master') { defH = 0; defM = 10; }
-            else if (type === 'sunlight') { defH = 8; defM = 0; }
-
-            store[accId][type].push({ id: ++nextId, d: defD, h: defH, m: defM, endTime: null });
-            renderGrid();
-            saveState();
-        }
-
-        function deleteItem(accId, type, id) {
-            store[accId][type] = store[accId][type].filter(item => item.id !== id);
-            renderGrid();
-            recalculateJobs();
-            saveState();
-        }
-
-        function startTimer(accId, type, id) {
-            initAudioContext();
-            const cardEl = document.getElementById(`card_${id}`);
-            const item = store[accId][type].find(i => i.id === id);
-
-            if (cardEl && item) {
-                const inputD = cardEl.querySelector('.input-d');
-                const inputH = cardEl.querySelector('.input-h');
-                const inputM = cardEl.querySelector('.input-m');
-
-                item.d = Math.max(0, inputD ? (parseInt(inputD.value, 10) || 0) : 0);
-                item.h = Math.max(0, inputH ? (parseInt(inputH.value, 10) || 0) : 0);
-                item.m = Math.max(0, inputM ? (parseInt(inputM.value, 10) || 0) : 0);
-
-                const now = new Date();
-                const totalSeconds = (item.d * 86400) + (item.h * 3600) + (item.m * 60);
-                item.endTime = new Date(now.getTime() + totalSeconds * 1000);
-
-                renderGrid();
-                recalculateJobs();
-                saveState();
-            }
-        }
-
-        function stopTimer(accId, type, id) {
-            const item = store[accId][type].find(i => i.id === id);
-            if (item) {
-                item.endTime = null;
-                renderGrid();
-                recalculateJobs();
-                saveState();
-            }
-        }
-
-        function updateTimers() {
-            const now = new Date();
-            const typeNames = {
-                soldiers: '士兵訓練所',
-                tech: '科技研究',
-                master: '📖 大師技能學習',
-                sunlight: '☀️ 沐光之旅'
-            };
-
-            accounts.forEach(acc => {
-                const displayName = getDisplayAccountName(acc.id);
-                ['soldiers', 'tech', 'master', 'sunlight'].forEach(type => {
-                    if (type === 'sunlight' && !showSunlightEvent) return;
-
-                    const typeName = typeNames[type];
-                    (store[acc.id][type] || []).forEach((item, idx) => {
-                        if (item.endTime) {
-                            const diff = Math.floor((item.endTime - now) / 1000);
-                            const disp = document.getElementById(`disp_${item.id}`);
-                            
-                            if (diff <= 0) {
-                                if (disp) disp.innerText = "00:00 (完結)";
-                                const eventKey = `task_${item.id}_${item.endTime.getTime()}`;
-                                triggerAlarmAlert(eventKey, `[${displayName}] ${typeName} #${idx + 1} 已經完成！`);
-                            } else if (disp) {
-                                const d = Math.floor(diff / 86400);
-                                const h = Math.floor((diff % 86400) / 3600);
-                                const m = Math.floor((diff % 3600) / 60);
-                                const s = diff % 60;
-                                disp.innerText = (d > 0 ? `${d}天 ` : '') + `${formatPad(h)}:${formatPad(m)}:${formatPad(s)}`;
-                            }
-                        }
-                    });
-                });
-
-                if (store[acc.id].soldierJobDate && now >= store[acc.id].soldierJobDate) {
-                    const jobKey = `job_s_${acc.id}_${store[acc.id].soldierJobDate.getTime()}`;
-                    triggerAlarmAlert(jobKey, `[${displayName}] ⚔️ 士兵職位預約時間 (${store[acc.id].soldierJobTime}) 到了！`);
-                }
-
-                if (store[acc.id].techJobDate && now >= store[acc.id].techJobDate) {
-                    const jobKey = `job_t_${acc.id}_${store[acc.id].techJobDate.getTime()}`;
-                    triggerAlarmAlert(jobKey, `[${displayName}] 🔬 科技職位預約時間 (${store[acc.id].techJobTime}) 到了！`);
-                }
-            });
-
-            checkExpiredJobsAndAutoUpdate();
-
-            if (document.getElementById('timelineView').style.display === 'block') {
-                updateTimeline();
-            }
-        }
-
-        function checkExpiredJobsAndAutoUpdate() {
-            const now = new Date();
-            let needUpdate = false;
-
-            accounts.forEach(acc => {
-                ['soldierJobDate', 'techJobDate'].forEach(dateKey => {
-                    if (store[acc.id][dateKey]) {
-                        if (now - store[acc.id][dateKey] > 5 * 60 * 1000) {
-                            const timeKey = dateKey.replace('Date', 'Time');
-                            store[acc.id][timeKey] = '';
-                            store[acc.id][dateKey] = null;
-                            needUpdate = true;
-                        }
-                    }
-                });
-            });
-
-            if (needUpdate) {
-                recalculateJobs();
-                saveState();
-            }
-        }
-
-        function recalculateJobs() {
-            const now = new Date();
-
-            accounts.forEach(acc => {
-                let futureSoldierEnds = (store[acc.id].soldiers || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
-                if (futureSoldierEnds.length > 0) {
-                    futureSoldierEnds.sort((a, b) => a - b);
-                    const slotObj = calcRecommendedSlot(futureSoldierEnds[0]);
-                    store[acc.id].soldierJobTime = slotObj.timeStr;
-                    store[acc.id].soldierJobDate = slotObj.dateObj;
-                } else {
-                    store[acc.id].soldierJobTime = '';
-                    store[acc.id].soldierJobDate = null;
-                }
-
-                let futureTechEnds = (store[acc.id].tech || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
-                if (futureTechEnds.length > 0) {
-                    futureTechEnds.sort((a, b) => a - b);
-                    const slotObj = calcRecommendedSlot(futureTechEnds[0]);
-                    store[acc.id].techJobTime = slotObj.timeStr;
-                    store[acc.id].techJobDate = slotObj.dateObj;
-                } else {
-                    store[acc.id].techJobTime = '';
-                    store[acc.id].techJobDate = null;
-                }
-
-                const sSelect = document.getElementById(`${acc.id}_soldier_job_select`);
-                if (sSelect) sSelect.value = store[acc.id].soldierJobTime;
-
-                const tSelect = document.getElementById(`${acc.id}_tech_job_select`);
-                if (tSelect) tSelect.value = store[acc.id].techJobTime;
-            });
-
-            updateTimeline();
-        }
-
-        function calcRecommendedSlot(endTime) {
-            const now = new Date();
-            let slotDate = new Date(endTime);
-            let h = slotDate.getHours();
-            let m = slotDate.getMinutes();
-            let slotH = h;
-            let slotM = 0;
-
-            if (m >= 50) {
-                slotH = (h + 1) % 24;
-                slotM = 0;
-                if (slotH === 0) slotDate.setDate(slotDate.getDate() + 1);
-            } else if (m >= 20) {
-                slotM = 30;
-            } else {
-                slotM = 0;
-            }
-
-            slotDate.setHours(slotH, slotM, 0, 0);
-
-            while (slotDate <= now) {
-                slotDate = new Date(slotDate.getTime() + 30 * 60 * 1000);
-            }
-
-            const finalH = slotDate.getHours();
-            const finalM = slotDate.getMinutes();
-
-            return { timeStr: `${formatPad(finalH)}:${formatPad(finalM)}`, dateObj: slotDate };
-        }
-
-        function shiftJobTime(accId, type) {
-            const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
-            const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
-
-            let curDate = store[accId][dateKey] || new Date();
-            let newDate = new Date(curDate.getTime() + 30 * 60 * 1000);
-
-            store[accId][dateKey] = newDate;
-            store[accId][timeKey] = formatTimeHM(newDate);
-
-            const selectId = `${accId}_${type}_job_select`;
-            document.getElementById(selectId).value = store[accId][timeKey];
-            updateTimeline();
-            saveState();
-        }
-
-        function manualJobChange(accId, type, val) {
-            const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
-            const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
-
-            store[accId][timeKey] = val;
-            if (val) {
-                const [h, m] = val.split(':').map(Number);
-                let d = new Date();
-                d.setHours(h, m, 0, 0);
-                if (d < new Date()) d.setDate(d.getDate() + 1);
-                store[accId][dateKey] = d;
-            } else {
-                store[accId][dateKey] = null;
-            }
-            updateTimeline();
-            saveState();
-        }
-
-        function generateJobOptions(selectedVal) {
-            let html = '<option value="">--無預約--</option>';
-            for (let h = 0; h < 24; h++) {
-                for (let m of [0, 30]) {
-                    const timeStr = `${formatPad(h)}:${formatPad(m)}`;
-                    const isSel = timeStr === selectedVal ? 'selected' : '';
-                    html += `<option value="${timeStr}" ${isSel}>${timeStr}</option>`;
-                }
-            }
-            return html;
-        }
-
-        function updateTimeline() {
-            const tasksContainer = document.getElementById('timeline_tasks');
-            const soldierJobsContainer = document.getElementById('timeline_soldier_jobs');
-            const techJobsContainer = document.getElementById('timeline_tech_jobs');
-
-            let tasksList = [];
-            let soldierJobsList = [];
-            let techJobsList = [];
-
-            accounts.forEach(acc => {
-                const displayName = getDisplayAccountName(acc.id);
-                (store[acc.id].soldiers || []).forEach((item, idx) => {
-                    if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `士兵 #${idx + 1}`, tagClass: 'tag-soldier' });
-                    }
-                });
-                (store[acc.id].tech || []).forEach((item, idx) => {
-                    if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `科技 #${idx + 1}`, tagClass: 'tag-tech' });
-                    }
-                });
-                (store[acc.id].master || []).forEach((item, idx) => {
-                    if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `📖 大師技能 #${idx + 1}`, tagClass: 'tag-master' });
-                    }
-                });
-                if (showSunlightEvent) {
-                    (store[acc.id].sunlight || []).forEach((item, idx) => {
-                        if (item.endTime) {
-                            tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `☀️ 沐光之旅 #${idx + 1}`, tagClass: 'tag-sunlight' });
-                        }
-                    });
-                }
-
-                if (store[acc.id].soldierJobDate) {
-                    soldierJobsList.push({ acc: displayName, accId: acc.id, time: store[acc.id].soldierJobDate, timeStr: formatDateTime(store[acc.id].soldierJobDate), label: '⚔️ 士兵職位', tagClass: 'tag-job-s' });
-                }
-                if (store[acc.id].techJobDate) {
-                    techJobsList.push({ acc: displayName, accId: acc.id, time: store[acc.id].techJobDate, timeStr: formatDateTime(store[acc.id].techJobDate), label: '🔬 科技職位', tagClass: 'tag-job-t' });
-                }
-            });
-
-            tasksList.sort((a, b) => a.time - b.time);
-            soldierJobsList.sort((a, b) => a.time - b.time);
-            techJobsList.sort((a, b) => a.time - b.time);
-
-            renderTimelineColumn(tasksContainer, tasksList, "無進行中計時");
-            renderTimelineColumn(soldierJobsContainer, soldierJobsList, "無士兵職位預約");
-            renderTimelineColumn(techJobsContainer, techJobsList, "無科技職位預約");
-        }
-
-        function renderTimelineColumn(container, list, emptyText) {
-            if (!container) return;
-            if (list.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color:#999; padding:15px; font-size:13px;">${emptyText}</div>`;
-                return;
-            }
-            container.innerHTML = list.map(item => `
-                <div class="timeline-item ${item.accId}">
-                    <div>
-                        <span style="font-size: 16px; margin-right: 4px;">[${item.acc}]</span>
-                        <span class="tag ${item.tagClass}">${item.label}</span>
-                    </div>
-                    <div>${item.timeStr}</div>
-                </div>
-            `).join('');
-        }
-
-        function toggleView() {
-            const grid = document.getElementById('gridView');
-            const timeline = document.getElementById('timelineView');
-            const btn = document.getElementById('toggleBtn');
-
-            if (grid.style.display === 'none') {
-                grid.style.display = 'grid';
-                timeline.style.display = 'none';
-                btn.innerText = '切換時間線';
-            } else {
-                grid.style.display = 'none';
-                timeline.style.display = 'block';
-                btn.innerText = '切換 3 欄視圖';
-                updateTimeline();
-            }
-        }
-
-        window.onload = init;
-    </script>
-</body>
-</html>
+            appId: "1:935740408911:web
