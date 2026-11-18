@@ -14,31 +14,26 @@
             src: url('./HanyiSentyMarshmallow.ttf') format('truetype');
             font-display: swap;
         }
-
         @font-face {
             font-family: 'DonutFont';
             src: url('./SentyDonut.ttf') format('truetype');
             font-display: swap;
         }
-
         @font-face {
             font-family: 'MaokenFont';
             src: url('./MaokenAssortedSans-TC.ttf') format('truetype');
             font-display: swap;
         }
-
         @font-face {
             font-family: 'HuninnFont';
             src: url('./jf-openhuninn-2.1.ttf') format('truetype');
             font-display: swap;
         }
-
         @font-face {
             font-family: 'KoseFont';
             src: url('./Kosefont-JP.ttf') format('truetype');
             font-display: swap;
         }
-
         @font-face {
             font-family: 'KosePFont';
             src: url('./KosefontP-JP.ttf') format('truetype');
@@ -46,47 +41,72 @@
         }
 
         :root {
-            --bg-h: #e6f3ff;
-            --border-h: #90caf9;
-            --card-h: #4a90e2;
+            /* San-X 療癒可可棕主色調 */
+            --cocoa: #5C3D2E;
+            --cocoa-light: #8C6A58;
+            --cream-bg: #FFFDF6;
+            --dot-color: #F3E5C8;
 
-            --bg-z: #ffe6e8;
-            --border-z: #f48fb1;
-            --card-z: #e91e63;
+            /* Howard：蘇打天空藍 */
+            --bg-h: #EEF7FF;
+            --border-h: #A6D4FA;
+            --card-h: linear-gradient(135deg, #6EB5FF 0%, #5299E8 100%);
+            --shadow-h: rgba(82, 153, 232, 0.25);
 
-            --bg-p: #fff9c4;
-            --border-p: #ffe082;
-            --card-p: #fbc02d;
+            /* Zoey：草莓櫻花粉 */
+            --bg-z: #FFF0F4;
+            --border-z: #F8B4C8;
+            --card-z: linear-gradient(135deg, #FF7EA5 0%, #EB5A87 100%);
+            --shadow-z: rgba(235, 90, 135, 0.25);
 
-            /* 預設組合：貓啃什錦黑（大標題） + jf粉圓體（內文小字） */
-            --font-title: 'MaokenFont', 'HuninnFont', "PingFang HK", "Microsoft JhengHei", sans-serif;
-            --font-body: 'HuninnFont', -apple-system, BlinkMacSystemFont, "PingFang HK", "Microsoft JhengHei", sans-serif;
-            --font-num: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            /* Patrick：蜂蜜布丁黃 */
+            --bg-p: #FFF9E2;
+            --border-p: #F7D774;
+            --card-p: linear-gradient(135deg, #F7B733 0%, #E69A15 100%);
+            --shadow-p: rgba(230, 154, 21, 0.25);
+
+            /* 預設字體組合 */
+            --font-title: 'MaokenFont', 'HuninnFont', "PingFang HK", sans-serif;
+            --font-body: 'HuninnFont', -apple-system, BlinkMacSystemFont, "PingFang HK", sans-serif;
+            --font-num: 'HuninnFont', ui-monospace, SFMono-Regular, Menlo, monospace;
         }
 
         * {
             box-sizing: border-box;
         }
 
+        /* San-X 風格奶油波點背景 */
         body {
             font-family: var(--font-body);
-            background-color: #f0f2f5;
+            background-color: var(--cream-bg);
+            background-image:
+                radial-gradient(var(--dot-color) 2.2px, transparent 2.2px),
+                radial-gradient(#FCE8EC 2.2px, var(--cream-bg) 2.2px);
+            background-size: 36px 36px;
+            background-position: 0 0, 18px 18px;
             margin: 0;
-            padding: 20px;
-            color: #333;
+            padding: 22px 18px 40px 18px;
+            color: var(--cocoa);
             -webkit-font-smoothing: antialiased;
         }
 
         button, select, input {
             font-family: var(--font-body);
+            color: var(--cocoa);
         }
 
+        /* 頂部可愛橫幅列 */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            max-width: 1200px;
-            margin: 0 auto 15px auto;
+            max-width: 1220px;
+            margin: 0 auto 20px auto;
+            padding: 12px 18px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #F0DFC8;
+            border-radius: 24px;
+            box-shadow: 0 6px 18px rgba(92, 61, 46, 0.07);
             flex-wrap: wrap;
             gap: 10px;
         }
@@ -94,34 +114,44 @@
         .title-group {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             flex-wrap: wrap;
+        }
+
+        .header-mascot {
+            width: 38px;
+            height: 38px;
+            flex-shrink: 0;
+            animation: gentleFloat 3s ease-in-out infinite;
         }
 
         h1 {
             font-family: var(--font-title);
             font-weight: normal;
-            font-size: 27px;
+            font-size: 26px;
             margin: 0;
-            letter-spacing: 0.8px;
-            color: #222;
+            letter-spacing: 1px;
+            color: var(--cocoa);
         }
 
         .sync-badge {
             font-size: 12px;
             font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: #e5e5ea;
-            color: #555;
+            padding: 4px 12px;
+            border-radius: 999px;
+            background: #F5EFE6;
+            color: var(--cocoa-light);
+            border: 1.5px dashed #DECBB7;
         }
         .sync-badge.connected {
-            background: #d4edda;
-            color: #155724;
+            background: #E8F8EC;
+            color: #26733A;
+            border-color: #A3DFB3;
         }
         .sync-badge.error {
-            background: #f8d7da;
-            color: #721c24;
+            background: #FDECEA;
+            color: #A62626;
+            border-color: #F5B7B1;
         }
 
         .header-btns {
@@ -130,132 +160,126 @@
             flex-wrap: wrap;
         }
 
-        .btn-refresh-profile {
-            background-color: #34c759;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
+        /* 糖果膠囊按鈕 */
+        .pill-btn {
+            border: 2px solid #FFF;
+            padding: 7px 13px;
+            border-radius: 999px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 13px;
-            transition: background 0.2s;
+            font-size: 12.5px;
+            color: #FFF;
+            box-shadow: 0 3px 8px rgba(92, 61, 46, 0.14);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s;
         }
-        .btn-refresh-profile:hover { background-color: #28a745; }
+        .pill-btn:hover {
+            transform: translateY(-2px) scale(1.03);
+            filter: brightness(1.04);
+        }
+        .pill-btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-refresh-profile { background: linear-gradient(135deg, #5CD685, #38B864); }
         .btn-refresh-profile:disabled { opacity: 0.65; cursor: wait; }
+        .btn-font-title { background: linear-gradient(135deg, #C07CEB, #A155D4); }
+        .btn-font-body { background: linear-gradient(135deg, #7D83EB, #5D64D4); }
+        .btn-test { background: linear-gradient(135deg, #FFAE42, #F28B18); }
+        .btn-event-toggle { background: #B8A99A; }
+        .btn-event-toggle.active { background: linear-gradient(135deg, #FF9966, #FF6B5B); }
+        .btn-toggle { background: linear-gradient(135deg, #5AA9FF, #3B88E8); }
 
-        .btn-font-title {
-            background-color: #af52de;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            transition: background 0.2s;
-        }
-        .btn-font-title:hover { background-color: #9338c2; }
-
-        .btn-font-body {
-            background-color: #5856d6;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            transition: background 0.2s;
-        }
-        .btn-font-body:hover { background-color: #4240b8; }
-
-        .btn-test {
-            background-color: #ff9500;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            transition: background 0.2s;
-        }
-        .btn-test:hover { background-color: #e08200; }
-
-        .btn-event-toggle {
-            background-color: #8e8e93;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            transition: background 0.2s;
-        }
-        .btn-event-toggle.active {
-            background-color: #ff9f0a;
-            color: #fff;
-            box-shadow: 0 2px 6px rgba(255, 159, 10, 0.4);
-        }
-
-        .btn-toggle {
-            background-color: #007aff;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            transition: background 0.2s;
-        }
-        .btn-toggle:hover { background-color: #0056b3; }
-
-        /* 3欄視圖 */
+        /* 3欄手賬卡片視圖 */
         .grid-view {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            max-width: 1200px;
+            gap: 18px;
+            max-width: 1220px;
             margin: 0 auto;
         }
 
         .account-column {
-            border-radius: 12px;
-            padding: 14px;
-            border: 2px solid;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border-radius: 24px;
+            padding: 16px;
+            border: 3px solid #FFFFFF;
+            box-shadow: 0 8px 22px rgba(92, 61, 46, 0.08);
             display: flex;
             flex-direction: column;
             gap: 14px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .account-column.h { background-color: var(--bg-h); border-color: var(--border-h); }
-        .account-column.z { background-color: var(--bg-z); border-color: var(--border-z); }
-        .account-column.p { background-color: var(--bg-p); border-color: var(--border-p); }
+        /* 內層虛線手賬縫邊 */
+        .account-column::before {
+            content: "";
+            position: absolute;
+            top: 6px; left: 6px; right: 6px; bottom: 6px;
+            border-radius: 18px;
+            border: 1.5px dashed rgba(92, 61, 46, 0.16);
+            pointer-events: none;
+        }
 
-        /* 遊戲角色名片區 */
+        .account-column.h { background-color: var(--bg-h); outline: 2px solid var(--border-h); }
+        .account-column.z { background-color: var(--bg-z); outline: 2px solid var(--border-z); }
+        .account-column.p { background-color: var(--bg-p); outline: 2px solid var(--border-p); }
+
+        /* 角落角色插圖貼紙 */
+        .corner-sticker {
+            position: absolute;
+            bottom: 8px;
+            right: 10px;
+            width: 58px;
+            height: 58px;
+            opacity: 0.88;
+            pointer-events: none;
+            z-index: 1;
+            filter: drop-shadow(0 2px 4px rgba(92, 61, 46, 0.15));
+        }
+
+        /* 遊戲角色名片貼紙 */
         .profile-card {
-            background: rgba(255, 255, 255, 0.94);
-            border-radius: 10px;
-            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 18px;
+            padding: 11px 13px;
             display: flex;
             align-items: center;
             gap: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            border: 2px solid rgba(92, 61, 46, 0.08);
+            box-shadow: 0 4px 12px rgba(92, 61, 46, 0.06);
             position: relative;
+            z-index: 2;
+        }
+
+        .profile-avatar-wrap {
+            position: relative;
+            flex-shrink: 0;
         }
 
         .profile-avatar {
-            width: 56px;
-            height: 56px;
-            border-radius: 12px;
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
             object-fit: cover;
-            background: #ddd;
-            border: 2px solid rgba(0,0,0,0.08);
-            flex-shrink: 0;
+            background: #F5EFE6;
+            border: 2.5px solid #FFF;
+            box-shadow: 0 3px 8px rgba(92, 61, 46, 0.15);
+            display: block;
+        }
+
+        .avatar-mini-badge {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            width: 22px;
+            height: 22px;
+            background: #FFF;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            box-shadow: 0 2px 4px rgba(92, 61, 46, 0.18);
         }
 
         .profile-details {
@@ -274,7 +298,7 @@
             font-family: var(--font-title);
             font-weight: normal;
             font-size: 24px;
-            color: #222;
+            color: var(--cocoa);
             line-height: 1.15;
             letter-spacing: 0.5px;
         }
@@ -282,10 +306,10 @@
         .profile-alliance {
             font-size: 11px;
             font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 5px;
-            background: #2c2c2e;
-            color: #fff;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--cocoa);
+            color: #FFFDF6;
         }
 
         .profile-stats-row {
@@ -299,25 +323,23 @@
         }
 
         .stat-pill {
-            padding: 2px 7px;
-            border-radius: 6px;
-            background: #f2f2f7;
-            color: #333;
+            padding: 2px 9px;
+            border-radius: 999px;
         }
-
         .stat-pill.tg {
-            background: #e3f2fd;
-            color: #0d47a1;
+            background: #E6F3FF;
+            color: #2B6CB0;
+            border: 1px solid #BEE3F8;
         }
-
         .stat-pill.power {
-            background: #fff3e0;
-            color: #e65100;
+            background: #FFF2E2;
+            color: #C05621;
+            border: 1px solid #FBD38D;
         }
 
         .profile-meta {
             font-size: 11px;
-            color: #777;
+            color: var(--cocoa-light);
             margin-top: 4px;
         }
 
@@ -325,14 +347,25 @@
             position: absolute;
             top: 8px;
             right: 8px;
-            background: transparent;
-            border: none;
+            background: #FAF4EB;
+            border: 1px solid #EADBC8;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
             cursor: pointer;
-            font-size: 13px;
-            opacity: 0.5;
-            padding: 2px 4px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.7;
+            transition: opacity 0.2s, transform 0.2s;
         }
-        .btn-edit-profile:hover { opacity: 1; }
+        .btn-edit-profile:hover { opacity: 1; transform: scale(1.1); }
+
+        .section-block {
+            position: relative;
+            z-index: 2;
+        }
 
         .section-header {
             font-family: var(--font-title);
@@ -342,17 +375,18 @@
             align-items: center;
             font-size: 18px;
             letter-spacing: 0.5px;
-            margin-bottom: 6px;
-            color: #222;
+            margin-bottom: 7px;
+            color: var(--cocoa);
+            padding: 0 2px;
         }
 
         .btn-add {
-            background: #34c759;
+            background: #5CD685;
             color: white;
-            border: none;
+            border: 2px solid #FFF;
             border-radius: 50%;
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             font-size: 15px;
             font-weight: bold;
             cursor: pointer;
@@ -360,31 +394,39 @@
             align-items: center;
             justify-content: center;
             line-height: 1;
+            box-shadow: 0 2px 5px rgba(92, 61, 46, 0.15);
+            transition: transform 0.2s;
         }
+        .btn-add:hover { transform: scale(1.15); }
 
-        /* 長方形計時卡片 */
+        /* 軟萌計時小卡片 */
         .timer-card {
             color: white;
-            border-radius: 8px;
-            padding: 10px 11px;
-            margin-bottom: 8px;
+            border-radius: 16px;
+            padding: 11px 12px;
+            margin-bottom: 9px;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            border: 2px solid rgba(255, 255, 255, 0.65);
             position: relative;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .timer-card:hover {
+            transform: translateY(-2px);
         }
 
-        .h .timer-card { background-color: var(--card-h); }
-        .z .timer-card { background-color: var(--card-z); }
-        .p .timer-card { background-color: #f57f17; }
+        .h .timer-card { background: var(--card-h); box-shadow: 0 4px 12px var(--shadow-h); }
+        .z .timer-card { background: var(--card-z); box-shadow: 0 4px 12px var(--shadow-z); }
+        .p .timer-card { background: var(--card-p); box-shadow: 0 4px 12px var(--shadow-p); }
 
         .timer-card.master-card {
-            border-left: 5px solid #ffd60a;
+            border-left: 6px solid #FFF3A1;
         }
         .timer-card.sunlight-card {
-            background: linear-gradient(135deg, #ff9500, #ff5e3a) !important;
-            border-left: 5px solid #fff3cd;
+            background: linear-gradient(135deg, #FFA24C 0%, #FF6F61 100%) !important;
+            box-shadow: 0 4px 12px rgba(255, 111, 97, 0.28) !important;
+            border-left: 6px solid #FFF6D6;
         }
 
         .timer-main-row {
@@ -402,21 +444,22 @@
 
         .timer-title {
             font-size: 12px;
-            opacity: 0.94;
+            opacity: 0.95;
             font-weight: 600;
         }
 
         .timer-display {
-            font-size: 19px;
+            font-size: 20px;
             font-weight: 700;
             font-family: var(--font-num);
             font-variant-numeric: tabular-nums;
             letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(92, 61, 46, 0.18);
         }
 
         .timer-sub {
             font-size: 11px;
-            opacity: 0.88;
+            opacity: 0.9;
         }
 
         .timer-inputs {
@@ -427,15 +470,16 @@
         }
 
         .time-input {
-            width: 26px;
-            height: 25px;
-            border: none;
-            border-radius: 4px;
+            width: 27px;
+            height: 26px;
+            border: 1.5px solid rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.95);
             text-align: center;
             font-size: 13px;
             font-weight: 700;
             font-family: var(--font-num);
-            color: #333;
+            color: var(--cocoa);
             padding: 0;
         }
 
@@ -446,23 +490,24 @@
         }
 
         .btn-action {
-            background: rgba(255,255,255,0.25);
-            border: none;
+            background: rgba(255, 255, 255, 0.28);
+            border: 1.5px solid rgba(255, 255, 255, 0.55);
             color: white;
-            padding: 5px 9px;
-            border-radius: 6px;
+            padding: 5px 10px;
+            border-radius: 999px;
             cursor: pointer;
             font-size: 12px;
             font-weight: 600;
             white-space: nowrap;
+            transition: background 0.15s;
         }
-        .btn-action:hover { background: rgba(255,255,255,0.4); }
+        .btn-action:hover { background: rgba(255, 255, 255, 0.45); }
 
         .btn-del {
             background: none;
             border: none;
-            color: rgba(255,255,255,0.75);
-            font-size: 15px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
             cursor: pointer;
             padding: 0 3px;
         }
@@ -473,41 +518,45 @@
             flex-wrap: wrap;
             gap: 4px;
             padding-top: 6px;
-            border-top: 1px solid rgba(255,255,255,0.2);
+            border-top: 1px dashed rgba(255, 255, 255, 0.45);
         }
 
         .btn-preset {
-            background: rgba(0, 0, 0, 0.22);
+            background: rgba(92, 61, 46, 0.22);
             color: white;
-            border: 1px solid rgba(255, 255, 255, 0.35);
-            border-radius: 4px;
-            padding: 2px 6px;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 999px;
+            padding: 2px 8px;
             font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             transition: background 0.15s;
         }
         .btn-preset:hover {
-            background: rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.38);
         }
 
+        /* 職位預約白卡 */
         .job-section {
-            background: rgba(255,255,255,0.92);
-            border-radius: 8px;
-            padding: 10px;
+            background: rgba(255, 255, 255, 0.94);
+            border-radius: 18px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            gap: 9px;
+            border: 2px solid rgba(92, 61, 46, 0.08);
+            box-shadow: 0 4px 10px rgba(92, 61, 46, 0.05);
+            position: relative;
+            z-index: 2;
         }
 
         .job-section-title {
             font-family: var(--font-title);
             font-weight: normal;
             font-size: 18px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 4px;
-            color: #222;
+            border-bottom: 1.5px dashed #E6D7C3;
+            padding-bottom: 5px;
+            color: var(--cocoa);
         }
 
         .job-row {
@@ -516,47 +565,51 @@
             justify-content: space-between;
             font-size: 13px;
             font-weight: 600;
+            color: var(--cocoa);
         }
 
         .btn-shift {
-            background: #ff9500;
+            background: #FFA24C;
             color: white;
             border: none;
-            padding: 3px 6px;
-            border-radius: 4px;
+            padding: 4px 8px;
+            border-radius: 999px;
             font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             margin-left: 4px;
         }
-        .btn-shift:hover { background: #e08200; }
+        .btn-shift:hover { background: #EB8931; }
 
         select {
-            padding: 3px 6px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1.5px solid #DFCBB5;
+            background: #FFFDF9;
+            font-size: 12.5px;
             font-weight: 600;
+            color: var(--cocoa);
         }
 
         /* 打直獨立拆分欄位視圖 */
         .timeline-view {
             display: none;
-            max-width: 1200px;
+            max-width: 1220px;
             margin: 0 auto;
         }
 
         .timeline-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            gap: 18px;
         }
 
         .timeline-column {
-            background: white;
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 24px;
+            padding: 16px;
+            border: 2px solid #F0DFC8;
+            box-shadow: 0 6px 18px rgba(92, 61, 46, 0.07);
         }
 
         .timeline-column h3 {
@@ -567,19 +620,21 @@
             font-size: 19px;
             text-align: center;
             padding-bottom: 8px;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px dashed #EFE2D0;
+            color: var(--cocoa);
         }
 
         .timeline-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 9px;
+            border-radius: 14px;
             border-left: 6px solid;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13.5px;
+            color: var(--cocoa);
         }
 
         .timeline-item.h { background-color: var(--bg-h); border-color: var(--border-h); }
@@ -587,25 +642,26 @@
         .timeline-item.p { background-color: var(--bg-p); border-color: var(--border-p); }
 
         .tag {
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 2px 8px;
+            border-radius: 999px;
             font-size: 11px;
             color: white;
             margin-left: 4px;
         }
-        .tag-soldier { background: #ff9500; }
-        .tag-tech { background: #5856d6; }
-        .tag-master { background: #34c759; }
-        .tag-sunlight { background: #ff3b30; }
-        .tag-job-s { background: #ff2d55; }
-        .tag-job-t { background: #007aff; }
+        .tag-soldier { background: #FF9F43; }
+        .tag-tech { background: #7D83EB; }
+        .tag-master { background: #5CD685; }
+        .tag-sunlight { background: #FF6F61; }
+        .tag-job-s { background: #EB5A87; }
+        .tag-job-t { background: #5299E8; }
 
         /* 網頁內鬧鐘彈窗遮罩 */
         .alarm-modal-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(92, 61, 46, 0.55);
+            backdrop-filter: blur(3px);
             z-index: 9999;
             justify-content: center;
             align-items: center;
@@ -613,20 +669,20 @@
         }
 
         .alarm-modal {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
+            background: #FFFDF8;
+            border-radius: 26px;
+            padding: 28px;
             max-width: 420px;
             width: 90%;
             text-align: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-            border-top: 8px solid #ff2d55;
+            box-shadow: 0 18px 40px rgba(92, 61, 46, 0.28);
+            border: 4px solid #FFB3C6;
             animation: bounceIn 0.3s ease;
         }
 
         .alarm-modal-icon {
             font-size: 48px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: inline-block;
             animation: ring 0.8s infinite;
         }
@@ -636,50 +692,54 @@
             font-weight: normal;
             margin: 0 0 10px 0;
             font-size: 26px;
-            color: #ff2d55;
+            color: #E04F7B;
         }
 
         .alarm-modal-list {
-            background: #f8f9fa;
-            border-radius: 8px;
+            background: #FFF5F7;
+            border: 1.5px dashed #F8B4C8;
+            border-radius: 14px;
             padding: 12px;
             margin: 15px 0;
             font-size: 15px;
             font-weight: 600;
-            color: #333;
+            color: var(--cocoa);
             max-height: 200px;
             overflow-y: auto;
         }
 
         .alarm-modal-list div {
             padding: 6px 0;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px dashed #F3D1DC;
         }
         .alarm-modal-list div:last-child { border-bottom: none; }
 
         .btn-dismiss {
-            background: #ff2d55;
+            background: linear-gradient(135deg, #FF7EA5, #EB5A87);
             color: white;
             border: none;
             padding: 12px 30px;
-            border-radius: 10px;
+            border-radius: 999px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             width: 100%;
+            box-shadow: 0 4px 12px rgba(235, 90, 135, 0.3);
         }
-        .btn-dismiss:hover { background: #d61c42; }
+        .btn-dismiss:hover { filter: brightness(1.05); }
 
+        @keyframes gentleFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
         @keyframes ring {
             0%, 100% { transform: rotate(0deg); }
             25% { transform: rotate(15deg); }
             75% { transform: rotate(-15deg); }
         }
-
         @keyframes fadeIn {
             from { opacity: 0; } to { opacity: 1; }
         }
-
         @keyframes bounceIn {
             0% { transform: scale(0.85); }
             100% { transform: scale(1); }
@@ -694,16 +754,31 @@
 
     <div class="header">
         <div class="title-group">
+            <!-- 可愛原創小熊鬧鐘 SVG 徽章 -->
+            <svg class="header-mascot" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="16" cy="18" r="9" fill="#C68B59" stroke="#5C3D2E" stroke-width="3"/>
+                <circle cx="16" cy="18" r="4.5" fill="#F7D5B4"/>
+                <circle cx="48" cy="18" r="9" fill="#C68B59" stroke="#5C3D2E" stroke-width="3"/>
+                <circle cx="48" cy="18" r="4.5" fill="#F7D5B4"/>
+                <ellipse cx="32" cy="36" rx="22" ry="19" fill="#D99B66" stroke="#5C3D2E" stroke-width="3"/>
+                <ellipse cx="32" cy="41" rx="9" ry="7" fill="#FFF8EE"/>
+                <circle cx="24" cy="33" r="2.6" fill="#5C3D2E"/>
+                <circle cx="40" cy="33" r="2.6" fill="#5C3D2E"/>
+                <ellipse cx="32" cy="38.5" rx="3" ry="2" fill="#5C3D2E"/>
+                <path d="M29 43 Q32 45.5 35 43" stroke="#5C3D2E" stroke-width="2.2" stroke-linecap="round"/>
+                <circle cx="19" cy="39" r="3.2" fill="#FF9EB5" opacity="0.7"/>
+                <circle cx="45" cy="39" r="3.2" fill="#FF9EB5" opacity="0.7"/>
+            </svg>
             <h1>多帳戶鬧鐘助手</h1>
             <span class="sync-badge" id="syncBadge">⏳ 連線雲端中...</span>
         </div>
         <div class="header-btns">
-            <button class="btn-refresh-profile" id="refreshProfileBtn" onclick="refreshAllProfiles()">🔄 刷新遊戲資料</button>
-            <button class="btn-font-title" id="titleFontBtn" onclick="cycleTitleFont()">🔤 標題：貓啃什錦黑</button>
-            <button class="btn-font-body" id="bodyFontBtn" onclick="cycleBodyFont()">📝 內文：jf粉圓體</button>
-            <button class="btn-event-toggle active" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光之旅：顯示中</button>
-            <button class="btn-test" onclick="testAlarm()">🔔 測試鈴聲</button>
-            <button class="btn-toggle" onclick="toggleView()" id="toggleBtn">切換時間線</button>
+            <button class="pill-btn btn-refresh-profile" id="refreshProfileBtn" onclick="refreshAllProfiles()">🔄 刷新戰力</button>
+            <button class="pill-btn btn-font-title" id="titleFontBtn" onclick="cycleTitleFont()">🔤 標題：貓啃什錦黑</button>
+            <button class="pill-btn btn-font-body" id="bodyFontBtn" onclick="cycleBodyFont()">📝 內文：jf粉圓體</button>
+            <button class="pill-btn btn-event-toggle active" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光：顯示</button>
+            <button class="pill-btn btn-test" onclick="testAlarm()">🔔 測試鈴聲</button>
+            <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">切換時間線</button>
         </div>
     </div>
 
@@ -764,9 +839,9 @@
         const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
 
         const accounts = [
-            { id: 'h', name: 'h' },
-            { id: 'z', name: 'z' },
-            { id: 'p', name: 'p' }
+            { id: 'h', name: 'h', badgeEmoji: '🐻' },
+            { id: 'z', name: 'z', badgeEmoji: '🌸' },
+            { id: 'p', name: 'p', badgeEmoji: '🐥' }
         ];
 
         let profiles = {
@@ -805,23 +880,20 @@
             }
         };
 
-        // 標題字體選項清單（加入 fallback 確保缺字不突兀）
         const titleFonts = [
             { label: '貓啃什錦黑', family: "'MaokenFont', 'HuninnFont', sans-serif" },
             { label: '棉花糖', family: "'MarshmallowFont', 'HuninnFont', sans-serif" },
             { label: '甜甜圈', family: "'DonutFont', 'HuninnFont', sans-serif" },
             { label: 'jf粉圓體', family: "'HuninnFont', sans-serif" },
             { label: 'KosefontP', family: "'KosePFont', 'HuninnFont', sans-serif" },
-            { label: '系統黑體', family: "-apple-system, BlinkMacSystemFont, 'PingFang HK', 'Microsoft JhengHei', sans-serif" }
+            { label: '系統黑體', family: "-apple-system, BlinkMacSystemFont, 'PingFang HK', sans-serif" }
         ];
 
-        // 內文小字選項清單（挑選清晰易讀的字體）
         const bodyFonts = [
-            { label: 'jf粉圓體', family: "'HuninnFont', 'PingFang HK', 'Microsoft JhengHei', sans-serif" },
-            { label: 'KosefontP', family: "'KosePFont', 'HuninnFont', 'PingFang HK', sans-serif" },
-            { label: 'Kosefont', family: "'KoseFont', 'HuninnFont', 'PingFang HK', sans-serif" },
-            { label: '貓啃什錦黑', family: "'MaokenFont', 'HuninnFont', sans-serif" },
-            { label: '系統黑體', family: "-apple-system, BlinkMacSystemFont, 'PingFang HK', 'Microsoft JhengHei', sans-serif" }
+            { label: 'jf粉圓體', family: "'HuninnFont', 'PingFang HK', sans-serif" },
+            { label: 'KosefontP', family: "'KosePFont', 'HuninnFont', sans-serif" },
+            { label: 'Kosefont', family: "'KoseFont', 'HuninnFont', sans-serif" },
+            { label: '系統黑體', family: "-apple-system, BlinkMacSystemFont, 'PingFang HK', sans-serif" }
         ];
 
         let titleFontIdx = 0;
@@ -864,6 +936,52 @@
         let popupWin = null;
         let isInitialLoadDone = false;
 
+        // 三帳戶專屬療癒角落小貼紙 SVG
+        function getCornerStickerSvg(accId) {
+            if (accId === 'h') {
+                // 小熊與星星貼紙
+                return `
+                <svg class="corner-sticker" viewBox="0 0 64 64" fill="none">
+                    <circle cx="18" cy="20" r="8" fill="#B5835A" stroke="#5C3D2E" stroke-width="2.5"/>
+                    <circle cx="46" cy="20" r="8" fill="#B5835A" stroke="#5C3D2E" stroke-width="2.5"/>
+                    <ellipse cx="32" cy="36" rx="20" ry="17" fill="#C9966B" stroke="#5C3D2E" stroke-width="2.5"/>
+                    <ellipse cx="32" cy="40" rx="8" ry="6" fill="#FFFDF6"/>
+                    <circle cx="25" cy="33" r="2.2" fill="#5C3D2E"/>
+                    <circle cx="39" cy="33" r="2.2" fill="#5C3D2E"/>
+                    <ellipse cx="32" cy="38" rx="2.5" ry="1.8" fill="#5C3D2E"/>
+                    <path d="M52 10 L54 14 L58 15 L55 18 L56 22 L52 20 L48 22 L49 18 L46 15 L50 14 Z" fill="#FFE066" stroke="#5C3D2E" stroke-width="1.5"/>
+                </svg>`;
+            } else if (accId === 'z') {
+                // 小白熊、紅鈕扣與櫻花貼紙
+                return `
+                <svg class="corner-sticker" viewBox="0 0 64 64" fill="none">
+                    <circle cx="18" cy="20" r="8" fill="#FFFFFF" stroke="#5C3D2E" stroke-width="2.5"/>
+                    <circle cx="18" cy="20" r="4" fill="#FFD1DC"/>
+                    <circle cx="46" cy="20" r="8" fill="#FFFFFF" stroke="#5C3D2E" stroke-width="2.5"/>
+                    <circle cx="46" cy="20" r="4" fill="#FFD1DC"/>
+                    <ellipse cx="32" cy="36" rx="20" ry="17" fill="#FFFFFF" stroke="#5C3D2E" stroke-width="2.5"/>
+                    <circle cx="25" cy="33" r="2.2" fill="#5C3D2E"/>
+                    <circle cx="39" cy="33" r="2.2" fill="#5C3D2E"/>
+                    <ellipse cx="32" cy="38" rx="2.5" ry="1.8" fill="#5C3D2E"/>
+                    <circle cx="20" cy="38" r="3" fill="#FF9EB5" opacity="0.75"/>
+                    <circle cx="44" cy="38" r="3" fill="#FF9EB5" opacity="0.75"/>
+                    <circle cx="32" cy="48" r="4" fill="#FF5A79" stroke="#5C3D2E" stroke-width="1.8"/>
+                </svg>`;
+            } else {
+                // 小黃雞與蜂蜜罐貼紙
+                return `
+                <svg class="corner-sticker" viewBox="0 0 64 64" fill="none">
+                    <path d="M29 14 Q32 8 35 14" stroke="#5C3D2E" stroke-width="2.5" stroke-linecap="round"/>
+                    <ellipse cx="32" cy="35" rx="19" ry="18" fill="#FFE066" stroke="#5C3D2E" stroke-width="2.5"/>
+                    <circle cx="24" cy="32" r="2.2" fill="#5C3D2E"/>
+                    <circle cx="40" cy="32" r="2.2" fill="#5C3D2E"/>
+                    <ellipse cx="32" cy="37" rx="4" ry="2.6" fill="#FF9F43" stroke="#5C3D2E" stroke-width="1.8"/>
+                    <circle cx="19" cy="37" r="3" fill="#FF9EB5" opacity="0.65"/>
+                    <circle cx="45" cy="37" r="3" fill="#FF9EB5" opacity="0.65"/>
+                </svg>`;
+            }
+        }
+
         function initFontThemes() {
             const savedTitle = localStorage.getItem(TITLE_FONT_KEY);
             if (savedTitle !== null) titleFontIdx = parseInt(savedTitle, 10) % titleFonts.length;
@@ -893,10 +1011,7 @@
             document.documentElement.style.setProperty('--font-body', bFont.family);
 
             const tBtn = document.getElementById('titleFontBtn');
-            if (tBtn) tBtn.innerText = `🔤 標題：${tFont.label}`;
-
-            const bBtn = document.getElementById('bodyFontBtn');
-            if (bBtn) bBtn.innerText = `📝 內文：${bFont.label}`;
+            if (tBtn) tBtn.innerText = `🔤 標題：${tFont.label}`;  const bBtn = document.getElementById('bodyFontBtn'); if (bBtn) bBtn.innerText = `📝 內文：${bFont.label}`;
         }
 
         function formatPower(num) {
@@ -918,969 +1033,4 @@
             const targetUrl = `https://kingdom-1177.vercel.app/api/governor-profile?name=${encodeURIComponent(p.queryName)}&alliance=${encodeURIComponent(p.queryAlliance || '')}`;
             const candidateUrls = [
                 targetUrl,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-                `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
-            ];
-
-            for (const url of candidateUrls) {
-                try {
-                    const res = await fetch(url, { cache: 'no-store' });
-                    if (!res.ok) continue;
-                    const data = await res.json();
-                    if (data && data.ok && data.governor) {
-                        const gov = data.governor;
-                        profiles[accId] = {
-                            ...profiles[accId],
-                            name: gov.name || p.queryName,
-                            alliance: gov.alliance || p.queryAlliance,
-                            levelLabel: gov.levelLabel || (gov.tg ? `TG${gov.tg}` : `Lv.${gov.townCenter || ''}`),
-                            power: gov.power || 0,
-                            powerRank: gov.powerRank || null,
-                            avatar: gov.avatar || profiles[accId].avatar,
-                            lastFetched: new Date().toISOString()
-                        };
-                        return true;
-                    }
-                } catch (e) {}
-            }
-            return false;
-        }
-
-        async function refreshAllProfiles(silent = false) {
-            const btn = document.getElementById('refreshProfileBtn');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerText = '⏳ 同步遊戲資料中...';
-            }
-
-            const results = await Promise.all([
-                fetchSingleProfile('h'),
-                fetchSingleProfile('z'),
-                fetchSingleProfile('p')
-            ]);
-
-            if (results.some(ok => ok)) {
-                saveProfiles();
-                renderGrid();
-                updateTimeline();
-            } else if (!silent) {
-                alert('暫時無法連線至遊戲資料接口，請稍後再試（已保留上次同步的資料）。');
-            }
-
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = '🔄 刷新遊戲資料';
-            }
-        }
-
-        function editAccountQuery(accId) {
-            const cur = profiles[accId];
-            const newName = prompt(`修改 [${accId.toUpperCase()}] 的遊戲角色名稱（需與遊戲內完全一致）：`, cur.queryName);
-            if (newName === null) return;
-            const trimmedName = newName.trim();
-            if (!trimmedName) return;
-
-            const newAlliance = prompt(`修改 [${trimmedName}] 的聯盟標籤（例如 777 或 TER）：`, cur.queryAlliance || '');
-            if (newAlliance === null) return;
-
-            profiles[accId].queryName = trimmedName;
-            profiles[accId].queryAlliance = newAlliance.trim();
-            profiles[accId].name = trimmedName;
-            profiles[accId].alliance = newAlliance.trim();
-            saveProfiles();
-            renderGrid();
-            refreshAllProfiles(false);
-        }
-
-        function saveProfiles() {
-            try {
-                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
-            } catch (e) {}
-            profileDbRef.set(profiles).catch(err => console.error("Profile Sync Error:", err));
-        }
-
-        function loadLocalProfiles() {
-            try {
-                const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    accounts.forEach(acc => {
-                        if (parsed[acc.id]) {
-                            profiles[acc.id] = { ...profiles[acc.id], ...parsed[acc.id] };
-                        }
-                    });
-                }
-            } catch (e) {}
-        }
-
-        function setupProfileListener() {
-            profileDbRef.on("value", (snapshot) => {
-                const cloudProfiles = snapshot.val();
-                if (cloudProfiles) {
-                    accounts.forEach(acc => {
-                        if (cloudProfiles[acc.id]) {
-                            profiles[acc.id] = { ...profiles[acc.id], ...cloudProfiles[acc.id] };
-                        }
-                    });
-                    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
-                    renderGrid();
-                    updateTimeline();
-                } else {
-                    saveProfiles();
-                }
-            });
-        }
-
-        function startBackgroundWorker() {
-            try {
-                const workerCode = `setInterval(function() { postMessage('tick'); }, 1000);`;
-                const blob = new Blob([workerCode], { type: 'application/javascript' });
-                const worker = new Worker(URL.createObjectURL(blob));
-                worker.onmessage = function() { updateTimers(); };
-            } catch (e) {
-                setInterval(updateTimers, 1000);
-            }
-        }
-
-        function init() {
-            initFontThemes();
-            loadLocalBackup();
-            loadLocalProfiles();
-            updateSunlightBtnUI();
-            renderGrid();
-            setupFirebaseRealtimeListener();
-            setupProfileListener();
-            startBackgroundWorker();
-            refreshAllProfiles(true);
-        }
-
-        function setupFirebaseRealtimeListener() {
-            const badge = document.getElementById('syncBadge');
-
-            dbRef.on("value", (snapshot) => {
-                const cloudData = snapshot.val();
-                badge.innerText = "🟢 雲端已即時同步";
-                badge.className = "sync-badge connected";
-
-                if (cloudData && cloudData.store) {
-                    applySerializedState(cloudData);
-                    saveLocalBackup();
-                    updateSunlightBtnUI();
-                    renderGrid();
-                    updateTimeline();
-                } else if (!isInitialLoadDone) {
-                    saveState();
-                }
-                isInitialLoadDone = true;
-            }, (error) => {
-                badge.innerText = "🔴 雲端連線異常（請檢查資料庫規則）";
-                badge.className = "sync-badge error";
-                console.error("Firebase Error:", error);
-            });
-        }
-
-        function serializeState() {
-            const serializedStore = {};
-            accounts.forEach(acc => {
-                const accData = store[acc.id];
-                serializedStore[acc.id] = {
-                    soldiers: (accData.soldiers || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
-                    tech: (accData.tech || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
-                    master: (accData.master || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
-                    sunlight: (accData.sunlight || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
-                    soldierJobTime: accData.soldierJobTime || '',
-                    soldierJobDate: accData.soldierJobDate ? accData.soldierJobDate.toISOString() : null,
-                    techJobTime: accData.techJobTime || '',
-                    techJobDate: accData.techJobDate ? accData.techJobDate.toISOString() : null
-                };
-            });
-
-            return {
-                store: serializedStore,
-                nextId: nextId,
-                showSunlightEvent: showSunlightEvent,
-                triggered: Array.from(triggeredEventKeys),
-                updatedAt: Date.now()
-            };
-        }
-
-        function applySerializedState(parsed) {
-            if (!parsed || !parsed.store) return;
-            accounts.forEach(acc => {
-                const incoming = parsed.store[acc.id] || {};
-                ['soldiers', 'tech', 'master', 'sunlight'].forEach(type => {
-                    const list = incoming[type] ? Object.values(incoming[type]) : [];
-                    store[acc.id][type] = list.map(item => ({
-                        ...item,
-                        endTime: item.endTime ? new Date(item.endTime) : null
-                    }));
-                });
-                store[acc.id].soldierJobTime = incoming.soldierJobTime || '';
-                store[acc.id].soldierJobDate = incoming.soldierJobDate ? new Date(incoming.soldierJobDate) : null;
-                store[acc.id].techJobTime = incoming.techJobTime || '';
-                store[acc.id].techJobDate = incoming.techJobDate ? new Date(incoming.techJobDate) : null;
-            });
-
-            if (parsed.nextId) nextId = parsed.nextId;
-            if (typeof parsed.showSunlightEvent === 'boolean') showSunlightEvent = parsed.showSunlightEvent;
-            if (parsed.triggered) triggeredEventKeys = new Set(Object.values(parsed.triggered));
-        }
-
-        function saveState() {
-            const payload = serializeState();
-            saveLocalBackup(payload);
-
-            const badge = document.getElementById('syncBadge');
-            badge.innerText = "🔄 同步上傳中...";
-            dbRef.set(payload)
-                .then(() => {
-                    badge.innerText = "🟢 雲端已即時同步";
-                    badge.className = "sync-badge connected";
-                })
-                .catch(err => {
-                    badge.innerText = "🔴 寫入雲端失敗";
-                    badge.className = "sync-badge error";
-                });
-        }
-
-        function saveLocalBackup(payloadObj) {
-            try {
-                const dataToSave = payloadObj || serializeState();
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-            } catch (e) {}
-        }
-
-        function loadLocalBackup() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) {
-                    applySerializedState(JSON.parse(raw));
-                }
-            } catch (e) {}
-        }
-
-        function toggleSunlightEvent() {
-            showSunlightEvent = !showSunlightEvent;
-            updateSunlightBtnUI();
-            renderGrid();
-            updateTimeline();
-            saveState();
-        }
-
-        function updateSunlightBtnUI() {
-            const btn = document.getElementById('sunlightToggleBtn');
-            if (!btn) return;
-            if (showSunlightEvent) {
-                btn.innerText = "☀️ 沐光之旅：顯示中";
-                btn.classList.add('active');
-            } else {
-                btn.innerText = "☀️ 沐光之旅：已隱藏";
-                btn.classList.remove('active');
-            }
-        }
-
-        function initAudioContext() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-
-        function playBeepOnce() {
-            try {
-                initAudioContext();
-                const now = audioCtx.currentTime;
-                
-                const osc1 = audioCtx.createOscillator();
-                const gain1 = audioCtx.createGain();
-                osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(880, now);
-                gain1.gain.setValueAtTime(0.35, now);
-                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-                osc1.connect(gain1);
-                gain1.connect(audioCtx.destination);
-                osc1.start(now);
-                osc1.stop(now + 0.25);
-
-                const osc2 = audioCtx.createOscillator();
-                const gain2 = audioCtx.createGain();
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(1174.66, now + 0.18);
-                gain2.gain.setValueAtTime(0.35, now + 0.18);
-                gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
-                osc2.connect(gain2);
-                gain2.connect(audioCtx.destination);
-                osc2.start(now + 0.18);
-                osc2.stop(now + 0.55);
-            } catch (e) {}
-        }
-
-        function openForcedPopup(messages) {
-            try {
-                const width = 420;
-                const height = 280;
-                const left = (screen.width - width) / 2;
-                const top = (screen.height - height) / 2;
-
-                if (popupWin && !popupWin.closed) {
-                    popupWin.close();
-                }
-
-                popupWin = window.open(
-                    "",
-                    "GameAlarmPopup",
-                    `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
-                );
-
-                if (popupWin) {
-                    const listHtml = messages.map(m => `<li style="margin:8px 0; font-size:17px;">${m}</li>`).join('');
-                    popupWin.document.open();
-                    popupWin.document.write(`
-                        <!DOCTYPE html>
-                        <html lang="zh-HK">
-                        <head><title>⏰ 時間到了！</title></head>
-                        <body style="font-family:sans-serif; background:#fff5f5; text-align:center; padding:20px; margin:0; border-top:8px solid #ff2d55;">
-                            <h2 style="color:#ff2d55; margin:5px 0 15px 0;">⏰ 鬧鐘時間到了！</h2>
-                            <ul style="list-style:none; padding:0; margin:0 0 20px 0; font-weight:bold; color:#333;">
-                                ${listHtml}
-                            </ul>
-                            <button onclick="window.opener && window.opener.dismissAlarm(); window.close();" 
-                                style="background:#ff2d55; color:white; border:none; padding:12px 28px; font-size:16px; font-weight:bold; border-radius:8px; cursor:pointer;">
-                                知道了（關閉鬧鐘）
-                            </button>
-                        </body>
-                        </html>
-                    `);
-                    popupWin.document.close();
-                    popupWin.focus();
-                }
-            } catch (e) {}
-        }
-
-        function triggerAlarmAlert(eventKey, message) {
-            if (triggeredEventKeys.has(eventKey)) return;
-            triggeredEventKeys.add(eventKey);
-            saveState();
-
-            if (!activeAlerts.includes(message)) {
-                activeAlerts.push(message);
-            }
-
-            const listEl = document.getElementById('alarmModalList');
-            listEl.innerHTML = activeAlerts.map(msg => `<div>${msg}</div>`).join('');
-            document.getElementById('alarmModalOverlay').style.display = 'flex';
-
-            openForcedPopup(activeAlerts);
-
-            try { window.focus(); } catch (e) {}
-            if (!titleBlinkInterval) {
-                let toggle = false;
-                titleBlinkInterval = setInterval(() => {
-                    document.title = toggle ? "【⏰ 時間到了！】" : "【🔔 快看鬧鐘！】";
-                    toggle = !toggle;
-                }, 600);
-            }
-
-            playBeepOnce();
-            if (!ringInterval) {
-                ringInterval = setInterval(playBeepOnce, 2000);
-            }
-        }
-
-        function dismissAlarm() {
-            document.getElementById('alarmModalOverlay').style.display = 'none';
-            activeAlerts = [];
-
-            if (popupWin && !popupWin.closed) {
-                popupWin.close();
-            }
-            if (ringInterval) {
-                clearInterval(ringInterval);
-                ringInterval = null;
-            }
-            if (titleBlinkInterval) {
-                clearInterval(titleBlinkInterval);
-                titleBlinkInterval = null;
-            }
-            document.title = ORIGINAL_TITLE;
-        }
-
-        function testAlarm() {
-            initAudioContext();
-            const testKey = "test_" + Date.now();
-            triggerAlarmAlert(testKey, `【測試】[${getDisplayAccountName('z')}] 士兵訓練所 已完成！`);
-        }
-
-        function applyPreset(accId, type, id, d, h, m, autoStart = false) {
-            const item = store[accId][type].find(i => i.id === id);
-            if (!item) return;
-
-            item.d = d;
-            item.h = h;
-            item.m = m;
-
-            if (autoStart) {
-                initAudioContext();
-                const now = new Date();
-                const totalSeconds = (d * 86400) + (h * 3600) + (m * 60);
-                item.endTime = new Date(now.getTime() + totalSeconds * 1000);
-                recalculateJobs();
-            }
-
-            renderGrid();
-            saveState();
-        }
-
-        function renderProfileHeader(accId) {
-            const p = profiles[accId] || {};
-            const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name || accId)}&background=random&color=fff&bold=true`;
-            const avatarSrc = p.avatar ? p.avatar : fallbackAvatar;
-            const rankText = p.powerRank ? ` · 戰力#${p.powerRank}` : '';
-            const syncTimeText = p.lastFetched
-                ? `更新: ${formatTimeHM(new Date(p.lastFetched))}${rankText}`
-                : '點擊「刷新遊戲資料」同步';
-
-            return `
-                <div class="profile-card">
-                    <img class="profile-avatar" src="${avatarSrc}" alt="${p.name || accId}" onerror="this.src='${fallbackAvatar}'">
-                    <div class="profile-details">
-                        <div class="profile-name-row">
-                            <span class="profile-name">${p.name || accId}</span>
-                            ${p.alliance ? `<span class="profile-alliance">[${p.alliance}]</span>` : ''}
-                        </div>
-                        <div class="profile-stats-row">
-                            <span class="stat-pill tg">${p.levelLabel || '--'}</span>
-                            <span class="stat-pill power">⚔️ ${formatPower(p.power)}</span>
-                        </div>
-                        <div class="profile-meta">${syncTimeText}</div>
-                    </div>
-                    <button class="btn-edit-profile" title="修改角色名或聯盟標籤" onclick="editAccountQuery('${accId}')">✏️</button>
-                </div>
-            `;
-        }
-
-        function renderGrid() {
-            const grid = document.getElementById('gridView');
-            grid.innerHTML = accounts.map(acc => {
-                const data = store[acc.id];
-                return `
-                <div class="account-column ${acc.id}">
-                    ${renderProfileHeader(acc.id)}
-                    
-                    <div>
-                        <div class="section-header">
-                            <span>⚔️ 士兵訓練</span>
-                            <button class="btn-add" onclick="addItem('${acc.id}', 'soldiers')">+</button>
-                        </div>
-                        <div>
-                            ${(data.soldiers || []).map(item => renderTimerCard(acc.id, 'soldiers', item)).join('')}
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="section-header">
-                            <span>🔬 科技研究</span>
-                            <button class="btn-add" onclick="addItem('${acc.id}', 'tech')">+</button>
-                        </div>
-                        <div>
-                            ${(data.tech || []).map(item => renderTimerCard(acc.id, 'tech', item)).join('')}
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="section-header">
-                            <span>📖 大師技能學習 (無須職位)</span>
-                            <button class="btn-add" onclick="addItem('${acc.id}', 'master')">+</button>
-                        </div>
-                        <div>
-                            ${(data.master || []).map(item => renderTimerCard(acc.id, 'master', item)).join('')}
-                        </div>
-                    </div>
-
-                    ${showSunlightEvent ? `
-                    <div>
-                        <div class="section-header">
-                            <span>☀️ 沐光之旅 (8小時周期)</span>
-                            <button class="btn-add" onclick="addItem('${acc.id}', 'sunlight')">+</button>
-                        </div>
-                        <div>
-                            ${(data.sunlight || []).map(item => renderTimerCard(acc.id, 'sunlight', item)).join('')}
-                        </div>
-                    </div>
-                    ` : ''}
-
-                    <div class="job-section">
-                        <div class="job-section-title">🏛️ 職位預約</div>
-                        
-                        <div class="job-row">
-                            <span>⚔️ 士兵職位:</span>
-                            <div>
-                                <select id="${acc.id}_soldier_job_select" onchange="manualJobChange('${acc.id}', 'soldier', this.value)">
-                                    ${generateJobOptions(data.soldierJobTime)}
-                                </select>
-                                <button class="btn-shift" onclick="shiftJobTime('${acc.id}', 'soldier')">+30分</button>
-                            </div>
-                        </div>
-
-                        <div class="job-row">
-                            <span>🔬 科技職位:</span>
-                            <div>
-                                <select id="${acc.id}_tech_job_select" onchange="manualJobChange('${acc.id}', 'tech', this.value)">
-                                    ${generateJobOptions(data.techJobTime)}
-                                </select>
-                                <button class="btn-shift" onclick="shiftJobTime('${acc.id}', 'tech')">+30分</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `}).join('');
-        }
-
-        function renderTimerCard(accId, type, item) {
-            const isRunning = item.endTime !== null;
-            let title = '';
-            let extraCardClass = '';
-            let presetsHtml = '';
-
-            if (type === 'soldiers') {
-                title = '士兵訓練所';
-            } else if (type === 'tech') {
-                title = '科技研究';
-            } else if (type === 'master') {
-                title = '📖 大師技能';
-                extraCardClass = 'master-card';
-                if (!isRunning) {
-                    presetsHtml = `
-                        <div class="preset-row">
-                            <span style="font-size:11px; opacity:0.85; margin-right:2px;">快捷:</span>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 0, 10, true)">10分</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 2, 0, true)">2時</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 10, 0, true)">10時</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 23, 0, true)">23時</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 3, 0, 0, true)">3天</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 5, 0, 0, true)">5天</button>
-                        </div>
-                    `;
-                }
-            } else if (type === 'sunlight') {
-                title = '☀️ 沐光之旅';
-                extraCardClass = 'sunlight-card';
-                if (!isRunning) {
-                    presetsHtml = `
-                        <div class="preset-row">
-                            <span style="font-size:11px; opacity:0.9; margin-right:2px;">周期快捷:</span>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'sunlight', ${item.id}, 0, 8, 0, true)">▶ 8小時整</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'sunlight', ${item.id}, 0, 8, 0, false)">填入8時(微調)</button>
-                        </div>
-                    `;
-                }
-            }
-            
-            return `
-            <div class="timer-card ${extraCardClass}" id="card_${item.id}">
-                <div class="timer-main-row">
-                    <div class="timer-info">
-                        <span class="timer-title">${title}</span>
-                        <div class="timer-display" id="disp_${item.id}">
-                            ${isRunning ? '--:--' : `${item.d}天 ${formatPad(item.h)}:${formatPad(item.m)}`}
-                        </div>
-                        <span class="timer-sub" id="sub_${item.id}">
-                            ${isRunning ? '完結: ' + formatDateTime(item.endTime) : '自訂或點下方快捷'}
-                        </span>
-                    </div>
-
-                    <div class="timer-actions">
-                        ${!isRunning ? `
-                            <div class="timer-inputs">
-                                <input type="text" class="time-input input-d" id="in_d_${item.id}" value="${item.d}" 
-                                    maxlength="2" 
-                                    onfocus="this.select()"
-                                    onkeydown="handleArrowNav(event, null, 'in_h_${item.id}', '${accId}', '${type}', ${item.id})"
-                                    onkeyup="autoJumpOnNumber(event, this, 'in_h_${item.id}')">天
-                                <input type="text" class="time-input input-h" id="in_h_${item.id}" value="${formatPad(item.h)}" 
-                                    maxlength="2" 
-                                    onfocus="this.select()"
-                                    onkeydown="handleArrowNav(event, 'in_d_${item.id}', 'in_m_${item.id}', '${accId}', '${type}', ${item.id})"
-                                    onkeyup="autoJumpOnNumber(event, this, 'in_m_${item.id}')">時
-                                <input type="text" class="time-input input-m" id="in_m_${item.id}" value="${formatPad(item.m)}" 
-                                    maxlength="2" 
-                                    onfocus="this.select()"
-                                    onkeydown="handleArrowNav(event, 'in_h_${item.id}', null, '${accId}', '${type}', ${item.id})">分
-                            </div>
-                            <button class="btn-action" onclick="startTimer('${accId}', '${type}', ${item.id})">▶ 開始</button>
-                        ` : `
-                            <button class="btn-action" onclick="stopTimer('${accId}', '${type}', ${item.id})">■ 重設</button>
-                        `}
-                        <button class="btn-del" onclick="deleteItem('${accId}', '${type}', ${item.id})">✕</button>
-                    </div>
-                </div>
-                ${presetsHtml}
-            </div>
-            `;
-        }
-
-        function handleArrowNav(event, prevFieldId, nextFieldId, accId, type, id) {
-            const parentCard = event.target.closest('.timer-card');
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                startTimer(accId, type, id);
-                return;
-            }
-            if (event.key === 'ArrowLeft' && prevFieldId && parentCard) {
-                event.preventDefault();
-                const prevInput = parentCard.querySelector('#' + prevFieldId);
-                if (prevInput) { prevInput.focus(); prevInput.select(); }
-            }
-            if (event.key === 'ArrowRight' && nextFieldId && parentCard) {
-                event.preventDefault();
-                const nextInput = parentCard.querySelector('#' + nextFieldId);
-                if (nextInput) { nextInput.focus(); nextInput.select(); }
-            }
-        }
-
-        function autoJumpOnNumber(event, currentInput, nextFieldId) {
-            const isNumberKey = (event.key >= '0' && event.key <= '9');
-            if (isNumberKey && currentInput.value.length >= 2 && nextFieldId) {
-                const parentCard = currentInput.closest('.timer-card');
-                if (parentCard) {
-                    const nextInput = parentCard.querySelector('#' + nextFieldId);
-                    if (nextInput) { nextInput.focus(); nextInput.select(); }
-                }
-            }
-        }
-
-        function formatPad(num) { return String(num).padStart(2, '0'); }
-        function formatTimeHM(date) { return !date ? '--:--' : `${formatPad(date.getHours())}:${formatPad(date.getMinutes())}`; }
-        function formatDateTime(date) { return !date ? '--:--' : `${date.getMonth() + 1}/${date.getDate()} ${formatTimeHM(date)}`; }
-
-        function addItem(accId, type) {
-            let defD = 0, defH = 0, defM = 18;
-            if (type === 'tech') { defH = 2; defM = 30; }
-            else if (type === 'master') { defH = 0; defM = 10; }
-            else if (type === 'sunlight') { defH = 8; defM = 0; }
-
-            store[accId][type].push({ id: ++nextId, d: defD, h: defH, m: defM, endTime: null });
-            renderGrid();
-            saveState();
-        }
-
-        function deleteItem(accId, type, id) {
-            store[accId][type] = store[accId][type].filter(item => item.id !== id);
-            renderGrid();
-            recalculateJobs();
-            saveState();
-        }
-
-        function startTimer(accId, type, id) {
-            initAudioContext();
-            const cardEl = document.getElementById(`card_${id}`);
-            const item = store[accId][type].find(i => i.id === id);
-
-            if (cardEl && item) {
-                const inputD = cardEl.querySelector('.input-d');
-                const inputH = cardEl.querySelector('.input-h');
-                const inputM = cardEl.querySelector('.input-m');
-
-                item.d = Math.max(0, inputD ? (parseInt(inputD.value, 10) || 0) : 0);
-                item.h = Math.max(0, inputH ? (parseInt(inputH.value, 10) || 0) : 0);
-                item.m = Math.max(0, inputM ? (parseInt(inputM.value, 10) || 0) : 0);
-
-                const now = new Date();
-                const totalSeconds = (item.d * 86400) + (item.h * 3600) + (item.m * 60);
-                item.endTime = new Date(now.getTime() + totalSeconds * 1000);
-
-                renderGrid();
-                recalculateJobs();
-                saveState();
-            }
-        }
-
-        function stopTimer(accId, type, id) {
-            const item = store[accId][type].find(i => i.id === id);
-            if (item) {
-                item.endTime = null;
-                renderGrid();
-                recalculateJobs();
-                saveState();
-            }
-        }
-
-        function updateTimers() {
-            const now = new Date();
-            const typeNames = {
-                soldiers: '士兵訓練所',
-                tech: '科技研究',
-                master: '📖 大師技能學習',
-                sunlight: '☀️ 沐光之旅'
-            };
-
-            accounts.forEach(acc => {
-                const displayName = getDisplayAccountName(acc.id);
-                ['soldiers', 'tech', 'master', 'sunlight'].forEach(type => {
-                    if (type === 'sunlight' && !showSunlightEvent) return;
-
-                    const typeName = typeNames[type];
-                    (store[acc.id][type] || []).forEach((item, idx) => {
-                        if (item.endTime) {
-                            const diff = Math.floor((item.endTime - now) / 1000);
-                            const disp = document.getElementById(`disp_${item.id}`);
-                            
-                            if (diff <= 0) {
-                                if (disp) disp.innerText = "00:00 (完結)";
-                                const eventKey = `task_${item.id}_${item.endTime.getTime()}`;
-                                triggerAlarmAlert(eventKey, `[${displayName}] ${typeName} #${idx + 1} 已經完成！`);
-                            } else if (disp) {
-                                const d = Math.floor(diff / 86400);
-                                const h = Math.floor((diff % 86400) / 3600);
-                                const m = Math.floor((diff % 3600) / 60);
-                                const s = diff % 60;
-                                disp.innerText = (d > 0 ? `${d}天 ` : '') + `${formatPad(h)}:${formatPad(m)}:${formatPad(s)}`;
-                            }
-                        }
-                    });
-                });
-
-                if (store[acc.id].soldierJobDate && now >= store[acc.id].soldierJobDate) {
-                    const jobKey = `job_s_${acc.id}_${store[acc.id].soldierJobDate.getTime()}`;
-                    triggerAlarmAlert(jobKey, `[${displayName}] ⚔️ 士兵職位預約時間 (${store[acc.id].soldierJobTime}) 到了！`);
-                }
-
-                if (store[acc.id].techJobDate && now >= store[acc.id].techJobDate) {
-                    const jobKey = `job_t_${acc.id}_${store[acc.id].techJobDate.getTime()}`;
-                    triggerAlarmAlert(jobKey, `[${displayName}] 🔬 科技職位預約時間 (${store[acc.id].techJobTime}) 到了！`);
-                }
-            });
-
-            checkExpiredJobsAndAutoUpdate();
-
-            if (document.getElementById('timelineView').style.display === 'block') {
-                updateTimeline();
-            }
-        }
-
-        function checkExpiredJobsAndAutoUpdate() {
-            const now = new Date();
-            let needUpdate = false;
-
-            accounts.forEach(acc => {
-                ['soldierJobDate', 'techJobDate'].forEach(dateKey => {
-                    if (store[acc.id][dateKey]) {
-                        if (now - store[acc.id][dateKey] > 5 * 60 * 1000) {
-                            const timeKey = dateKey.replace('Date', 'Time');
-                            store[acc.id][timeKey] = '';
-                            store[acc.id][dateKey] = null;
-                            needUpdate = true;
-                        }
-                    }
-                });
-            });
-
-            if (needUpdate) {
-                recalculateJobs();
-                saveState();
-            }
-        }
-
-        function recalculateJobs() {
-            const now = new Date();
-
-            accounts.forEach(acc => {
-                let futureSoldierEnds = (store[acc.id].soldiers || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
-                if (futureSoldierEnds.length > 0) {
-                    futureSoldierEnds.sort((a, b) => a - b);
-                    const slotObj = calcRecommendedSlot(futureSoldierEnds[0]);
-                    store[acc.id].soldierJobTime = slotObj.timeStr;
-                    store[acc.id].soldierJobDate = slotObj.dateObj;
-                } else {
-                    store[acc.id].soldierJobTime = '';
-                    store[acc.id].soldierJobDate = null;
-                }
-
-                let futureTechEnds = (store[acc.id].tech || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
-                if (futureTechEnds.length > 0) {
-                    futureTechEnds.sort((a, b) => a - b);
-                    const slotObj = calcRecommendedSlot(futureTechEnds[0]);
-                    store[acc.id].techJobTime = slotObj.timeStr;
-                    store[acc.id].techJobDate = slotObj.dateObj;
-                } else {
-                    store[acc.id].techJobTime = '';
-                    store[acc.id].techJobDate = null;
-                }
-
-                const sSelect = document.getElementById(`${acc.id}_soldier_job_select`);
-                if (sSelect) sSelect.value = store[acc.id].soldierJobTime;
-
-                const tSelect = document.getElementById(`${acc.id}_tech_job_select`);
-                if (tSelect) tSelect.value = store[acc.id].techJobTime;
-            });
-
-            updateTimeline();
-        }
-
-        function calcRecommendedSlot(endTime) {
-            const now = new Date();
-            let slotDate = new Date(endTime);
-            let h = slotDate.getHours();
-            let m = slotDate.getMinutes();
-            let slotH = h;
-            let slotM = 0;
-
-            if (m >= 50) {
-                slotH = (h + 1) % 24;
-                slotM = 0;
-                if (slotH === 0) slotDate.setDate(slotDate.getDate() + 1);
-            } else if (m >= 20) {
-                slotM = 30;
-            } else {
-                slotM = 0;
-            }
-
-            slotDate.setHours(slotH, slotM, 0, 0);
-
-            while (slotDate <= now) {
-                slotDate = new Date(slotDate.getTime() + 30 * 60 * 1000);
-            }
-
-            const finalH = slotDate.getHours();
-            const finalM = slotDate.getMinutes();
-
-            return { timeStr: `${formatPad(finalH)}:${formatPad(finalM)}`, dateObj: slotDate };
-        }
-
-        function shiftJobTime(accId, type) {
-            const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
-            const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
-
-            let curDate = store[accId][dateKey] || new Date();
-            let newDate = new Date(curDate.getTime() + 30 * 60 * 1000);
-
-            store[accId][dateKey] = newDate;
-            store[accId][timeKey] = formatTimeHM(newDate);
-
-            const selectId = `${accId}_${type}_job_select`;
-            document.getElementById(selectId).value = store[accId][timeKey];
-            updateTimeline();
-            saveState();
-        }
-
-        function manualJobChange(accId, type, val) {
-            const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
-            const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
-
-            store[accId][timeKey] = val;
-            if (val) {
-                const [h, m] = val.split(':').map(Number);
-                let d = new Date();
-                d.setHours(h, m, 0, 0);
-                if (d < new Date()) d.setDate(d.getDate() + 1);
-                store[accId][dateKey] = d;
-            } else {
-                store[accId][dateKey] = null;
-            }
-            updateTimeline();
-            saveState();
-        }
-
-        function generateJobOptions(selectedVal) {
-            let html = '<option value="">--無預約--</option>';
-            for (let h = 0; h < 24; h++) {
-                for (let m of [0, 30]) {
-                    const timeStr = `${formatPad(h)}:${formatPad(m)}`;
-                    const isSel = timeStr === selectedVal ? 'selected' : '';
-                    html += `<option value="${timeStr}" ${isSel}>${timeStr}</option>`;
-                }
-            }
-            return html;
-        }
-
-        function updateTimeline() {
-            const tasksContainer = document.getElementById('timeline_tasks');
-            const soldierJobsContainer = document.getElementById('timeline_soldier_jobs');
-            const techJobsContainer = document.getElementById('timeline_tech_jobs');
-
-            let tasksList = [];
-            let soldierJobsList = [];
-            let techJobsList = [];
-
-            accounts.forEach(acc => {
-                const displayName = getDisplayAccountName(acc.id);
-                (store[acc.id].soldiers || []).forEach((item, idx) => {
-                    if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `士兵 #${idx + 1}`, tagClass: 'tag-soldier' });
-                    }
-                });
-                (store[acc.id].tech || []).forEach((item, idx) => {
-                    if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `科技 #${idx + 1}`, tagClass: 'tag-tech' });
-                    }
-                });
-                (store[acc.id].master || []).forEach((item, idx) => {
-                    if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `📖 大師技能 #${idx + 1}`, tagClass: 'tag-master' });
-                    }
-                });
-                if (showSunlightEvent) {
-                    (store[acc.id].sunlight || []).forEach((item, idx) => {
-                        if (item.endTime) {
-                            tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `☀️ 沐光之旅 #${idx + 1}`, tagClass: 'tag-sunlight' });
-                        }
-                    });
-                }
-
-                if (store[acc.id].soldierJobDate) {
-                    soldierJobsList.push({ acc: displayName, accId: acc.id, time: store[acc.id].soldierJobDate, timeStr: formatDateTime(store[acc.id].soldierJobDate), label: '⚔️ 士兵職位', tagClass: 'tag-job-s' });
-                }
-                if (store[acc.id].techJobDate) {
-                    techJobsList.push({ acc: displayName, accId: acc.id, time: store[acc.id].techJobDate, timeStr: formatDateTime(store[acc.id].techJobDate), label: '🔬 科技職位', tagClass: 'tag-job-t' });
-                }
-            });
-
-            tasksList.sort((a, b) => a.time - b.time);
-            soldierJobsList.sort((a, b) => a.time - b.time);
-            techJobsList.sort((a, b) => a.time - b.time);
-
-            renderTimelineColumn(tasksContainer, tasksList, "無進行中計時");
-            renderTimelineColumn(soldierJobsContainer, soldierJobsList, "無士兵職位預約");
-            renderTimelineColumn(techJobsContainer, techJobsList, "無科技職位預約");
-        }
-
-        function renderTimelineColumn(container, list, emptyText) {
-            if (!container) return;
-            if (list.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color:#999; padding:15px; font-size:13px;">${emptyText}</div>`;
-                return;
-            }
-            container.innerHTML = list.map(item => `
-                <div class="timeline-item ${item.accId}">
-                    <div>
-                        <span style="font-size: 16px; margin-right: 4px;">[${item.acc}]</span>
-                        <span class="tag ${item.tagClass}">${item.label}</span>
-                    </div>
-                    <div>${item.timeStr}</div>
-                </div>
-            `).join('');
-        }
-
-        function toggleView() {
-            const grid = document.getElementById('gridView');
-            const timeline = document.getElementById('timelineView');
-            const btn = document.getElementById('toggleBtn');
-
-            if (grid.style.display === 'none') {
-                grid.style.display = 'grid';
-                timeline.style.display = 'none';
-                btn.innerText = '切換時間線';
-            } else {
-                grid.style.display = 'none';
-                timeline.style.display = 'block';
-                btn.innerText = '切換 3 欄視圖';
-                updateTimeline();
-            }
-        }
-
-        window.onload = init;
-    </script>
-</body>
-</html>
+                `https
