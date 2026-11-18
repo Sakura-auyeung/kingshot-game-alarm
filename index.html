@@ -1011,7 +1011,10 @@
             document.documentElement.style.setProperty('--font-body', bFont.family);
 
             const tBtn = document.getElementById('titleFontBtn');
-            if (tBtn) tBtn.innerText = `🔤 標題：${tFont.label}`;  const bBtn = document.getElementById('bodyFontBtn'); if (bBtn) bBtn.innerText = `📝 內文：${bFont.label}`;
+            if (tBtn) tBtn.innerText = `🔤 標題：${tFont.label}`;
+
+            const bBtn = document.getElementById('bodyFontBtn');
+            if (bBtn) bBtn.innerText = `📝 內文：${bFont.label}`;
         }
 
         function formatPower(num) {
@@ -1033,4 +1036,975 @@
             const targetUrl = `https://kingdom-1177.vercel.app/api/governor-profile?name=${encodeURIComponent(p.queryName)}&alliance=${encodeURIComponent(p.queryAlliance || '')}`;
             const candidateUrls = [
                 targetUrl,
-                `https
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+                `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
+            ];
+
+            for (const url of candidateUrls) {
+                try {
+                    const res = await fetch(url, { cache: 'no-store' });
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    if (data && data.ok && data.governor) {
+                        const gov = data.governor;
+                        profiles[accId] = {
+                            ...profiles[accId],
+                            name: gov.name || p.queryName,
+                            alliance: gov.alliance || p.queryAlliance,
+                            levelLabel: gov.levelLabel || (gov.tg ? `TG${gov.tg}` : `Lv.${gov.townCenter || ''}`),
+                            power: gov.power || 0,
+                            powerRank: gov.powerRank || null,
+                            avatar: gov.avatar || profiles[accId].avatar,
+                            lastFetched: new Date().toISOString()
+                        };
+                        return true;
+                    }
+                } catch (e) {}
+            }
+            return false;
+        }
+
+        async function refreshAllProfiles(silent = false) {
+            const btn = document.getElementById('refreshProfileBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ 同步中...';
+            }
+
+            const results = await Promise.all([
+                fetchSingleProfile('h'),
+                fetchSingleProfile('z'),
+                fetchSingleProfile('p')
+            ]);
+
+            if (results.some(ok => ok)) {
+                saveProfiles();
+                renderGrid();
+                updateTimeline();
+            } else if (!silent) {
+                alert('暫時無法連線至遊戲資料接口，請稍後再試（已保留上次同步的資料）。');
+            }
+
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = '🔄 刷新戰力';
+            }
+        }
+
+        function editAccountQuery(accId) {
+            const cur = profiles[accId];
+            const newName = prompt(`修改 [${accId.toUpperCase()}] 的遊戲角色名稱（需與遊戲內完全一致）：`, cur.queryName);
+            if (newName === null) return;
+            const trimmedName = newName.trim();
+            if (!trimmedName) return;
+
+            const newAlliance = prompt(`修改 [${trimmedName}] 的聯盟標籤（例如 777 或 TER）：`, cur.queryAlliance || '');
+            if (newAlliance === null) return;
+
+            profiles[accId].queryName = trimmedName;
+            profiles[accId].queryAlliance = newAlliance.trim();
+            profiles[accId].name = trimmedName;
+            profiles[accId].alliance = newAlliance.trim();
+            saveProfiles();
+            renderGrid();
+            refreshAllProfiles(false);
+        }
+
+        function saveProfiles() {
+            try {
+                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
+            } catch (e) {}
+            profileDbRef.set(profiles).catch(err => console.error("Profile Sync Error:", err));
+        }
+
+        function loadLocalProfiles() {
+            try {
+                const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    accounts.forEach(acc => {
+                        if (parsed[acc.id]) {
+                            profiles[acc.id] = { ...profiles[acc.id], ...parsed[acc.id] };
+                        }
+                    });
+                }
+            } catch (e) {}
+        }
+
+        function setupProfileListener() {
+            profileDbRef.on("value", (snapshot) => {
+                const cloudProfiles = snapshot.val();
+                if (cloudProfiles) {
+                    accounts.forEach(acc => {
+                        if (cloudProfiles[acc.id]) {
+                            profiles[acc.id] = { ...profiles[acc.id], ...cloudProfiles[acc.id] };
+                        }
+                    });
+                    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
+                    renderGrid();
+                    updateTimeline();
+                } else {
+                    saveProfiles();
+                }
+            });
+        }
+
+        function startBackgroundWorker() {
+            try {
+                const workerCode = `setInterval(function() { postMessage('tick'); }, 1000);`;
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                const worker = new Worker(URL.createObjectURL(blob));
+                worker.onmessage = function() { updateTimers(); };
+            } catch (e) {
+                setInterval(updateTimers, 1000);
+            }
+        }
+
+        function init() {
+            initFontThemes();
+            loadLocalBackup();
+            loadLocalProfiles();
+            updateSunlightBtnUI();
+            renderGrid();
+            setupFirebaseRealtimeListener();
+            setupProfileListener();
+            startBackgroundWorker();
+            refreshAllProfiles(true);
+        }
+
+        function setupFirebaseRealtimeListener() {
+            const badge = document.getElementById('syncBadge');
+
+            dbRef.on("value", (snapshot) => {
+                const cloudData = snapshot.val();
+                badge.innerText = "🟢 雲端已同步";
+                badge.className = "sync-badge connected";
+
+                if (cloudData && cloudData.store) {
+                    applySerializedState(cloudData);
+                    saveLocalBackup();
+                    updateSunlightBtnUI();
+                    renderGrid();
+                    updateTimeline();
+                } else if (!isInitialLoadDone) {
+                    saveState();
+                }
+                isInitialLoadDone = true;
+            }, (error) => {
+                badge.innerText = "🔴 雲端連線異常";
+                badge.className = "sync-badge error";
+                console.error("Firebase Error:", error);
+            });
+        }
+
+        function serializeState() {
+            const serializedStore = {};
+            accounts.forEach(acc => {
+                const accData = store[acc.id];
+                serializedStore[acc.id] = {
+                    soldiers: (accData.soldiers || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
+                    tech: (accData.tech || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
+                    master: (accData.master || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
+                    sunlight: (accData.sunlight || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
+                    soldierJobTime: accData.soldierJobTime || '',
+                    soldierJobDate: accData.soldierJobDate ? accData.soldierJobDate.toISOString() : null,
+                    techJobTime: accData.techJobTime || '',
+                    techJobDate: accData.techJobDate ? accData.techJobDate.toISOString() : null
+                };
+            });
+
+            return {
+                store: serializedStore,
+                nextId: nextId,
+                showSunlightEvent: showSunlightEvent,
+                triggered: Array.from(triggeredEventKeys),
+                updatedAt: Date.now()
+            };
+        }
+
+        function applySerializedState(parsed) {
+            if (!parsed || !parsed.store) return;
+            accounts.forEach(acc => {
+                const incoming = parsed.store[acc.id] || {};
+                ['soldiers', 'tech', 'master', 'sunlight'].forEach(type => {
+                    const list = incoming[type] ? Object.values(incoming[type]) : [];
+                    store[acc.id][type] = list.map(item => ({
+                        ...item,
+                        endTime: item.endTime ? new Date(item.endTime) : null
+                    }));
+                });
+                store[acc.id].soldierJobTime = incoming.soldierJobTime || '';
+                store[acc.id].soldierJobDate = incoming.soldierJobDate ? new Date(incoming.soldierJobDate) : null;
+                store[acc.id].techJobTime = incoming.techJobTime || '';
+                store[acc.id].techJobDate = incoming.techJobDate ? new Date(incoming.techJobDate) : null;
+            });
+
+            if (parsed.nextId) nextId = parsed.nextId;
+            if (typeof parsed.showSunlightEvent === 'boolean') showSunlightEvent = parsed.showSunlightEvent;
+            if (parsed.triggered) triggeredEventKeys = new Set(Object.values(parsed.triggered));
+        }
+
+        function saveState() {
+            const payload = serializeState();
+            saveLocalBackup(payload);
+
+            const badge = document.getElementById('syncBadge');
+            badge.innerText = "🔄 同步中...";
+            dbRef.set(payload)
+                .then(() => {
+                    badge.innerText = "🟢 雲端已同步";
+                    badge.className = "sync-badge connected";
+                })
+                .catch(err => {
+                    badge.innerText = "🔴 寫入失敗";
+                    badge.className = "sync-badge error";
+                });
+        }
+
+        function saveLocalBackup(payloadObj) {
+            try {
+                const dataToSave = payloadObj || serializeState();
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+            } catch (e) {}
+        }
+
+        function loadLocalBackup() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    applySerializedState(JSON.parse(raw));
+                }
+            } catch (e) {}
+        }
+
+        function toggleSunlightEvent() {
+            showSunlightEvent = !showSunlightEvent;
+            updateSunlightBtnUI();
+            renderGrid();
+            updateTimeline();
+            saveState();
+        }
+
+        function updateSunlightBtnUI() {
+            const btn = document.getElementById('sunlightToggleBtn');
+            if (!btn) return;
+            if (showSunlightEvent) {
+                btn.innerText = "☀️ 沐光：顯示";
+                btn.classList.add('active');
+            } else {
+                btn.innerText = "☀️ 沐光：隱藏";
+                btn.classList.remove('active');
+            }
+        }
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playBeepOnce() {
+            try {
+                initAudioContext();
+                const now = audioCtx.currentTime;
+                
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(880, now);
+                gain1.gain.setValueAtTime(0.35, now);
+                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.25);
+
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(1174.66, now + 0.18);
+                gain2.gain.setValueAtTime(0.35, now + 0.18);
+                gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.start(now + 0.18);
+                osc2.stop(now + 0.55);
+            } catch (e) {}
+        }
+
+        function openForcedPopup(messages) {
+            try {
+                const width = 420;
+                const height = 280;
+                const left = (screen.width - width) / 2;
+                const top = (screen.height - height) / 2;
+
+                if (popupWin && !popupWin.closed) {
+                    popupWin.close();
+                }
+
+                popupWin = window.open(
+                    "",
+                    "GameAlarmPopup",
+                    `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+                );
+
+                if (popupWin) {
+                    const listHtml = messages.map(m => `<li style="margin:8px 0; font-size:17px;">${m}</li>`).join('');
+                    popupWin.document.open();
+                    popupWin.document.write(`
+                        <!DOCTYPE html>
+                        <html lang="zh-HK">
+                        <head><title>⏰ 時間到了！</title></head>
+                        <body style="font-family:sans-serif; background:#FFFDF8; text-align:center; padding:20px; margin:0; border-top:8px solid #FF7EA5; color:#5C3D2E;">
+                            <h2 style="color:#E04F7B; margin:5px 0 15px 0;">⏰ 鬧鐘時間到了！</h2>
+                            <ul style="list-style:none; padding:0; margin:0 0 20px 0; font-weight:bold;">
+                                ${listHtml}
+                            </ul>
+                            <button onclick="window.opener && window.opener.dismissAlarm(); window.close();" 
+                                style="background:#EB5A87; color:white; border:none; padding:12px 28px; font-size:16px; font-weight:bold; border-radius:999px; cursor:pointer;">
+                                知道了（關閉鬧鐘）
+                            </button>
+                        </body>
+                        </html>
+                    `);
+                    popupWin.document.close();
+                    popupWin.focus();
+                }
+            } catch (e) {}
+        }
+
+        function triggerAlarmAlert(eventKey, message) {
+            if (triggeredEventKeys.has(eventKey)) return;
+            triggeredEventKeys.add(eventKey);
+            saveState();
+
+            if (!activeAlerts.includes(message)) {
+                activeAlerts.push(message);
+            }
+
+            const listEl = document.getElementById('alarmModalList');
+            listEl.innerHTML = activeAlerts.map(msg => `<div>${msg}</div>`).join('');
+            document.getElementById('alarmModalOverlay').style.display = 'flex';
+
+            openForcedPopup(activeAlerts);
+
+            try { window.focus(); } catch (e) {}
+            if (!titleBlinkInterval) {
+                let toggle = false;
+                titleBlinkInterval = setInterval(() => {
+                    document.title = toggle ? "【⏰ 時間到了！】" : "【🔔 快看鬧鐘！】";
+                    toggle = !toggle;
+                }, 600);
+            }
+
+            playBeepOnce();
+            if (!ringInterval) {
+                ringInterval = setInterval(playBeepOnce, 2000);
+            }
+        }
+
+        function dismissAlarm() {
+            document.getElementById('alarmModalOverlay').style.display = 'none';
+            activeAlerts = [];
+
+            if (popupWin && !popupWin.closed) {
+                popupWin.close();
+            }
+            if (ringInterval) {
+                clearInterval(ringInterval);
+                ringInterval = null;
+            }
+            if (titleBlinkInterval) {
+                clearInterval(titleBlinkInterval);
+                titleBlinkInterval = null;
+            }
+            document.title = ORIGINAL_TITLE;
+        }
+
+        function testAlarm() {
+            initAudioContext();
+            const testKey = "test_" + Date.now();
+            triggerAlarmAlert(testKey, `【測試】[${getDisplayAccountName('z')}] 士兵訓練所 已完成！`);
+        }
+
+        function applyPreset(accId, type, id, d, h, m, autoStart = false) {
+            const item = store[accId][type].find(i => i.id === id);
+            if (!item) return;
+
+            item.d = d;
+            item.h = h;
+            item.m = m;
+
+            if (autoStart) {
+                initAudioContext();
+                const now = new Date();
+                const totalSeconds = (d * 86400) + (h * 3600) + (m * 60);
+                item.endTime = new Date(now.getTime() + totalSeconds * 1000);
+                recalculateJobs();
+            }
+
+            renderGrid();
+            saveState();
+        }
+
+        function renderProfileHeader(acc) {
+            const accId = acc.id;
+            const p = profiles[accId] || {};
+            const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name || accId)}&background=F3E5C8&color=5C3D2E&bold=true`;
+            const avatarSrc = p.avatar ? p.avatar : fallbackAvatar;
+            const rankText = p.powerRank ? ` · 戰力#${p.powerRank}` : '';
+            const syncTimeText = p.lastFetched
+                ? `更新: ${formatTimeHM(new Date(p.lastFetched))}${rankText}`
+                : '點擊「刷新戰力」同步';
+
+            return `
+                <div class="profile-card">
+                    <div class="profile-avatar-wrap">
+                        <img class="profile-avatar" src="${avatarSrc}" alt="${p.name || accId}" onerror="this.src='${fallbackAvatar}'">
+                        <span class="avatar-mini-badge">${acc.badgeEmoji}</span>
+                    </div>
+                    <div class="profile-details">
+                        <div class="profile-name-row">
+                            <span class="profile-name">${p.name || accId}</span>
+                            ${p.alliance ? `<span class="profile-alliance">[${p.alliance}]</span>` : ''}
+                        </div>
+                        <div class="profile-stats-row">
+                            <span class="stat-pill tg">${p.levelLabel || '--'}</span>
+                            <span class="stat-pill power">⚔️ ${formatPower(p.power)}</span>
+                        </div>
+                        <div class="profile-meta">${syncTimeText}</div>
+                    </div>
+                    <button class="btn-edit-profile" title="修改角色名或聯盟標籤" onclick="editAccountQuery('${accId}')">✏️</button>
+                </div>
+            `;
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('gridView');
+            grid.innerHTML = accounts.map(acc => {
+                const data = store[acc.id];
+                return `
+                <div class="account-column ${acc.id}">
+                    ${renderProfileHeader(acc)}
+                    
+                    <div class="section-block">
+                        <div class="section-header">
+                            <span>⚔️ 士兵訓練</span>
+                            <button class="btn-add" onclick="addItem('${acc.id}', 'soldiers')">+</button>
+                        </div>
+                        <div>
+                            ${(data.soldiers || []).map(item => renderTimerCard(acc.id, 'soldiers', item)).join('')}
+                        </div>
+                    </div>
+
+                    <div class="section-block">
+                        <div class="section-header">
+                            <span>🔬 科技研究</span>
+                            <button class="btn-add" onclick="addItem('${acc.id}', 'tech')">+</button>
+                        </div>
+                        <div>
+                            ${(data.tech || []).map(item => renderTimerCard(acc.id, 'tech', item)).join('')}
+                        </div>
+                    </div>
+
+                    <div class="section-block">
+                        <div class="section-header">
+                            <span>📖 大師技能 (無須職位)</span>
+                            <button class="btn-add" onclick="addItem('${acc.id}', 'master')">+</button>
+                        </div>
+                        <div>
+                            ${(data.master || []).map(item => renderTimerCard(acc.id, 'master', item)).join('')}
+                        </div>
+                    </div>
+
+                    ${showSunlightEvent ? `
+                    <div class="section-block">
+                        <div class="section-header">
+                            <span>☀️ 沐光之旅 (8小時周期)</span>
+                            <button class="btn-add" onclick="addItem('${acc.id}', 'sunlight')">+</button>
+                        </div>
+                        <div>
+                            ${(data.sunlight || []).map(item => renderTimerCard(acc.id, 'sunlight', item)).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <div class="job-section">
+                        <div class="job-section-title">🏛️ 職位預約</div>
+                        
+                        <div class="job-row">
+                            <span>⚔️ 士兵職位:</span>
+                            <div>
+                                <select id="${acc.id}_soldier_job_select" onchange="manualJobChange('${acc.id}', 'soldier', this.value)">
+                                    ${generateJobOptions(data.soldierJobTime)}
+                                </select>
+                                <button class="btn-shift" onclick="shiftJobTime('${acc.id}', 'soldier')">+30分</button>
+                            </div>
+                        </div>
+
+                        <div class="job-row">
+                            <span>🔬 科技職位:</span>
+                            <div>
+                                <select id="${acc.id}_tech_job_select" onchange="manualJobChange('${acc.id}', 'tech', this.value)">
+                                    ${generateJobOptions(data.techJobTime)}
+                                </select>
+                                <button class="btn-shift" onclick="shiftJobTime('${acc.id}', 'tech')">+30分</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${getCornerStickerSvg(acc.id)}
+                </div>
+            `}).join('');
+        }
+
+        function renderTimerCard(accId, type, item) {
+            const isRunning = item.endTime !== null;
+            let title = '';
+            let extraCardClass = '';
+            let presetsHtml = '';
+
+            if (type === 'soldiers') {
+                title = '士兵訓練所';
+            } else if (type === 'tech') {
+                title = '科技研究';
+            } else if (type === 'master') {
+                title = '📖 大師技能';
+                extraCardClass = 'master-card';
+                if (!isRunning) {
+                    presetsHtml = `
+                        <div class="preset-row">
+                            <span style="font-size:11px; opacity:0.9; margin-right:2px;">快捷:</span>
+                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 0, 10, true)">10分</button>
+                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 2, 0, true)">2時</button>
+                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 10, 0, true)">10時</button>
+                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 0, 23, 0, true)">23時</button>
+                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 3, 0, 0, true)">3天</button>
+                            <button class="btn-preset" onclick="applyPreset('${accId}', 'master', ${item.id}, 5, 0, 0, true)">5天</button>
+                        </div>
+                    `;
+                }
+            } else if (type === 'sunlight') {
+                title = '☀️ 沐光之旅';
+                extraCardClass = 'sunlight-card';
+                if (!isRunning) {
+                    presetsHtml = `
+                        <div class="preset-row">
+                            <span style="font-size:11px; opacity:0.92; margin-right:2px;">周期:</span>
+                            <button class="btn-preset" onclick="applyPreset('${accId}', 'sunlight', ${item.id}, 0, 8, 0, true)">▶ 8小時整</button>
+                            <button class="btn-preset" onclick="applyPreset('${accId}', 'sunlight', ${item.id}, 0, 8, 0, false)">填入8時</button>
+                        </div>
+                    `;
+                }
+            }
+            
+            return `
+            <div class="timer-card ${extraCardClass}" id="card_${item.id}">
+                <div class="timer-main-row">
+                    <div class="timer-info">
+                        <span class="timer-title">${title}</span>
+                        <div class="timer-display" id="disp_${item.id}">
+                            ${isRunning ? '--:--' : `${item.d}天 ${formatPad(item.h)}:${formatPad(item.m)}`}
+                        </div>
+                        <span class="timer-sub" id="sub_${item.id}">
+                            ${isRunning ? '完結: ' + formatDateTime(item.endTime) : '自訂或點下方快捷'}
+                        </span>
+                    </div>
+
+                    <div class="timer-actions">
+                        ${!isRunning ? `
+                            <div class="timer-inputs">
+                                <input type="text" class="time-input input-d" id="in_d_${item.id}" value="${item.d}" 
+                                    maxlength="2" 
+                                    onfocus="this.select()"
+                                    onkeydown="handleArrowNav(event, null, 'in_h_${item.id}', '${accId}', '${type}', ${item.id})"
+                                    onkeyup="autoJumpOnNumber(event, this, 'in_h_${item.id}')">天
+                                <input type="text" class="time-input input-h" id="in_h_${item.id}" value="${formatPad(item.h)}" 
+                                    maxlength="2" 
+                                    onfocus="this.select()"
+                                    onkeydown="handleArrowNav(event, 'in_d_${item.id}', 'in_m_${item.id}', '${accId}', '${type}', ${item.id})"
+                                    onkeyup="autoJumpOnNumber(event, this, 'in_m_${item.id}')">時
+                                <input type="text" class="time-input input-m" id="in_m_${item.id}" value="${formatPad(item.m)}" 
+                                    maxlength="2" 
+                                    onfocus="this.select()"
+                                    onkeydown="handleArrowNav(event, 'in_h_${item.id}', null, '${accId}', '${type}', ${item.id})">分
+                            </div>
+                            <button class="btn-action" onclick="startTimer('${accId}', '${type}', ${item.id})">▶ 開始</button>
+                        ` : `
+                            <button class="btn-action" onclick="stopTimer('${accId}', '${type}', ${item.id})">■ 重設</button>
+                        `}
+                        <button class="btn-del" onclick="deleteItem('${accId}', '${type}', ${item.id})">✕</button>
+                    </div>
+                </div>
+                ${presetsHtml}
+            </div>
+            `;
+        }
+
+        function handleArrowNav(event, prevFieldId, nextFieldId, accId, type, id) {
+            const parentCard = event.target.closest('.timer-card');
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                startTimer(accId, type, id);
+                return;
+            }
+            if (event.key === 'ArrowLeft' && prevFieldId && parentCard) {
+                event.preventDefault();
+                const prevInput = parentCard.querySelector('#' + prevFieldId);
+                if (prevInput) { prevInput.focus(); prevInput.select(); }
+            }
+            if (event.key === 'ArrowRight' && nextFieldId && parentCard) {
+                event.preventDefault();
+                const nextInput = parentCard.querySelector('#' + nextFieldId);
+                if (nextInput) { nextInput.focus(); nextInput.select(); }
+            }
+        }
+
+        function autoJumpOnNumber(event, currentInput, nextFieldId) {
+            const isNumberKey = (event.key >= '0' && event.key <= '9');
+            if (isNumberKey && currentInput.value.length >= 2 && nextFieldId) {
+                const parentCard = currentInput.closest('.timer-card');
+                if (parentCard) {
+                    const nextInput = parentCard.querySelector('#' + nextFieldId);
+                    if (nextInput) { nextInput.focus(); nextInput.select(); }
+                }
+            }
+        }
+
+        function formatPad(num) { return String(num).padStart(2, '0'); }
+        function formatTimeHM(date) { return !date ? '--:--' : `${formatPad(date.getHours())}:${formatPad(date.getMinutes())}`; }
+        function formatDateTime(date) { return !date ? '--:--' : `${date.getMonth() + 1}/${date.getDate()} ${formatTimeHM(date)}`; }
+
+        function addItem(accId, type) {
+            let defD = 0, defH = 0, defM = 18;
+            if (type === 'tech') { defH = 2; defM = 30; }
+            else if (type === 'master') { defH = 0; defM = 10; }
+            else if (type === 'sunlight') { defH = 8; defM = 0; }
+
+            store[accId][type].push({ id: ++nextId, d: defD, h: defH, m: defM, endTime: null });
+            renderGrid();
+            saveState();
+        }
+
+        function deleteItem(accId, type, id) {
+            store[accId][type] = store[accId][type].filter(item => item.id !== id);
+            renderGrid();
+            recalculateJobs();
+            saveState();
+        }
+
+        function startTimer(accId, type, id) {
+            initAudioContext();
+            const cardEl = document.getElementById(`card_${id}`);
+            const item = store[accId][type].find(i => i.id === id);
+
+            if (cardEl && item) {
+                const inputD = cardEl.querySelector('.input-d');
+                const inputH = cardEl.querySelector('.input-h');
+                const inputM = cardEl.querySelector('.input-m');
+
+                item.d = Math.max(0, inputD ? (parseInt(inputD.value, 10) || 0) : 0);
+                item.h = Math.max(0, inputH ? (parseInt(inputH.value, 10) || 0) : 0);
+                item.m = Math.max(0, inputM ? (parseInt(inputM.value, 10) || 0) : 0);
+
+                const now = new Date();
+                const totalSeconds = (item.d * 86400) + (item.h * 3600) + (item.m * 60);
+                item.endTime = new Date(now.getTime() + totalSeconds * 1000);
+
+                renderGrid();
+                recalculateJobs();
+                saveState();
+            }
+        }
+
+        function stopTimer(accId, type, id) {
+            const item = store[accId][type].find(i => i.id === id);
+            if (item) {
+                item.endTime = null;
+                renderGrid();
+                recalculateJobs();
+                saveState();
+            }
+        }
+
+        function updateTimers() {
+            const now = new Date();
+            const typeNames = {
+                soldiers: '士兵訓練所',
+                tech: '科技研究',
+                master: '📖 大師技能學習',
+                sunlight: '☀️ 沐光之旅'
+            };
+
+            accounts.forEach(acc => {
+                const displayName = getDisplayAccountName(acc.id);
+                ['soldiers', 'tech', 'master', 'sunlight'].forEach(type => {
+                    if (type === 'sunlight' && !showSunlightEvent) return;
+
+                    const typeName = typeNames[type];
+                    (store[acc.id][type] || []).forEach((item, idx) => {
+                        if (item.endTime) {
+                            const diff = Math.floor((item.endTime - now) / 1000);
+                            const disp = document.getElementById(`disp_${item.id}`);
+                            
+                            if (diff <= 0) {
+                                if (disp) disp.innerText = "00:00 (完結)";
+                                const eventKey = `task_${item.id}_${item.endTime.getTime()}`;
+                                triggerAlarmAlert(eventKey, `[${displayName}] ${typeName} #${idx + 1} 已經完成！`);
+                            } else if (disp) {
+                                const d = Math.floor(diff / 86400);
+                                const h = Math.floor((diff % 86400) / 3600);
+                                const m = Math.floor((diff % 3600) / 60);
+                                const s = diff % 60;
+                                disp.innerText = (d > 0 ? `${d}天 ` : '') + `${formatPad(h)}:${formatPad(m)}:${formatPad(s)}`;
+                            }
+                        }
+                    });
+                });
+
+                if (store[acc.id].soldierJobDate && now >= store[acc.id].soldierJobDate) {
+                    const jobKey = `job_s_${acc.id}_${store[acc.id].soldierJobDate.getTime()}`;
+                    triggerAlarmAlert(jobKey, `[${displayName}] ⚔️ 士兵職位預約時間 (${store[acc.id].soldierJobTime}) 到了！`);
+                }
+
+                if (store[acc.id].techJobDate && now >= store[acc.id].techJobDate) {
+                    const jobKey = `job_t_${acc.id}_${store[acc.id].techJobDate.getTime()}`;
+                    triggerAlarmAlert(jobKey, `[${displayName}] 🔬 科技職位預約時間 (${store[acc.id].techJobTime}) 到了！`);
+                }
+            });
+
+            checkExpiredJobsAndAutoUpdate();
+
+            if (document.getElementById('timelineView').style.display === 'block') {
+                updateTimeline();
+            }
+        }
+
+        function checkExpiredJobsAndAutoUpdate() {
+            const now = new Date();
+            let needUpdate = false;
+
+            accounts.forEach(acc => {
+                ['soldierJobDate', 'techJobDate'].forEach(dateKey => {
+                    if (store[acc.id][dateKey]) {
+                        if (now - store[acc.id][dateKey] > 5 * 60 * 1000) {
+                            const timeKey = dateKey.replace('Date', 'Time');
+                            store[acc.id][timeKey] = '';
+                            store[acc.id][dateKey] = null;
+                            needUpdate = true;
+                        }
+                    }
+                });
+            });
+
+            if (needUpdate) {
+                recalculateJobs();
+                saveState();
+            }
+        }
+
+        function recalculateJobs() {
+            const now = new Date();
+
+            accounts.forEach(acc => {
+                let futureSoldierEnds = (store[acc.id].soldiers || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
+                if (futureSoldierEnds.length > 0) {
+                    futureSoldierEnds.sort((a, b) => a - b);
+                    const slotObj = calcRecommendedSlot(futureSoldierEnds[0]);
+                    store[acc.id].soldierJobTime = slotObj.timeStr;
+                    store[acc.id].soldierJobDate = slotObj.dateObj;
+                } else {
+                    store[acc.id].soldierJobTime = '';
+                    store[acc.id].soldierJobDate = null;
+                }
+
+                let futureTechEnds = (store[acc.id].tech || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
+                if (futureTechEnds.length > 0) {
+                    futureTechEnds.sort((a, b) => a - b);
+                    const slotObj = calcRecommendedSlot(futureTechEnds[0]);
+                    store[acc.id].techJobTime = slotObj.timeStr;
+                    store[acc.id].techJobDate = slotObj.dateObj;
+                } else {
+                    store[acc.id].techJobTime = '';
+                    store[acc.id].techJobDate = null;
+                }
+
+                const sSelect = document.getElementById(`${acc.id}_soldier_job_select`);
+                if (sSelect) sSelect.value = store[acc.id].soldierJobTime;
+
+                const tSelect = document.getElementById(`${acc.id}_tech_job_select`);
+                if (tSelect) tSelect.value = store[acc.id].techJobTime;
+            });
+
+            updateTimeline();
+        }
+
+        function calcRecommendedSlot(endTime) {
+            const now = new Date();
+            let slotDate = new Date(endTime);
+            let h = slotDate.getHours();
+            let m = slotDate.getMinutes();
+            let slotH = h;
+            let slotM = 0;
+
+            if (m >= 50) {
+                slotH = (h + 1) % 24;
+                slotM = 0;
+                if (slotH === 0) slotDate.setDate(slotDate.getDate() + 1);
+            } else if (m >= 20) {
+                slotM = 30;
+            } else {
+                slotM = 0;
+            }
+
+            slotDate.setHours(slotH, slotM, 0, 0);
+
+            while (slotDate <= now) {
+                slotDate = new Date(slotDate.getTime() + 30 * 60 * 1000);
+            }
+
+            const finalH = slotDate.getHours();
+            const finalM = slotDate.getMinutes();
+
+            return { timeStr: `${formatPad(finalH)}:${formatPad(finalM)}`, dateObj: slotDate };
+        }
+
+        function shiftJobTime(accId, type) {
+            const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+            const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+
+            let curDate = store[accId][dateKey] || new Date();
+            let newDate = new Date(curDate.getTime() + 30 * 60 * 1000);
+
+            store[accId][dateKey] = newDate;
+            store[accId][timeKey] = formatTimeHM(newDate);
+
+            const selectId = `${accId}_${type}_job_select`;
+            document.getElementById(selectId).value = store[accId][timeKey];
+            updateTimeline();
+            saveState();
+        }
+
+        function manualJobChange(accId, type, val) {
+            const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+            const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+
+            store[accId][timeKey] = val;
+            if (val) {
+                const [h, m] = val.split(':').map(Number);
+                let d = new Date();
+                d.setHours(h, m, 0, 0);
+                if (d < new Date()) d.setDate(d.getDate() + 1);
+                store[accId][dateKey] = d;
+            } else {
+                store[accId][dateKey] = null;
+            }
+            updateTimeline();
+            saveState();
+        }
+
+        function generateJobOptions(selectedVal) {
+            let html = '<option value="">--無預約--</option>';
+            for (let h = 0; h < 24; h++) {
+                for (let m of [0, 30]) {
+                    const timeStr = `${formatPad(h)}:${formatPad(m)}`;
+                    const isSel = timeStr === selectedVal ? 'selected' : '';
+                    html += `<option value="${timeStr}" ${isSel}>${timeStr}</option>`;
+                }
+            }
+            return html;
+        }
+
+        function updateTimeline() {
+            const tasksContainer = document.getElementById('timeline_tasks');
+            const soldierJobsContainer = document.getElementById('timeline_soldier_jobs');
+            const techJobsContainer = document.getElementById('timeline_tech_jobs');
+
+            let tasksList = [];
+            let soldierJobsList = [];
+            let techJobsList = [];
+
+            accounts.forEach(acc => {
+                const displayName = getDisplayAccountName(acc.id);
+                (store[acc.id].soldiers || []).forEach((item, idx) => {
+                    if (item.endTime) {
+                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `士兵 #${idx + 1}`, tagClass: 'tag-soldier' });
+                    }
+                });
+                (store[acc.id].tech || []).forEach((item, idx) => {
+                    if (item.endTime) {
+                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `科技 #${idx + 1}`, tagClass: 'tag-tech' });
+                    }
+                });
+                (store[acc.id].master || []).forEach((item, idx) => {
+                    if (item.endTime) {
+                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `📖 大師技能 #${idx + 1}`, tagClass: 'tag-master' });
+                    }
+                });
+                if (showSunlightEvent) {
+                    (store[acc.id].sunlight || []).forEach((item, idx) => {
+                        if (item.endTime) {
+                            tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `☀️ 沐光之旅 #${idx + 1}`, tagClass: 'tag-sunlight' });
+                        }
+                    });
+                }
+
+                if (store[acc.id].soldierJobDate) {
+                    soldierJobsList.push({ acc: displayName, accId: acc.id, time: store[acc.id].soldierJobDate, timeStr: formatDateTime(store[acc.id].soldierJobDate), label: '⚔️ 士兵職位', tagClass: 'tag-job-s' });
+                }
+                if (store[acc.id].techJobDate) {
+                    techJobsList.push({ acc: displayName, accId: acc.id, time: store[acc.id].techJobDate, timeStr: formatDateTime(store[acc.id].techJobDate), label: '🔬 科技職位', tagClass: 'tag-job-t' });
+                }
+            });
+
+            tasksList.sort((a, b) => a.time - b.time);
+            soldierJobsList.sort((a, b) => a.time - b.time);
+            techJobsList.sort((a, b) => a.time - b.time);
+
+            renderTimelineColumn(tasksContainer, tasksList, "無進行中計時");
+            renderTimelineColumn(soldierJobsContainer, soldierJobsList, "無士兵職位預約");
+            renderTimelineColumn(techJobsContainer, techJobsList, "無科技職位預約");
+        }
+
+        function renderTimelineColumn(container, list, emptyText) {
+            if (!container) return;
+            if (list.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:15px; font-size:13px;">${emptyText}</div>`;
+                return;
+            }
+            container.innerHTML = list.map(item => `
+                <div class="timeline-item ${item.accId}">
+                    <div>
+                        <span style="font-size: 15px; margin-right: 4px;">[${item.acc}]</span>
+                        <span class="tag ${item.tagClass}">${item.label}</span>
+                    </div>
+                    <div>${item.timeStr}</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleView() {
+            const grid = document.getElementById('gridView');
+            const timeline = document.getElementById('timelineView');
+            const btn = document.getElementById('toggleBtn');
+
+            if (grid.style.display === 'none') {
+                grid.style.display = 'grid';
+                timeline.style.display = 'none';
+                btn.innerText = '切換時間線';
+            } else {
+                grid.style.display = 'none';
+                timeline.style.display = 'block';
+                btn.innerText = '切換 3 欄視圖';
+                updateTimeline();
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
