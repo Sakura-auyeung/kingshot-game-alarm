@@ -306,7 +306,7 @@
             position: absolute;
             top: 46px;
             right: 0;
-            width: 410px;
+            width: 420px;
             max-width: 92vw;
             background: #FFFDF8;
             border: 2.5px solid #F2DFC4;
@@ -464,7 +464,7 @@
 
         /* 待辦清單內的「新一輪快捷輸入列」 */
         .todo-renew-box {
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.88);
             border: 1px dashed #D8C4AE;
             border-radius: 10px;
             padding: 6px 8px;
@@ -477,7 +477,7 @@
         .todo-renew-row {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
             flex-wrap: wrap;
             font-size: 11.5px;
         }
@@ -492,6 +492,16 @@
             font-size: 12px;
             font-weight: 700;
             padding: 0;
+        }
+
+        .todo-time-select {
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1.5px solid #DFCBB5;
+            background: #FFFDF9;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--cocoa);
         }
 
         .btn-todo-start {
@@ -768,7 +778,7 @@
         }
         .btn-add:hover { transform: scale(1.15); }
 
-        /* 方案 B：四張計時卡片左側統一預留 30px 欄寬（小花在左側），左邊緣筆直對齊同一條垂直線 */
+        /* 四張計時卡片左側統一預留 30px 欄寬（小花在左側），左邊緣筆直對齊同一條垂直線 */
         .timer-item-row {
             display: flex;
             align-items: center;
@@ -1091,7 +1101,7 @@
 
         /* 無捲軸自然展開區，左側留足空間給突出去的超大熊頭徽章貼紙 */
         .timeline-list-body {
-            padding-left: 16px;
+            padding-left: 18px;
             overflow: visible;
         }
 
@@ -1110,7 +1120,7 @@
             background-size: auto 5px;
         }
 
-        /* 時間線項目：超大無框熊頭徽章贴纸（上下左右霸氣突出並遮住左邊框，完全不撐高行高） */
+        /* 時間線項目：超大無框熊頭徽章貼紙 */
         .timeline-item {
             position: relative;
             display: flex;
@@ -1138,7 +1148,6 @@
             flex: 1;
         }
 
-        /* 超大熊頭貼紙：圖片本身 66px 並帶柔和外發光白邊，直接遮住左邊框且上下微微超出橫條 */
         .tl-bear-sticker {
             position: absolute;
             left: -24px;
@@ -1193,12 +1202,13 @@
             background: #F3E4CE;
         }
 
-        /* 後面頁：職位預約設定與防撞管理卡片（熊頭同樣大尺寸徽章式遮住左邊框） */
+        /* 後面頁：職位預約管理卡片 — 熊頭向上移並放大遮角 */
         .job-manage-card {
             position: relative;
             border-radius: 16px;
-            padding: 12px 14px 12px 16px;
-            margin-bottom: 13px;
+            padding: 13px 14px 12px 16px;
+            margin-top: 12px;
+            margin-bottom: 14px;
             border-left: 6px solid;
             display: flex;
             flex-direction: column;
@@ -1215,19 +1225,19 @@
             align-items: center;
             font-weight: 700;
             font-size: 15.5px;
-            padding-left: 28px;
+            padding-left: 40px;
         }
 
         .job-bear-sticker {
             position: absolute;
-            left: -24px;
-            top: -6px;
-            width: 68px;
-            height: 68px;
+            left: -30px;
+            top: -18px;
+            width: 82px;
+            height: 82px;
             object-fit: contain;
             pointer-events: none;
             z-index: 6;
-            filter: drop-shadow(0 0 1.5px #FFF) drop-shadow(0 2px 3px rgba(92, 61, 46, 0.22));
+            filter: drop-shadow(0 0 2px #FFF) drop-shadow(0 3px 4px rgba(92, 61, 46, 0.25));
         }
 
         .job-manage-controls {
@@ -1327,7 +1337,7 @@
     <!-- 頁面最上方雙色黃波浪花邊 -->
     <div class="header-frill"></div>
 
-    <!-- 日本官網同款熱鬆餅 SHAKI!! 開場載入動畫（真實載入連動） -->
+    <!-- 日本官網同款熱鬆餅 SHAKI!! 開場載入動畫 -->
     <div class="loading-splash" id="loadingSplash">
         <div class="loading-stage">
             <img class="loading-frame frame-1" src="./img_op_1.png" alt="">
@@ -1464,7 +1474,8 @@
         };
 
         let showSunlightEvent = true;
-        let showAllTimelineDays = false; // 預設只顯示今天和明天，按「更多」才展開後面日期
+        let showAllTimelineDays = false;
+        let latestStateUpdatedAt = 0;
 
         let store = {
             h: { 
@@ -1512,14 +1523,14 @@
 
             setTimeout(() => {
                 hideSplashScreen();
-            }, 2500);
+            }, 2200);
         }
 
         function notifyDataReadyForSplash() {
             if (isFirebaseFirstLoaded) return;
             isFirebaseFirstLoaded = true;
             const elapsed = Date.now() - splashStartTime;
-            const minVisibleMs = 650;
+            const minVisibleMs = 600;
             const remain = Math.max(0, minVisibleMs - elapsed);
             setTimeout(hideSplashScreen, remain);
         }
@@ -1534,7 +1545,7 @@
             }
         }
 
-        // --- 全自動標準時間偏差校正 ---
+        // --- 安全時間基準 ---
         let serverTimeOffsetMs = 0;
         function getAccurateNow() {
             return new Date(Date.now() + serverTimeOffsetMs);
@@ -1543,26 +1554,16 @@
         function setupAutoTimeSync() {
             db.ref(".info/serverTimeOffset").on("value", (snap) => {
                 const offset = snap.val();
-                if (typeof offset === "number") {
+                // 僅接受合理偏移（±12小時內），避免異常數值令計時突變
+                if (typeof offset === "number" && Math.abs(offset) < 12 * 3600 * 1000) {
                     serverTimeOffsetMs = offset;
                     renderGrid();
                     updateTimeline(true);
                 }
             });
-
-            fetch("https://worldtimeapi.org/api/timezone/Asia/Hong_Kong", { cache: "no-store" })
-                .then(res => res.ok ? res.json() : null)
-                .then(data => {
-                    if (data && data.unixtime && serverTimeOffsetMs === 0) {
-                        serverTimeOffsetMs = (data.unixtime * 1000) - Date.now();
-                        renderGrid();
-                        updateTimeline(true);
-                    }
-                })
-                .catch(() => {});
         }
 
-        // --- YouTube 同款右上角小鈴鐺 To-Do List 待辦清單 ---
+        // --- 右上角小鈴鐺 To-Do List 待辦清單 ---
         let notifHistory = [];
         let triggeredEventKeys = new Set();
         let nextId = 300;
@@ -1571,7 +1572,6 @@
         let titleBlinkInterval = null;
         let activeSystemNotifications = [];
         let isInitialLoadDone = false;
-        let hasPrunedInitialDrafts = false;
 
         function loadNotifHistory() {
             try {
@@ -1696,11 +1696,15 @@
                                 `;
                             } else if (item.category === 'job_soldier' || item.category === 'job_tech') {
                                 const jType = item.category === 'job_soldier' ? 'soldier' : 'tech';
+                                const timeKey = jType === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+                                const currentJobTime = store[accId] ? (store[accId][timeKey] || '') : '';
                                 renewControlHtml = `
                                     <div class="todo-renew-box">
                                         <div class="todo-renew-row">
-                                            <span style="font-weight:700;">職位處理:</span>
-                                            <button class="btn-todo-preset" onclick="shiftJobFromTodo('${safeId}', '${accId}', '${jType}')">延後 +30分</button>
+                                            <span style="font-weight:700;">改選時間:</span>
+                                            <select class="todo-time-select" onchange="selectJobTimeFromTodo('${safeId}', '${accId}', '${jType}', this.value)">
+                                                ${generateJobOptions(currentJobTime, '選擇新時間')}
+                                            </select>
                                             <button class="btn-todo-start" onclick="confirmJobFromTodo('${safeId}', '${accId}', '${jType}')">✅ 已領職位並完成</button>
                                         </div>
                                     </div>
@@ -1781,8 +1785,9 @@
             renderBellUI();
         }
 
-        function shiftJobFromTodo(notifId, accId, jType) {
-            shiftJobTime(accId, jType);
+        function selectJobTimeFromTodo(notifId, accId, jType, newVal) {
+            if (!newVal) return;
+            manualJobChange(accId, jType, newVal);
             const todo = notifHistory.find(n => n.id === notifId);
             if (todo) todo.unread = false;
             saveNotifHistory();
@@ -1988,33 +1993,25 @@
             if (!p || !p.queryName) return false;
 
             const targetUrl = `https://kingdom-1177.vercel.app/api/governor-profile?name=${encodeURIComponent(p.queryName)}&alliance=${encodeURIComponent(p.queryAlliance || '')}`;
-            const candidateUrls = [
-                targetUrl,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-                `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
-            ];
-
-            for (const url of candidateUrls) {
-                try {
-                    const res = await fetch(url, { cache: 'no-store' });
-                    if (!res.ok) continue;
-                    const data = await res.json();
-                    if (data && data.ok && data.governor) {
-                        const gov = data.governor;
-                        profiles[accId] = {
-                            ...profiles[accId],
-                            name: gov.name || p.queryName,
-                            alliance: gov.alliance || p.queryAlliance,
-                            levelLabel: gov.levelLabel || (gov.tg ? `TG${gov.tg}` : `Lv.${gov.townCenter || ''}`),
-                            power: gov.power || 0,
-                            powerRank: gov.powerRank || null,
-                            avatar: gov.avatar || profiles[accId].avatar,
-                            lastFetched: new Date().toISOString()
-                        };
-                        return true;
-                    }
-                } catch (e) {}
-            }
+            try {
+                const res = await fetch(targetUrl, { cache: 'no-store' });
+                if (!res.ok) return false;
+                const data = await res.json();
+                if (data && data.ok && data.governor) {
+                    const gov = data.governor;
+                    profiles[accId] = {
+                        ...profiles[accId],
+                        name: gov.name || p.queryName,
+                        alliance: gov.alliance || p.queryAlliance,
+                        levelLabel: gov.levelLabel || (gov.tg ? `TG${gov.tg}` : `Lv.${gov.townCenter || ''}`),
+                        power: gov.power || 0,
+                        powerRank: gov.powerRank || null,
+                        avatar: gov.avatar || profiles[accId].avatar,
+                        lastFetched: new Date().toISOString()
+                    };
+                    return true;
+                }
+            } catch (e) {}
             return false;
         }
 
@@ -2085,8 +2082,6 @@
                     localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
                     renderGrid();
                     updateTimeline(true);
-                } else {
-                    saveProfiles();
                 }
             });
         }
@@ -2102,24 +2097,11 @@
             }
         }
 
-        function pruneUnstartedDrafts() {
-            let changed = false;
+        // 只清理未開始草稿，絕不改動進行中計時
+        function pruneUnstartedDraftsOnly() {
             accounts.forEach(acc => {
-                ['soldiers', 'tech', 'master', 'sunlight'].forEach(type => {
+                ['soldiers', 'sunlight'].forEach(type => {
                     const list = store[acc.id][type] || [];
-
-                    if (type === 'tech' || type === 'master') {
-                        if (list.length === 0) {
-                            store[acc.id][type] = [{ id: ++nextId, d: 0, h: 0, m: type === 'master' ? 10 : 0, endTime: null }];
-                            changed = true;
-                        } else if (list.length > 1) {
-                            const activeOne = list.find(i => i.endTime !== null) || list[0];
-                            store[acc.id][type] = [activeOne];
-                            changed = true;
-                        }
-                        return;
-                    }
-
                     const running = list.filter(i => i.endTime !== null);
                     const unstarted = list.filter(i => i.endTime === null);
 
@@ -2131,16 +2113,13 @@
                             firstDraft.m = 0;
                         }
                         store[acc.id][type] = [...running, firstDraft];
-                        changed = true;
                     } else if (unstarted.length === 0 && running.length === 0) {
                         let defD = 0, defH = 0, defM = 0;
                         if (type === 'sunlight') defH = 8;
                         store[acc.id][type] = [{ id: ++nextId, d: defD, h: defH, m: defM, endTime: null }];
-                        changed = true;
                     }
                 });
             });
-            return changed;
         }
 
         function init() {
@@ -2149,7 +2128,7 @@
             updateNotifBadgeUI();
             loadNotifHistory();
             loadLocalBackup();
-            pruneUnstartedDrafts();
+            pruneUnstartedDraftsOnly();
             loadLocalProfiles();
             updateSunlightBtnUI();
             renderGrid();
@@ -2168,21 +2147,16 @@
                 badge.className = "sync-badge connected";
 
                 if (cloudData && cloudData.store) {
-                    applySerializedState(cloudData);
-                    if (!hasPrunedInitialDrafts) {
-                        hasPrunedInitialDrafts = true;
-                        if (pruneUnstartedDrafts()) {
-                            saveState();
-                        }
-                    } else {
-                        pruneUnstartedDrafts();
+                    const incomingUpdatedAt = Number(cloudData.updatedAt) || 0;
+                    // 若本機有更新的狀態且尚未寫入完成，避免被較舊雲端快照倒退覆蓋
+                    if (!isInitialLoadDone || incomingUpdatedAt >= latestStateUpdatedAt) {
+                        applySerializedState(cloudData);
+                        pruneUnstartedDraftsOnly();
+                        saveLocalBackup();
+                        updateSunlightBtnUI();
+                        renderGrid();
+                        updateTimeline(true);
                     }
-                    saveLocalBackup();
-                    updateSunlightBtnUI();
-                    renderGrid();
-                    updateTimeline(true);
-                } else if (!isInitialLoadDone) {
-                    saveState();
                 }
                 isInitialLoadDone = true;
                 notifyDataReadyForSplash();
@@ -2194,7 +2168,7 @@
             });
         }
 
-        function serializeState() {
+        function serializeState(timestampMs = Date.now()) {
             const serializedStore = {};
             accounts.forEach(acc => {
                 const accData = store[acc.id];
@@ -2219,7 +2193,7 @@
                 nextId: nextId,
                 showSunlightEvent: showSunlightEvent,
                 triggered: Array.from(triggeredEventKeys),
-                updatedAt: Date.now()
+                updatedAt: timestampMs
             };
         }
 
@@ -2248,10 +2222,13 @@
             if (parsed.nextId) nextId = parsed.nextId;
             if (typeof parsed.showSunlightEvent === 'boolean') showSunlightEvent = parsed.showSunlightEvent;
             if (parsed.triggered) triggeredEventKeys = new Set(Object.values(parsed.triggered));
+            if (parsed.updatedAt) latestStateUpdatedAt = Math.max(latestStateUpdatedAt, Number(parsed.updatedAt) || 0);
         }
 
         function saveState() {
-            const payload = serializeState();
+            const nowStamp = Date.now();
+            latestStateUpdatedAt = nowStamp;
+            const payload = serializeState(nowStamp);
             saveLocalBackup(payload);
 
             const badge = document.getElementById('syncBadge');
@@ -2269,7 +2246,7 @@
 
         function saveLocalBackup(payloadObj) {
             try {
-                const dataToSave = payloadObj || serializeState();
+                const dataToSave = payloadObj || serializeState(latestStateUpdatedAt || Date.now());
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
             } catch (e) {}
         }
@@ -2344,7 +2321,7 @@
         function triggerAlarmAlert(eventKey, message, targetTimestampMs, meta = {}) {
             if (triggeredEventKeys.has(eventKey)) return;
             triggeredEventKeys.add(eventKey);
-            saveState();
+            saveLocalBackup();
 
             const nowMs = getAccurateNow().getTime();
             const actualTargetMs = targetTimestampMs || nowMs;
@@ -2826,16 +2803,17 @@
                 if (tDistEl) tDistEl.innerText = getJobStatusMeta(acc.id, 'tech').distText;
             });
 
-            checkExpiredJobsAndAutoUpdate();
+            checkExpiredJobsQuietly();
 
             if (document.getElementById('timelineView').style.display === 'block') {
                 updateTimelineDynamicTextsOnly();
             }
         }
 
-        function checkExpiredJobsAndAutoUpdate() {
+        // 只清理逾時超過 10 分鐘的個別職位預約，不會重設其他計時或覆蓋雲端
+        function checkExpiredJobsQuietly() {
             const now = getAccurateNow();
-            let needUpdate = false;
+            let changed = false;
 
             accounts.forEach(acc => {
                 ['soldierJobDate', 'techJobDate'].forEach(dateKey => {
@@ -2848,17 +2826,16 @@
                             store[acc.id][dateKey] = null;
                             store[acc.id][confKey] = false;
                             store[acc.id][manualKey] = false;
-                            needUpdate = true;
+                            changed = true;
                         }
                     }
                 });
             });
 
-            if (needUpdate) {
-                recalculateJobs();
+            if (changed) {
                 renderGrid();
                 updateTimeline(true);
-                saveState();
+                saveLocalBackup();
             }
         }
 
@@ -2935,7 +2912,6 @@
             return { timeStr: `${formatPad(finalH)}:${formatPad(finalM)}`, dateObj: slotDate };
         }
 
-        // 只修改指定 accId 的時間，絕不影響其他人的 Confirmed 狀態
         function shiftJobTime(accId, type) {
             const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
             const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
@@ -2992,8 +2968,8 @@
             saveState();
         }
 
-        function generateJobOptions(selectedVal) {
-            let html = '<option value="">--無預約--</option>';
+        function generateJobOptions(selectedVal, emptyLabel = '--無預約--') {
+            let html = `<option value="">${emptyLabel}</option>`;
             for (let h = 0; h < 24; h++) {
                 for (let m of [0, 30]) {
                     const timeStr = `${formatPad(h)}:${formatPad(m)}`;
@@ -3070,7 +3046,6 @@
                 if (tasksList.length === 0) {
                     tasksContainer.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:18px; font-size:13px;">無進行中計時</div>`;
                 } else {
-                    // 預設只顯示今天 (diffDays <= 0) 和明天 (diffDays === 1)
                     const todayTomorrowTasks = tasksList.filter(t => {
                         const diff = getDayDiffFromToday(t.time);
                         return diff === null || diff <= 1;
