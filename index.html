@@ -742,21 +742,21 @@
         .tag-job-s { background: #EB5A87; }
         .tag-job-t { background: #5299E8; }
 
-        /* 頁尾單獨 1 個大雲朵 (bg_cloud_pc.png) */
-        .footer-clouds {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 82px;
-            background-image: url('./bg_cloud_pc.png');
-            background-repeat: no-repeat;
-            background-position: bottom center;
-            background-size: auto 82px;
-            pointer-events: none;
-            z-index: 1;
-            opacity: 0.94;
-        }
+/* 頁尾單獨 1 個大雲朵 (bg_cloud_pc.png) */
+.footer-clouds {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 180px; /* 先把高度放寬，避免雲朵上半部被裁切 */
+    background-image: url('./bg_cloud_pc.png');
+    background-repeat: no-repeat;
+    background-position: bottom center;
+    background-size: contain; /* 完整顯示整張圖片，不會被切掉 */
+    pointer-events: none;
+    z-index: 6; /* 調到卡片上方（原本是 1，被中間欄位擋住了） */
+    opacity: 0.95;
+}
 
         /* 網頁內鬧鐘彈窗遮罩 */
         .alarm-modal-overlay {
