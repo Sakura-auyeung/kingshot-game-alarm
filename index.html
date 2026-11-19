@@ -149,7 +149,7 @@
             flex-wrap: wrap;
             gap: 10px;
             position: relative;
-            z-index: 5;
+            z-index: 20;
         }
 
         .title-group {
@@ -218,8 +218,10 @@
 
         .header-btns {
             display: flex;
+            align-items: center;
             gap: 8px;
             flex-wrap: wrap;
+            position: relative;
         }
 
         /* 糖果膠囊按鈕 */
@@ -255,6 +257,160 @@
         .btn-event-toggle { background: #B8A99A; }
         .btn-event-toggle.active { background: linear-gradient(135deg, #FF85A1, #EB5A87); }
         .btn-toggle { background: linear-gradient(135deg, #5AA9FF, #3B88E8); }
+
+        /* YouTube 同款右上角小鈴鐺通知中心按鈕與下拉選單 */
+        .bell-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+
+        .btn-bell {
+            background: #FFF8EC;
+            border: 2px solid #F2DFC4;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 3px 8px rgba(92, 61, 46, 0.1);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .btn-bell:hover { transform: scale(1.08); }
+        .btn-bell.ringing {
+            animation: ring 0.7s infinite;
+            background: #FFF0F4;
+            border-color: #FF85A1;
+        }
+
+        .bell-count-badge {
+            position: absolute;
+            top: -4px;
+            right: -5px;
+            min-width: 19px;
+            height: 19px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: #E63946;
+            color: #FFF;
+            font-size: 11px;
+            font-weight: 800;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #FFF;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .notif-dropdown {
+            display: none;
+            position: absolute;
+            top: 46px;
+            right: 0;
+            width: 340px;
+            max-width: 90vw;
+            background: #FFFDF8;
+            border: 2.5px solid #F2DFC4;
+            border-radius: 20px;
+            box-shadow: 0 14px 32px rgba(92, 61, 46, 0.22);
+            z-index: 9999;
+            overflow: hidden;
+            animation: fadeIn 0.15s ease;
+        }
+        .notif-dropdown.open {
+            display: block;
+        }
+
+        .notif-dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 11px 15px;
+            background: #FAF2E6;
+            border-bottom: 1.5px dashed #E6D5BE;
+            font-family: var(--font-title);
+            font-size: 17px;
+            color: var(--cocoa);
+        }
+
+        .notif-header-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-notif-mini {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid #DECBB7;
+            background: #FFF;
+            color: var(--cocoa);
+            cursor: pointer;
+        }
+        .btn-notif-mini:hover { background: #FFF0F4; border-color: #F8B4C8; }
+
+        .notif-dropdown-list {
+            max-height: 310px;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .notif-item {
+            padding: 9px 11px;
+            border-radius: 12px;
+            margin-bottom: 6px;
+            background: #FFF;
+            border: 1px solid #EFE4D6;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            transition: background 0.15s;
+        }
+        .notif-item.unread {
+            background: #FFF4F7;
+            border-color: #F8B4C8;
+            border-left: 4px solid #EB5A87;
+        }
+        .notif-item-msg {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--cocoa);
+            line-height: 1.35;
+        }
+        .notif-item-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--cocoa-light);
+        }
+
+        /* 螢光筆 size 迷你日期膠囊（超緊湊，不撐高行距） */
+        .day-hl {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 10.5px;
+            font-weight: 800;
+            line-height: 1.1;
+            vertical-align: baseline;
+            margin-right: 2px;
+            letter-spacing: 0.3px;
+        }
+        .day-hl.today {
+            background-color: #9E2A2B; /* 棕紅 / 深紅白字 */
+            color: #FFFFFF;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+        }
+        .day-hl.tomorrow {
+            background-color: #1D4E89; /* 深藍白字 */
+            color: #FFFFFF;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+        }
 
         /* 3欄手賬卡片視圖 */
         .grid-view {
@@ -544,7 +700,7 @@
         .timer-info {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
         }
 
         .timer-display {
@@ -558,8 +714,9 @@
         }
 
         .timer-sub {
-            font-size: 11px;
-            opacity: 0.94;
+            font-size: 11.5px;
+            opacity: 0.96;
+            line-height: 1.25;
         }
 
         .timer-inputs {
@@ -636,63 +793,109 @@
             background: rgba(255, 255, 255, 0.38);
         }
 
-        /* 職位預約白卡：標題維持原本大小（18px），放大框內文字與下拉選單 */
+        /* 首頁職位預約「狀態顯示看板」（設定集中在後面時間線頁面） */
         .job-section {
             background: rgba(255, 255, 255, 0.96);
             border-radius: 18px;
-            padding: 13px 14px 15px 14px;
+            padding: 13px 14px 14px 14px;
             display: flex;
             flex-direction: column;
-            gap: 11px;
+            gap: 10px;
             border: 2px solid rgba(92, 61, 46, 0.08);
             box-shadow: 0 4px 10px rgba(92, 61, 46, 0.05);
             position: relative;
             z-index: 2;
         }
 
+        .job-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1.5px dashed #E6D7C3;
+            padding-bottom: 5px;
+        }
+
         .job-section-title {
             font-family: var(--font-title);
             font-weight: normal;
             font-size: 18px;
-            border-bottom: 1.5px dashed #E6D7C3;
-            padding-bottom: 5px;
             color: var(--cocoa);
         }
 
-        .job-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 16.5px;
+        .btn-goto-timeline {
+            font-size: 11.5px;
             font-weight: 700;
-            color: var(--cocoa);
-            gap: 6px;
-        }
-
-        .btn-shift {
-            background: #FFA24C;
-            color: white;
-            border: none;
-            padding: 5px 11px;
+            padding: 3px 9px;
             border-radius: 999px;
-            font-size: 13.5px;
-            font-weight: 700;
+            border: 1px solid #DFCBB5;
+            background: #FAF3E8;
+            color: var(--cocoa);
             cursor: pointer;
-            margin-left: 4px;
+            transition: background 0.15s;
         }
-        .btn-shift:hover { background: #EB8931; }
+        .btn-goto-timeline:hover {
+            background: #F3E4CE;
+        }
 
-        select {
-            padding: 5px 11px;
-            border-radius: 999px;
-            border: 1.5px solid #DFCBB5;
+        .job-status-card {
             background: #FFFDF9;
-            font-size: 15px;
+            border: 1.5px solid #EFE4D4;
+            border-radius: 12px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .job-status-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14.5px;
             font-weight: 700;
             color: var(--cocoa);
         }
 
-        /* 打直獨立拆分欄位視圖 */
+        .job-status-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--cocoa-light);
+        }
+
+        .status-pill {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+        .status-pill.confirmed {
+            background: #E8F8EC;
+            color: #26733A;
+            border: 1px solid #A3DFB3;
+        }
+        .status-pill.pending {
+            background: #FFF4E0;
+            color: #B26200;
+            border: 1px solid #F7D774;
+        }
+        .status-pill.cooldown {
+            background: #FDECEA;
+            color: #A62626;
+            border: 1px solid #F5B7B1;
+        }
+        .status-pill.none {
+            background: #F3EFEA;
+            color: #8C7B6E;
+        }
+
+        .dist-text {
+            font-weight: 700;
+            color: #5C3D2E;
+        }
+
+        /* 打直獨立拆分欄位視圖（後面頁） */
         .timeline-view {
             display: none;
             max-width: 1240px;
@@ -705,6 +908,7 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 18px;
+            align-items: start;
         }
 
         .timeline-column {
@@ -713,31 +917,69 @@
             padding: 16px;
             border: 2.5px solid #F0DFC8;
             box-shadow: 0 6px 18px rgba(92, 61, 46, 0.07);
+            display: flex;
+            flex-direction: column;
         }
 
         .timeline-column h3 {
             font-family: var(--font-title);
             font-weight: normal;
             margin-top: 0;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             font-size: 19px;
             text-align: center;
             padding-bottom: 8px;
             border-bottom: 2px dashed #EFE2D0;
             color: var(--cocoa);
+            flex-shrink: 0;
+        }
+
+        /* 框內滾動區：避免過多項目將頁面無限拉長 */
+        .timeline-scroll-area {
+            max-height: 540px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .timeline-scroll-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        .timeline-scroll-area::-webkit-scrollbar-track {
+            background: #FAF4EB;
+            border-radius: 999px;
+        }
+        .timeline-scroll-area::-webkit-scrollbar-thumb {
+            background: #DFCBB5;
+            border-radius: 999px;
+        }
+
+        /* 不同日期之間的黃色手繪點點橫線分隔 (dot_yoko.png) */
+        .date-dot-divider {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 12px 0 10px 0;
+        }
+        .date-dot-line {
+            flex: 1;
+            height: 10px;
+            background-image: url('./dot_yoko.png');
+            background-repeat: repeat-x;
+            background-position: left center;
+            background-size: auto 10px;
         }
 
         .timeline-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 12px;
-            margin-bottom: 9px;
+            padding: 9px 11px;
+            margin-bottom: 8px;
             border-radius: 14px;
             border-left: 6px solid;
             font-weight: 600;
             font-size: 13.5px;
             color: var(--cocoa);
+            gap: 6px;
         }
 
         .timeline-item.h { background-color: var(--bg-h); border-color: var(--border-h); }
@@ -755,10 +997,96 @@
         .tag-tech { background: #7D83EB; }
         .tag-master { background: #5CD685; }
         .tag-sunlight { background: #FF6F61; }
-        .tag-job-s { background: #EB5A87; }
-        .tag-job-t { background: #5299E8; }
 
-        /* 頁尾單獨 1 個雲朵：貼在整個網頁最底部，夾在圓點背景(body)與卡片框(z-index:4)之間，不影響網頁高度 */
+        /* 後面頁：職位預約設定與防撞管理卡片 */
+        .job-manage-card {
+            border-radius: 16px;
+            padding: 11px 12px;
+            margin-bottom: 11px;
+            border-left: 6px solid;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .job-manage-card.h { background-color: var(--bg-h); border-color: var(--border-h); }
+        .job-manage-card.z { background-color: var(--bg-z); border-color: var(--border-z); }
+        .job-manage-card.p { background-color: var(--bg-p); border-color: var(--border-p); }
+
+        .job-manage-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .job-manage-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1.5px solid #DFCBB5;
+            background: #FFFDF9;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--cocoa);
+        }
+
+        .btn-shift {
+            background: #FFA24C;
+            color: white;
+            border: none;
+            padding: 4px 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-shift:hover { background: #EB8931; }
+
+        .btn-confirm-job {
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1.5px solid #DFCBB5;
+            background: #FFFFFF;
+            color: var(--cocoa);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-confirm-job.confirmed {
+            background: #38B864;
+            border-color: #2B9650;
+            color: #FFFFFF;
+        }
+
+        .job-manage-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--cocoa-light);
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .job-warning-box {
+            background: #FDECEA;
+            border: 1px solid #F5B7B1;
+            color: #A62626;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+
+        /* 頁尾單獨 1 個雲朵：貼在整個網頁最底部，夾在圓點背景(body)與卡片框(z-index:4)之間 */
         .footer-clouds {
             position: absolute;
             bottom: 0;
@@ -773,79 +1101,6 @@
             z-index: 1;
             opacity: 0.96;
         }
-
-        /* 網頁內鬧鐘彈窗遮罩 */
-        .alarm-modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(92, 61, 46, 0.55);
-            backdrop-filter: blur(3px);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.2s ease;
-        }
-
-        .alarm-modal {
-            background: #FFFDF8;
-            border-radius: 26px;
-            padding: 28px;
-            max-width: 420px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 18px 40px rgba(92, 61, 46, 0.28);
-            border: 4px solid #FFB3C6;
-            animation: bounceIn 0.3s ease;
-        }
-
-        .alarm-modal-icon {
-            font-size: 48px;
-            margin-bottom: 8px;
-            display: inline-block;
-            animation: ring 0.8s infinite;
-        }
-
-        .alarm-modal h2 {
-            font-family: var(--font-title);
-            font-weight: normal;
-            margin: 0 0 10px 0;
-            font-size: 26px;
-            color: #E04F7B;
-        }
-
-        .alarm-modal-list {
-            background: #FFF5F7;
-            border: 1.5px dashed #F8B4C8;
-            border-radius: 14px;
-            padding: 12px;
-            margin: 15px 0;
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--cocoa);
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .alarm-modal-list div {
-            padding: 6px 0;
-            border-bottom: 1px dashed #F3D1DC;
-        }
-        .alarm-modal-list div:last-child { border-bottom: none; }
-
-        .btn-dismiss {
-            background: linear-gradient(135deg, #FF7EA5, #EB5A87);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 999px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            box-shadow: 0 4px 12px rgba(235, 90, 135, 0.3);
-        }
-        .btn-dismiss:hover { filter: brightness(1.05); }
 
         @keyframes gentleFloat {
             0%, 100% { transform: translateY(0px); }
@@ -862,11 +1117,8 @@
             75% { transform: rotate(-15deg); }
         }
         @keyframes fadeIn {
-            from { opacity: 0; } to { opacity: 1; }
-        }
-        @keyframes bounceIn {
-            0% { transform: scale(0.85); }
-            100% { transform: scale(1); }
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @media (max-width: 950px) {
@@ -904,44 +1156,52 @@
             <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">
                 <img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換時間線
             </button>
+
+            <!-- YouTube 同款右上角小鈴鐺通知中心 -->
+            <div class="bell-wrapper" id="bellWrapper">
+                <button class="btn-bell" id="bellBtn" title="通知紀錄" onclick="toggleBellDropdown(event)">
+                    🔔
+                    <span class="bell-count-badge" id="bellCountBadge">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown" onclick="event.stopPropagation()">
+                    <div class="notif-dropdown-header">
+                        <span>🔔 鬧鐘提醒紀錄</span>
+                        <div class="notif-header-actions">
+                            <button class="btn-notif-mini" onclick="markAllNotifsRead()">全部已讀</button>
+                            <button class="btn-notif-mini" onclick="clearAllNotifs()">清空</button>
+                        </div>
+                    </div>
+                    <div class="notif-dropdown-list" id="notifDropdownList"></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- 3欄視圖 -->
+    <!-- 前面頁：3欄視圖 -->
     <div class="grid-view" id="gridView"></div>
 
-    <!-- 打直：獨立拆分 3 欄 -->
+    <!-- 後面頁：打直獨立拆分 3 欄（帶框內滾動 + dot_yoko.png 跨日分隔線 + 職位預約防撞設定） -->
     <div class="timeline-view" id="timelineView">
         <div class="timeline-grid">
             <div class="timeline-column">
                 <h3>⏱️ 訓練 / 研究 / 技能 / 活動完結</h3>
-                <div id="timeline_tasks"></div>
+                <div class="timeline-scroll-area" id="timeline_tasks"></div>
             </div>
 
             <div class="timeline-column">
-                <h3>⚔️ 士兵職位預約排程</h3>
-                <div id="timeline_soldier_jobs"></div>
+                <h3>⚔️ 士兵職位預約管理</h3>
+                <div class="timeline-scroll-area" id="timeline_soldier_jobs"></div>
             </div>
 
             <div class="timeline-column">
-                <h3>🔬 科技職位預約排程</h3>
-                <div id="timeline_tech_jobs"></div>
+                <h3>🔬 科技職位預約管理</h3>
+                <div class="timeline-scroll-area" id="timeline_tech_jobs"></div>
             </div>
         </div>
     </div>
 
     <!-- 頁尾單獨 1 個雲朵（貼在網頁最底部，位處背景與卡片框之間） -->
     <div class="footer-clouds"></div>
-
-    <!-- 網頁內鬧鐘彈出視窗 -->
-    <div class="alarm-modal-overlay" id="alarmModalOverlay">
-        <div class="alarm-modal">
-            <div class="alarm-modal-icon">⏰</div>
-            <h2>時間到了！</h2>
-            <div class="alarm-modal-list" id="alarmModalList"></div>
-            <button class="btn-dismiss" onclick="dismissAlarm()">知道了（關閉鬧鐘）</button>
-        </div>
-    </div>
 
     <script>
         // --- 1. Firebase 專案設定 ---
@@ -962,9 +1222,10 @@
 
         const STORAGE_KEY = "multi_account_alarm_local_backup";
         const PROFILE_STORAGE_KEY = "multi_account_profiles_backup";
+        const NOTIF_HISTORY_KEY = "multi_account_notif_history_v1";
         const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
 
-        // 順序改為：Howard（粉色小白熊）、Zoey（主號，黃色鬆弛熊）、Patrick（綠色茶小熊）
+        // 順序：Howard（粉色小白熊）、Zoey（主號，黃色鬆弛熊）、Patrick（綠色茶小熊）
         const accounts = [
             { id: 'h', name: 'h', isMain: false, faceFile: 'chara_face_2-1.png', standFile: 'chara_stand_2-1.png' },
             { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png', standFile: 'chara_stand_1-1.png' },
@@ -1009,44 +1270,200 @@
 
         let showSunlightEvent = true;
 
-        // 士兵訓練與科技研究預設由 0天 00時 00分 開始
+        // store 包含職位確認狀態 (soldierJobConfirmed, techJobConfirmed)
         let store = {
             h: { 
                 soldiers: [{ id: 1, d: 0, h: 0, m: 0, endTime: null }], 
                 tech: [{ id: 2, d: 0, h: 0, m: 0, endTime: null }],
                 master: [{ id: 101, d: 0, h: 0, m: 10, endTime: null }],
                 sunlight: [{ id: 201, d: 0, h: 8, m: 0, endTime: null }],
-                soldierJobTime: '', soldierJobDate: null, 
-                techJobTime: '', techJobDate: null 
+                soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false,
+                techJobTime: '', techJobDate: null, techJobConfirmed: false
             },
             z: { 
                 soldiers: [{ id: 3, d: 0, h: 0, m: 0, endTime: null }], 
                 tech: [{ id: 4, d: 0, h: 0, m: 0, endTime: null }],
                 master: [{ id: 102, d: 0, h: 0, m: 10, endTime: null }],
                 sunlight: [{ id: 202, d: 0, h: 8, m: 0, endTime: null }],
-                soldierJobTime: '', soldierJobDate: null, 
-                techJobTime: '', techJobDate: null 
+                soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false,
+                techJobTime: '', techJobDate: null, techJobConfirmed: false
             },
             p: { 
                 soldiers: [{ id: 5, d: 0, h: 0, m: 0, endTime: null }], 
                 tech: [{ id: 6, d: 0, h: 0, m: 0, endTime: null }],
                 master: [{ id: 103, d: 0, h: 0, m: 10, endTime: null }],
                 sunlight: [{ id: 203, d: 0, h: 8, m: 0, endTime: null }],
-                soldierJobTime: '', soldierJobDate: null, 
-                techJobTime: '', techJobDate: null 
+                soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false,
+                techJobTime: '', techJobDate: null, techJobConfirmed: false
             }
         };
 
+        // --- 全自動標準時間偏差校正（方案 A） ---
+        let serverTimeOffsetMs = 0; // 真實標準時間 - 本機系統時間（毫秒）
+        function getAccurateNow() {
+            return new Date(Date.now() + serverTimeOffsetMs);
+        }
+
+        function setupAutoTimeSync() {
+            // 1. 優先透過 Firebase 內建的 .info/serverTimeOffset 自動對時（零額外按鈕、支援 HTTPS、公司與家裡自動獨立計算）
+            db.ref(".info/serverTimeOffset").on("value", (snap) => {
+                const offset = snap.val();
+                if (typeof offset === "number") {
+                    serverTimeOffsetMs = offset;
+                    renderGrid();
+                    updateTimeline();
+                }
+            });
+
+            // 2. 備援：向標準時間 API 校準
+            fetch("https://worldtimeapi.org/api/timezone/Asia/Hong_Kong", { cache: "no-store" })
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (data && data.unixtime && serverTimeOffsetMs === 0) {
+                        serverTimeOffsetMs = (data.unixtime * 1000) - Date.now();
+                        renderGrid();
+                        updateTimeline();
+                    }
+                })
+                .catch(() => {});
+        }
+
+        // --- YouTube 同款右上角小鈴鐺通知紀錄 ---
+        let notifHistory = []; // { id, message, targetTimestamp, unread }
         let triggeredEventKeys = new Set();
         let nextId = 300;
         let audioCtx = null;
         let ringInterval = null;
         let titleBlinkInterval = null;
-        let activeAlerts = [];
         let activeSystemNotifications = [];
-        let popupWin = null;
         let isInitialLoadDone = false;
         let hasPrunedInitialDrafts = false;
+
+        function loadNotifHistory() {
+            try {
+                const raw = localStorage.getItem(NOTIF_HISTORY_KEY);
+                if (raw) {
+                    notifHistory = JSON.parse(raw) || [];
+                }
+            } catch (e) { notifHistory = []; }
+            renderBellUI();
+        }
+
+        function saveNotifHistory() {
+            try {
+                localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(notifHistory.slice(0, 40)));
+            } catch (e) {}
+        }
+
+        function formatRelativeAgo(timestampMs) {
+            const diffSec = Math.max(0, Math.floor((getAccurateNow().getTime() - timestampMs) / 1000));
+            if (diffSec < 60) return "剛剛";
+            const diffMin = Math.floor(diffSec / 60);
+            if (diffMin < 60) return `${diffMin} 分鐘前`;
+            const diffHr = Math.floor(diffMin / 60);
+            if (diffHr < 24) return `${diffHr} 小時 ${diffMin % 60} 分前`;
+            const diffDay = Math.floor(diffHr / 24);
+            return `${diffDay} 天前`;
+        }
+
+        function renderBellUI() {
+            const unreadCount = notifHistory.filter(n => n.unread).length;
+            const badge = document.getElementById('bellCountBadge');
+            const bellBtn = document.getElementById('bellBtn');
+            const listEl = document.getElementById('notifDropdownList');
+
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.style.display = 'inline-flex';
+                    badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            if (bellBtn) {
+                if (unreadCount > 0) {
+                    bellBtn.classList.add('ringing');
+                } else {
+                    bellBtn.classList.remove('ringing');
+                }
+            }
+
+            if (listEl) {
+                if (notifHistory.length === 0) {
+                    listEl.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:22px 10px; font-size:13px;">暫無鬧鐘提醒紀錄 🐻</div>`;
+                } else {
+                    listEl.innerHTML = notifHistory.map(item => `
+                        <div class="notif-item ${item.unread ? 'unread' : ''}" onclick="markSingleNotifRead('${item.id}')">
+                            <div class="notif-item-msg">${item.message}</div>
+                            <div class="notif-item-meta">
+                                <span>🕒 ${formatRelativeAgo(item.targetTimestamp)}</span>
+                                <span>${item.unread ? '● 未讀' : '已讀'}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
+        function toggleBellDropdown(event) {
+            if (event) event.stopPropagation();
+            const dropdown = document.getElementById('notifDropdown');
+            if (!dropdown) return;
+            const willOpen = !dropdown.classList.contains('open');
+            dropdown.classList.toggle('open');
+            if (willOpen) {
+                renderBellUI();
+                stopRingingEffects();
+            }
+        }
+
+        document.addEventListener('click', () => {
+            const dropdown = document.getElementById('notifDropdown');
+            if (dropdown) dropdown.classList.remove('open');
+        });
+
+        function markSingleNotifRead(id) {
+            const target = notifHistory.find(n => n.id === id);
+            if (target) {
+                target.unread = false;
+                saveNotifHistory();
+                renderBellUI();
+            }
+            if (notifHistory.every(n => !n.unread)) {
+                stopRingingEffects();
+            }
+        }
+
+        function markAllNotifsRead() {
+            notifHistory.forEach(n => n.unread = false);
+            saveNotifHistory();
+            renderBellUI();
+            stopRingingEffects();
+        }
+
+        function clearAllNotifs() {
+            notifHistory = [];
+            saveNotifHistory();
+            renderBellUI();
+            stopRingingEffects();
+        }
+
+        function stopRingingEffects() {
+            activeSystemNotifications.forEach(n => {
+                try { n.close(); } catch (e) {}
+            });
+            activeSystemNotifications = [];
+            if (ringInterval) {
+                clearInterval(ringInterval);
+                ringInterval = null;
+            }
+            if (titleBlinkInterval) {
+                clearInterval(titleBlinkInterval);
+                titleBlinkInterval = null;
+            }
+            document.title = ORIGINAL_TITLE;
+        }
 
         function playSplashAnimation() {
             const splash = document.getElementById('loadingSplash');
@@ -1060,7 +1477,6 @@
             }, 1350);
         }
 
-        // 類似 YouTube 推送的 Windows / Chrome 系統右下角通知權限檢查與申請
         function updateNotifBadgeUI() {
             const badge = document.getElementById('notifBadge');
             if (!badge) return;
@@ -1099,15 +1515,55 @@
                         body: message,
                         icon: "./chara_face_1-1.png",
                         badge: "./chara_face_1-1.png",
-                        requireInteraction: true // 讓通知停留在 Windows 右下角直到你點擊關閉
+                        requireInteraction: true
                     });
                     notif.onclick = function() {
                         try { window.focus(); } catch (e) {}
+                        const dropdown = document.getElementById('notifDropdown');
+                        if (dropdown) dropdown.classList.add('open');
                         notif.close();
                     };
                     activeSystemNotifications.push(notif);
                 } catch (e) {}
             }
+        }
+
+        // --- 日期格式化：今天（棕紅白字螢光筆）、明天（深藍白字螢光筆）、其他（MM/DD） ---
+        function getDayTagHtml(dateObj) {
+            if (!dateObj) return '';
+            const now = getAccurateNow();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const targetStart = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).getTime();
+            const diffDays = Math.round((targetStart - todayStart) / 86400000);
+
+            if (diffDays === 0) {
+                return `<span class="day-hl today">今天</span>`;
+            } else if (diffDays === 1) {
+                return `<span class="day-hl tomorrow">明天</span>`;
+            } else {
+                return `${dateObj.getMonth() + 1}/${dateObj.getDate()} `;
+            }
+        }
+
+        function getDateGroupKey(dateObj) {
+            if (!dateObj) return '';
+            return `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}-${dateObj.getDate()}`;
+        }
+
+        function formatPad(num) { return String(num).padStart(2, '0'); }
+        function formatTimeHM(date) { return !date ? '--:--' : `${formatPad(date.getHours())}:${formatPad(date.getMinutes())}`; }
+        function formatDateTimeHtml(date) {
+            if (!date) return '--:--';
+            return `${getDayTagHtml(date)}${formatTimeHM(date)}`;
+        }
+
+        function formatDurationShort(ms) {
+            if (ms <= 0) return '已到時';
+            const totalMin = Math.floor(ms / 60000);
+            const h = Math.floor(totalMin / 60);
+            const m = totalMin % 60;
+            if (h > 0) return `還有 ${h}時 ${m}分`;
+            return `還有 ${m}分`;
         }
 
         function formatPower(num) {
@@ -1271,7 +1727,9 @@
 
         function init() {
             playSplashAnimation();
+            setupAutoTimeSync();
             updateNotifBadgeUI();
+            loadNotifHistory();
             loadLocalBackup();
             pruneUnstartedDrafts();
             loadLocalProfiles();
@@ -1325,8 +1783,10 @@
                     sunlight: (accData.sunlight || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
                     soldierJobTime: accData.soldierJobTime || '',
                     soldierJobDate: accData.soldierJobDate ? accData.soldierJobDate.toISOString() : null,
+                    soldierJobConfirmed: Boolean(accData.soldierJobConfirmed),
                     techJobTime: accData.techJobTime || '',
-                    techJobDate: accData.techJobDate ? accData.techJobDate.toISOString() : null
+                    techJobDate: accData.techJobDate ? accData.techJobDate.toISOString() : null,
+                    techJobConfirmed: Boolean(accData.techJobConfirmed)
                 };
             });
 
@@ -1352,8 +1812,10 @@
                 });
                 store[acc.id].soldierJobTime = incoming.soldierJobTime || '';
                 store[acc.id].soldierJobDate = incoming.soldierJobDate ? new Date(incoming.soldierJobDate) : null;
+                store[acc.id].soldierJobConfirmed = Boolean(incoming.soldierJobConfirmed);
                 store[acc.id].techJobTime = incoming.techJobTime || '';
                 store[acc.id].techJobDate = incoming.techJobDate ? new Date(incoming.techJobDate) : null;
+                store[acc.id].techJobConfirmed = Boolean(incoming.techJobConfirmed);
             });
 
             if (parsed.nextId) nextId = parsed.nextId;
@@ -1452,111 +1914,51 @@
             } catch (e) {}
         }
 
-        function openForcedPopup(messages) {
-            try {
-                const width = 420;
-                const height = 280;
-                const left = (screen.width - width) / 2;
-                const top = (screen.height - height) / 2;
-
-                if (popupWin && !popupWin.closed) {
-                    popupWin.close();
-                }
-
-                popupWin = window.open(
-                    "",
-                    "GameAlarmPopup",
-                    `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
-                );
-
-                if (popupWin) {
-                    const listHtml = messages.map(m => `<li style="margin:8px 0; font-size:17px;">${m}</li>`).join('');
-                    popupWin.document.open();
-                    popupWin.document.write(`
-                        <!DOCTYPE html>
-                        <html lang="zh-HK">
-                        <head><title>⏰ 時間到了！</title></head>
-                        <body style="font-family:sans-serif; background:#FFFDF8; text-align:center; padding:20px; margin:0; border-top:8px solid #FF7EA5; color:#5C3D2E;">
-                            <h2 style="color:#E04F7B; margin:5px 0 15px 0;">⏰ 鬧鐘時間到了！</h2>
-                            <ul style="list-style:none; padding:0; margin:0 0 20px 0; font-weight:bold;">
-                                ${listHtml}
-                            </ul>
-                            <button onclick="window.opener && window.opener.dismissAlarm(); window.close();" 
-                                style="background:#EB5A87; color:white; border:none; padding:12px 28px; font-size:16px; font-weight:bold; border-radius:999px; cursor:pointer;">
-                                知道了（關閉鬧鐘）
-                            </button>
-                        </body>
-                        </html>
-                    `);
-                    popupWin.document.close();
-                    popupWin.focus();
-                }
-            } catch (e) {}
-        }
-
-        function triggerAlarmAlert(eventKey, message) {
+        // 統一觸發鬧鐘：寫入右上角小鈴鐺紀錄 + Windows 右下角原生彈窗（若非過期補發則響鈴並閃爍分頁標題）
+        function triggerAlarmAlert(eventKey, message, targetTimestampMs) {
             if (triggeredEventKeys.has(eventKey)) return;
             triggeredEventKeys.add(eventKey);
             saveState();
 
-            if (!activeAlerts.includes(message)) {
-                activeAlerts.push(message);
-            }
+            const nowMs = getAccurateNow().getTime();
+            const actualTargetMs = targetTimestampMs || nowMs;
+            const isMissedOffline = (nowMs - actualTargetMs) > 90 * 1000; // 超過 1.5 分鐘前（例如回家途中關閉網頁期間）
 
-            // 1. 發送類似 YouTube 推送的 Windows / Chrome 右下角原生桌面彈窗（即使縮小 Chrome 也會彈出）
-            sendSystemCornerNotification(message);
-
-            // 2. 更新網頁內彈窗
-            const listEl = document.getElementById('alarmModalList');
-            listEl.innerHTML = activeAlerts.map(msg => `<div>${msg}</div>`).join('');
-            document.getElementById('alarmModalOverlay').style.display = 'flex';
-
-            // 3. 獨立小視窗與分頁閃爍提示
-            openForcedPopup(activeAlerts);
-
-            try { window.focus(); } catch (e) {}
-            if (!titleBlinkInterval) {
-                let toggle = false;
-                titleBlinkInterval = setInterval(() => {
-                    document.title = toggle ? "【⏰ 時間到了！】" : "【🔔 快看鬧鐘！】";
-                    toggle = !toggle;
-                }, 600);
-            }
-
-            playBeepOnce();
-            if (!ringInterval) {
-                ringInterval = setInterval(playBeepOnce, 2000);
-            }
-        }
-
-        function dismissAlarm() {
-            document.getElementById('alarmModalOverlay').style.display = 'none';
-            activeAlerts = [];
-
-            activeSystemNotifications.forEach(n => {
-                try { n.close(); } catch (e) {}
+            // 1. 加入右上角小鈴鐺紀錄（自動計算幾分鐘前）
+            notifHistory.unshift({
+                id: eventKey,
+                message: message,
+                targetTimestamp: actualTargetMs,
+                unread: true
             });
-            activeSystemNotifications = [];
+            saveNotifHistory();
+            renderBellUI();
 
-            if (popupWin && !popupWin.closed) {
-                popupWin.close();
+            // 2. 如果是剛到點，發送 Windows / Chrome 右下角系統通知並響鈴
+            if (!isMissedOffline) {
+                sendSystemCornerNotification(message);
+
+                if (!titleBlinkInterval) {
+                    let toggle = false;
+                    titleBlinkInterval = setInterval(() => {
+                        document.title = toggle ? "【⏰ 時間到了！】" : "【🔔 快看鬧鐘！】";
+                        toggle = !toggle;
+                    }, 600);
+                }
+
+                playBeepOnce();
+                if (!ringInterval) {
+                    ringInterval = setInterval(playBeepOnce, 2000);
+                }
             }
-            if (ringInterval) {
-                clearInterval(ringInterval);
-                ringInterval = null;
-            }
-            if (titleBlinkInterval) {
-                clearInterval(titleBlinkInterval);
-                titleBlinkInterval = null;
-            }
-            document.title = ORIGINAL_TITLE;
         }
 
         function testAlarm() {
             initAudioContext();
             requestDesktopNotificationPermission();
-            const testKey = "test_" + Date.now();
-            triggerAlarmAlert(testKey, `【測試】[${getDisplayAccountName('z')}] 士兵訓練 已完成！`);
+            const nowMs = getAccurateNow().getTime();
+            const testKey = "test_" + nowMs;
+            triggerAlarmAlert(testKey, `【測試】[${getDisplayAccountName('z')}] 士兵訓練 已完成！`, nowMs);
         }
 
         function applyPreset(accId, type, id, d, h, m, autoStart = false) {
@@ -1570,7 +1972,7 @@
             if (autoStart) {
                 initAudioContext();
                 requestDesktopNotificationPermission();
-                const now = new Date();
+                const now = getAccurateNow();
                 const totalSeconds = (d * 86400) + (h * 3600) + (m * 60);
                 item.endTime = new Date(now.getTime() + totalSeconds * 1000);
                 recalculateJobs();
@@ -1608,6 +2010,43 @@
             `;
         }
 
+        // 檢查某個帳號的職位目前是否處於「獲得職位後 10 分鐘冷卻期」或無預約
+        function getJobStatusMeta(accId, type) {
+            const now = getAccurateNow();
+            const jobDate = type === 'soldier' ? store[accId].soldierJobDate : store[accId].techJobDate;
+            const jobTime = type === 'soldier' ? store[accId].soldierJobTime : store[accId].techJobTime;
+            const isConfirmed = type === 'soldier' ? store[accId].soldierJobConfirmed : store[accId].techJobConfirmed;
+
+            if (!jobDate || !jobTime) {
+                return { hasJob: false, statusHtml: `<span class="status-pill none">無預約</span>`, distText: '--', dateHtml: '--' };
+            }
+
+            const diffMs = jobDate.getTime() - now.getTime();
+            const dateHtml = `${getDayTagHtml(jobDate)}${jobTime}`;
+
+            // 若剛過預約時間 0 ~ 10 分鐘內，顯示「10分鐘申請冷卻中」提醒
+            if (diffMs <= 0 && diffMs >= -10 * 60 * 1000) {
+                const remainCoolMin = Math.ceil((10 * 60 * 1000 + diffMs) / 60000);
+                return {
+                    hasJob: true,
+                    statusHtml: `<span class="status-pill cooldown">⚠️ 10分冷卻剩 ${remainCoolMin}分</span>`,
+                    distText: '進行中',
+                    dateHtml
+                };
+            }
+
+            const statusHtml = isConfirmed
+                ? `<span class="status-pill confirmed">✅ 已確認</span>`
+                : `<span class="status-pill pending">⏳ 待確認</span>`;
+
+            return {
+                hasJob: true,
+                statusHtml,
+                distText: formatDurationShort(diffMs),
+                dateHtml
+            };
+        }
+
         function renderSectionCards(accId, type, list) {
             let activeSeq = 0;
             return (list || []).map(item => {
@@ -1620,6 +2059,8 @@
             const grid = document.getElementById('gridView');
             grid.innerHTML = accounts.map(acc => {
                 const data = store[acc.id];
+                const sMeta = getJobStatusMeta(acc.id, 'soldier');
+                const tMeta = getJobStatusMeta(acc.id, 'tech');
 
                 return `
                 <div class="account-column ${acc.id}">
@@ -1667,26 +2108,32 @@
                     </div>
                     ` : ''}
 
+                    <!-- 首頁職位預約看板：顯示確認狀態、距離時間與今天/明天螢光筆標籤，設定集中於後面時間線 -->
                     <div class="job-section">
-                        <div class="job-section-title">🏛️ 職位預約</div>
+                        <div class="job-section-header">
+                            <span class="job-section-title">🏛️ 職位預約看板</span>
+                            <button class="btn-goto-timeline" onclick="openTimelineView()">去時間線設定 ➔</button>
+                        </div>
                         
-                        <div class="job-row">
-                            <span>⚔️ 士兵職位:</span>
-                            <div>
-                                <select id="${acc.id}_soldier_job_select" onchange="manualJobChange('${acc.id}', 'soldier', this.value)">
-                                    ${generateJobOptions(data.soldierJobTime)}
-                                </select>
-                                <button class="btn-shift" onclick="shiftJobTime('${acc.id}', 'soldier')">+30分</button>
+                        <div class="job-status-card" id="home_job_s_${acc.id}">
+                            <div class="job-status-top">
+                                <span>⚔️ 士兵：${sMeta.dateHtml}</span>
+                                ${sMeta.statusHtml}
+                            </div>
+                            <div class="job-status-bottom">
+                                <span>距離職位時間</span>
+                                <span class="dist-text">${sMeta.distText}</span>
                             </div>
                         </div>
 
-                        <div class="job-row">
-                            <span>🔬 科技職位:</span>
-                            <div>
-                                <select id="${acc.id}_tech_job_select" onchange="manualJobChange('${acc.id}', 'tech', this.value)">
-                                    ${generateJobOptions(data.techJobTime)}
-                                </select>
-                                <button class="btn-shift" onclick="shiftJobTime('${acc.id}', 'tech')">+30分</button>
+                        <div class="job-status-card" id="home_job_t_${acc.id}">
+                            <div class="job-status-top">
+                                <span>🔬 科技：${tMeta.dateHtml}</span>
+                                ${tMeta.statusHtml}
+                            </div>
+                            <div class="job-status-bottom">
+                                <span>距離職位時間</span>
+                                <span class="dist-text">${tMeta.distText}</span>
                             </div>
                         </div>
                     </div>
@@ -1739,7 +2186,7 @@
                                 ${isRunning ? '--:--' : `${item.d}天 ${formatPad(item.h)}:${formatPad(item.m)}`}
                             </div>
                             <span class="timer-sub" id="sub_${item.id}">
-                                ${isRunning ? '完結: ' + formatDateTime(item.endTime) : '設定時間後按開始'}
+                                ${isRunning ? '完結: ' + formatDateTimeHtml(item.endTime) : '設定時間後按開始'}
                             </span>
                         </div>
 
@@ -1804,10 +2251,6 @@
             }
         }
 
-        function formatPad(num) { return String(num).padStart(2, '0'); }
-        function formatTimeHM(date) { return !date ? '--:--' : `${formatPad(date.getHours())}:${formatPad(date.getMinutes())}`; }
-        function formatDateTime(date) { return !date ? '--:--' : `${date.getMonth() + 1}/${date.getDate()} ${formatTimeHM(date)}`; }
-
         function addItem(accId, type) {
             let defD = 0, defH = 0, defM = 0;
             if (type === 'master') { defM = 10; }
@@ -1839,7 +2282,7 @@
                 item.h = Math.max(0, inputH ? (parseInt(inputH.value, 10) || 0) : 0);
                 item.m = Math.max(0, inputM ? (parseInt(inputM.value, 10) || 0) : 0);
 
-                const now = new Date();
+                const now = getAccurateNow();
                 const totalSeconds = (item.d * 86400) + (item.h * 3600) + (item.m * 60);
                 item.endTime = new Date(now.getTime() + totalSeconds * 1000);
 
@@ -1853,7 +2296,7 @@
             const item = store[accId][type].find(i => i.id === id);
             if (item) {
                 if (item.endTime) {
-                    const diffSec = Math.max(0, Math.ceil((item.endTime - new Date()) / 1000));
+                    const diffSec = Math.max(0, Math.ceil((item.endTime - getAccurateNow()) / 1000));
                     item.d = Math.floor(diffSec / 86400);
                     item.h = Math.floor((diffSec % 86400) / 3600);
                     item.m = Math.floor((diffSec % 3600) / 60);
@@ -1866,7 +2309,7 @@
         }
 
         function updateTimers() {
-            const now = new Date();
+            const now = getAccurateNow();
             const typeNames = {
                 soldiers: '士兵訓練',
                 tech: '科技研究',
@@ -1888,7 +2331,7 @@
                             if (diff <= 0) {
                                 if (disp) disp.innerText = "00:00 (完結)";
                                 const eventKey = `task_${item.id}_${item.endTime.getTime()}`;
-                                triggerAlarmAlert(eventKey, `[${displayName}] ${typeName} #${idx + 1} 已經完成！`);
+                                triggerAlarmAlert(eventKey, `[${displayName}] ${typeName} #${idx + 1} 已經完成！`, item.endTime.getTime());
                             } else if (disp) {
                                 const d = Math.floor(diff / 86400);
                                 const h = Math.floor((diff % 86400) / 3600);
@@ -1902,16 +2345,22 @@
 
                 if (store[acc.id].soldierJobDate && now >= store[acc.id].soldierJobDate) {
                     const jobKey = `job_s_${acc.id}_${store[acc.id].soldierJobDate.getTime()}`;
-                    triggerAlarmAlert(jobKey, `[${displayName}] ⚔️ 士兵職位預約時間 (${store[acc.id].soldierJobTime}) 到了！`);
+                    triggerAlarmAlert(jobKey, `[${displayName}] ⚔️ 士兵職位預約時間 (${store[acc.id].soldierJobTime}) 到了！`, store[acc.id].soldierJobDate.getTime());
                 }
 
                 if (store[acc.id].techJobDate && now >= store[acc.id].techJobDate) {
                     const jobKey = `job_t_${acc.id}_${store[acc.id].techJobDate.getTime()}`;
-                    triggerAlarmAlert(jobKey, `[${displayName}] 🔬 科技職位預約時間 (${store[acc.id].techJobTime}) 到了！`);
+                    triggerAlarmAlert(jobKey, `[${displayName}] 🔬 科技職位預約時間 (${store[acc.id].techJobTime}) 到了！`, store[acc.id].techJobDate.getTime());
                 }
             });
 
             checkExpiredJobsAndAutoUpdate();
+
+            // 若小鈴鐺下拉選單正開著，即時刷新「幾分鐘前」
+            const dropdown = document.getElementById('notifDropdown');
+            if (dropdown && dropdown.classList.contains('open')) {
+                renderBellUI();
+            }
 
             if (document.getElementById('timelineView').style.display === 'block') {
                 updateTimeline();
@@ -1919,16 +2368,19 @@
         }
 
         function checkExpiredJobsAndAutoUpdate() {
-            const now = new Date();
+            const now = getAccurateNow();
             let needUpdate = false;
 
             accounts.forEach(acc => {
+                // 保留 10 分鐘冷卻視窗顯示，超過 10 分鐘後自動清除過期預約
                 ['soldierJobDate', 'techJobDate'].forEach(dateKey => {
                     if (store[acc.id][dateKey]) {
-                        if (now - store[acc.id][dateKey] > 5 * 60 * 1000) {
+                        if (now - store[acc.id][dateKey] > 10 * 60 * 1000) {
                             const timeKey = dateKey.replace('Date', 'Time');
+                            const confKey = dateKey.replace('Date', 'Confirmed');
                             store[acc.id][timeKey] = '';
                             store[acc.id][dateKey] = null;
+                            store[acc.id][confKey] = false;
                             needUpdate = true;
                         }
                     }
@@ -1937,12 +2389,13 @@
 
             if (needUpdate) {
                 recalculateJobs();
+                renderGrid();
                 saveState();
             }
         }
 
         function recalculateJobs() {
-            const now = new Date();
+            const now = getAccurateNow();
 
             accounts.forEach(acc => {
                 let futureSoldierEnds = (store[acc.id].soldiers || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
@@ -1951,7 +2404,8 @@
                     const slotObj = calcRecommendedSlot(futureSoldierEnds[0]);
                     store[acc.id].soldierJobTime = slotObj.timeStr;
                     store[acc.id].soldierJobDate = slotObj.dateObj;
-                } else {
+                    store[acc.id].soldierJobConfirmed = false;
+                } else if (!store[acc.id].soldierJobConfirmed) {
                     store[acc.id].soldierJobTime = '';
                     store[acc.id].soldierJobDate = null;
                 }
@@ -1962,23 +2416,19 @@
                     const slotObj = calcRecommendedSlot(futureTechEnds[0]);
                     store[acc.id].techJobTime = slotObj.timeStr;
                     store[acc.id].techJobDate = slotObj.dateObj;
-                } else {
+                    store[acc.id].techJobConfirmed = false;
+                } else if (!store[acc.id].techJobConfirmed) {
                     store[acc.id].techJobTime = '';
                     store[acc.id].techJobDate = null;
                 }
-
-                const sSelect = document.getElementById(`${acc.id}_soldier_job_select`);
-                if (sSelect) sSelect.value = store[acc.id].soldierJobTime;
-
-                const tSelect = document.getElementById(`${acc.id}_tech_job_select`);
-                if (tSelect) tSelect.value = store[acc.id].techJobTime;
             });
 
+            renderGrid();
             updateTimeline();
         }
 
         function calcRecommendedSlot(endTime) {
-            const now = new Date();
+            const now = getAccurateNow();
             let slotDate = new Date(endTime);
             let h = slotDate.getHours();
             let m = slotDate.getMinutes();
@@ -2007,18 +2457,20 @@
             return { timeStr: `${formatPad(finalH)}:${formatPad(finalM)}`, dateObj: slotDate };
         }
 
+        // 在後面時間線頁面操作職位預約：+30分、下拉更改任意空缺時段、一鍵確認已預約
         function shiftJobTime(accId, type) {
             const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
             const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+            const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
 
-            let curDate = store[accId][dateKey] || new Date();
+            let curDate = store[accId][dateKey] || getAccurateNow();
             let newDate = new Date(curDate.getTime() + 30 * 60 * 1000);
 
             store[accId][dateKey] = newDate;
             store[accId][timeKey] = formatTimeHM(newDate);
+            store[accId][confKey] = false;
 
-            const selectId = `${accId}_${type}_job_select`;
-            document.getElementById(selectId).value = store[accId][timeKey];
+            renderGrid();
             updateTimeline();
             saveState();
         }
@@ -2026,17 +2478,28 @@
         function manualJobChange(accId, type, val) {
             const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
             const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+            const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
 
             store[accId][timeKey] = val;
+            store[accId][confKey] = false;
             if (val) {
                 const [h, m] = val.split(':').map(Number);
-                let d = new Date();
+                let d = getAccurateNow();
                 d.setHours(h, m, 0, 0);
-                if (d < new Date()) d.setDate(d.getDate() + 1);
+                if (d < getAccurateNow()) d.setDate(d.getDate() + 1);
                 store[accId][dateKey] = d;
             } else {
                 store[accId][dateKey] = null;
             }
+            renderGrid();
+            updateTimeline();
+            saveState();
+        }
+
+        function toggleJobConfirmed(accId, type) {
+            const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+            store[accId][confKey] = !store[accId][confKey];
+            renderGrid();
             updateTimeline();
             saveState();
         }
@@ -2053,72 +2516,158 @@
             return html;
         }
 
+        // 後面頁（時間線視圖）：更新左側任務時間線 + 右側兩個職位預約管理
         function updateTimeline() {
             const tasksContainer = document.getElementById('timeline_tasks');
             const soldierJobsContainer = document.getElementById('timeline_soldier_jobs');
             const techJobsContainer = document.getElementById('timeline_tech_jobs');
 
             let tasksList = [];
-            let soldierJobsList = [];
-            let techJobsList = [];
 
             accounts.forEach(acc => {
                 const displayName = getDisplayAccountName(acc.id);
                 (store[acc.id].soldiers || []).forEach((item, idx) => {
                     if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `士兵 #${idx + 1}`, tagClass: 'tag-soldier' });
+                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, label: `士兵 #${idx + 1}`, tagClass: 'tag-soldier' });
                     }
                 });
                 (store[acc.id].tech || []).forEach((item, idx) => {
                     if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `科技 #${idx + 1}`, tagClass: 'tag-tech' });
+                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, label: `科技 #${idx + 1}`, tagClass: 'tag-tech' });
                     }
                 });
                 (store[acc.id].master || []).forEach((item, idx) => {
                     if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `📖 大師技能 #${idx + 1}`, tagClass: 'tag-master' });
+                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, label: `📖 大師技能 #${idx + 1}`, tagClass: 'tag-master' });
                     }
                 });
                 if (showSunlightEvent) {
                     (store[acc.id].sunlight || []).forEach((item, idx) => {
                         if (item.endTime) {
-                            tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, timeStr: formatDateTime(item.endTime), label: `☀️ 沐光之旅 #${idx + 1}`, tagClass: 'tag-sunlight' });
+                            tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, label: `☀️ 沐光之旅 #${idx + 1}`, tagClass: 'tag-sunlight' });
                         }
                     });
-                }
-
-                if (store[acc.id].soldierJobDate) {
-                    soldierJobsList.push({ acc: displayName, accId: acc.id, time: store[acc.id].soldierJobDate, timeStr: formatDateTime(store[acc.id].soldierJobDate), label: '⚔️ 士兵職位', tagClass: 'tag-job-s' });
-                }
-                if (store[acc.id].techJobDate) {
-                    techJobsList.push({ acc: displayName, accId: acc.id, time: store[acc.id].techJobDate, timeStr: formatDateTime(store[acc.id].techJobDate), label: '🔬 科技職位', tagClass: 'tag-job-t' });
                 }
             });
 
             tasksList.sort((a, b) => a.time - b.time);
-            soldierJobsList.sort((a, b) => a.time - b.time);
-            techJobsList.sort((a, b) => a.time - b.time);
 
-            renderTimelineColumn(tasksContainer, tasksList, "無進行中計時");
-            renderTimelineColumn(soldierJobsContainer, soldierJobsList, "無士兵職位預約");
-            renderTimelineColumn(techJobsContainer, techJobsList, "無科技職位預約");
+            // 渲染左側任務時間線：不同日期之間插入 dot_yoko.png 黃色手繪點點橫線分隔
+            if (tasksContainer) {
+                if (tasksList.length === 0) {
+                    tasksContainer.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:18px; font-size:13px;">無進行中計時</div>`;
+                } else {
+                    let html = '';
+                    let prevDateKey = null;
+
+                    tasksList.forEach(item => {
+                        const curDateKey = getDateGroupKey(item.time);
+                        if (prevDateKey !== null && curDateKey !== prevDateKey) {
+                            html += `
+                                <div class="date-dot-divider" title="跨日分隔">
+                                    <div class="date-dot-line"></div>
+                                </div>
+                            `;
+                        }
+                        prevDateKey = curDateKey;
+
+                        html += `
+                            <div class="timeline-item ${item.accId}">
+                                <div>
+                                    <span style="font-size: 14.5px; margin-right: 4px;">[${item.acc}]</span>
+                                    <span class="tag ${item.tagClass}">${item.label}</span>
+                                </div>
+                                <div style="white-space:nowrap;">${formatDateTimeHtml(item.time)}</div>
+                            </div>
+                        `;
+                    });
+                    tasksContainer.innerHTML = html;
+                }
+            }
+
+            // 渲染右側兩個職位預約管理（含防撞偵測、距離時間計算與確認按鈕）
+            renderJobManagementColumn(soldierJobsContainer, 'soldier');
+            renderJobManagementColumn(techJobsContainer, 'tech');
         }
 
-        function renderTimelineColumn(container, list, emptyText) {
+        function renderJobManagementColumn(container, type) {
             if (!container) return;
-            if (list.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:15px; font-size:13px;">${emptyText}</div>`;
-                return;
-            }
-            container.innerHTML = list.map(item => `
-                <div class="timeline-item ${item.accId}">
-                    <div>
-                        <span style="font-size: 15px; margin-right: 4px;">[${item.acc}]</span>
-                        <span class="tag ${item.tagClass}">${item.label}</span>
+            const now = getAccurateNow();
+            const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+            const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+            const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+
+            // 收集所有有預約的帳號時間，用來檢查「多帳號時間相撞」或「不足 10 分鐘冷卻間隔」
+            const activeEntries = accounts
+                .filter(acc => store[acc.id][dateKey] && store[acc.id][timeKey])
+                .map(acc => ({
+                    accId: acc.id,
+                    name: getDisplayAccountName(acc.id),
+                    date: store[acc.id][dateKey]
+                }));
+
+            container.innerHTML = accounts.map(acc => {
+                const displayName = getDisplayAccountName(acc.id);
+                const curTimeStr = store[acc.id][timeKey];
+                const curDate = store[acc.id][dateKey];
+                const isConfirmed = Boolean(store[acc.id][confKey]);
+
+                // 檢查是否與其他帳號相撞或間隔過近
+                let warnings = [];
+                if (curDate) {
+                    activeEntries.forEach(other => {
+                        if (other.accId !== acc.id) {
+                            const diffMin = Math.abs(curDate.getTime() - other.date.getTime()) / 60000;
+                            if (diffMin === 0) {
+                                warnings.push(`⚠️ 與 [${other.name}] 預約時間完全相撞！`);
+                            } else if (diffMin < 10) {
+                                warnings.push(`⚠️ 與 [${other.name}] 間隔僅 ${Math.round(diffMin)} 分鐘（注意 10 分鐘冷卻）`);
+                            }
+                        }
+                    });
+                }
+
+                const distStr = curDate ? formatDurationShort(curDate.getTime() - now.getTime()) : '尚未設定時間';
+                const dateBadgeHtml = curDate ? formatDateTimeHtml(curDate) : '--';
+
+                return `
+                    <div class="job-manage-card ${acc.id}">
+                        <div class="job-manage-top">
+                            <span>[${displayName}]</span>
+                            <span>${dateBadgeHtml}</span>
+                        </div>
+
+                        <div class="job-manage-controls">
+                            <select onchange="manualJobChange('${acc.id}', '${type}', this.value)">
+                                ${generateJobOptions(curTimeStr)}
+                            </select>
+                            <button class="btn-shift" onclick="shiftJobTime('${acc.id}', '${type}')">+30分</button>
+                            ${curTimeStr ? `
+                                <button class="btn-confirm-job ${isConfirmed ? 'confirmed' : ''}" onclick="toggleJobConfirmed('${acc.id}', '${type}')">
+                                    ${isConfirmed ? '✅ 已確認預約' : '⬜ 確認已預約'}
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <div class="job-manage-meta">
+                            <span>距離職位：<strong>${distStr}</strong></span>
+                            <span>${isConfirmed ? '狀態：已鎖定' : (curTimeStr ? '狀態：待確認' : '')}</span>
+                        </div>
+
+                        ${warnings.length > 0 ? `<div class="job-warning-box">${warnings.join('<br>')}</div>` : ''}
                     </div>
-                    <div>${item.timeStr}</div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+        }
+
+        function openTimelineView() {
+            const grid = document.getElementById('gridView');
+            const timeline = document.getElementById('timelineView');
+            const btn = document.getElementById('toggleBtn');
+            grid.style.display = 'none';
+            timeline.style.display = 'block';
+            btn.innerHTML = '<img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換 3 欄視圖';
+            updateTimeline();
         }
 
         function toggleView() {
@@ -2131,10 +2680,7 @@
                 timeline.style.display = 'none';
                 btn.innerHTML = '<img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換時間線';
             } else {
-                grid.style.display = 'none';
-                timeline.style.display = 'block';
-                btn.innerHTML = '<img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換 3 欄視圖';
-                updateTimeline();
+                openTimelineView();
             }
         }
 
