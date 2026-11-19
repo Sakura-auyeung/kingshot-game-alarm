@@ -562,13 +562,13 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
         }
 
-        /* 3欄手賬卡片視圖（取消頂部斷裂留白，保持連貫緊湊） */
+        /* 3欄手賬卡片視圖（收返緊湊欄寬與間距） */
         .grid-view {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 22px;
             max-width: 1240px;
-            margin: 26px auto 0 auto;
+            margin: 0 auto;
             position: relative;
             z-index: 4;
         }
@@ -598,21 +598,21 @@
         .account-column.z { background-color: var(--bg-z); outline: 2px solid var(--border-z); }
         .account-column.p { background-color: var(--bg-p); outline: 2px solid var(--border-p); }
 
-        /* 放大貼頂探頭立牌小熊（直接跨過卡片頂框邊緣，唔留空隙斷裂） */
-        .bear-top-peek {
+        /* 公仔直接站在欄位「框外角」 */
+        .outer-corner-stand {
             position: absolute;
-            top: -124px;
-            right: 8px;
-            width: 196px;
-            height: 196px;
+            bottom: -22px;
+            right: -28px;
+            width: 80px;
+            height: 80px;
             object-fit: contain;
             pointer-events: none;
-            z-index: 9;
-            filter: drop-shadow(0 0 2px #FFF) drop-shadow(0 5px 10px rgba(92, 61, 46, 0.24));
+            z-index: 8;
+            filter: drop-shadow(0 3px 6px rgba(92, 61, 46, 0.22));
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .account-column:hover .bear-top-peek {
-            transform: translateY(-6px) rotate(-2deg) scale(1.04);
+        .account-column:hover .outer-corner-stand {
+            transform: translateY(-4px) rotate(-4deg) scale(1.06);
         }
 
         /* 遊戲角色名片貼紙 */
@@ -1105,6 +1105,7 @@
             color: var(--cocoa);
         }
 
+        /* 無捲軸自然展開區，左側留足空間給往左大大突出的熊頭徽章貼紙 */
         .timeline-list-body {
             padding-left: 24px;
             overflow: visible;
@@ -1205,6 +1206,7 @@
             background: #F3E4CE;
         }
 
+        /* 後面頁：職位預約管理卡片 — 熊頭往上小小、往左大大突出遮角 */
         .job-manage-card {
             position: relative;
             border-radius: 16px;
@@ -1327,20 +1329,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 手機版精簡頂部與立牌自適應 */
+        /* 手機版精簡頂部與右上角小鬧鐘固定 */
         @media (max-width: 950px) {
             body { padding: 20px 14px 56px 14px; }
-            .grid-view, .timeline-grid {
-                grid-template-columns: 1fr;
-                margin-top: 12px;
-                row-gap: 78px;
-            }
-            .bear-top-peek {
-                top: -92px;
-                right: 6px;
-                width: 146px;
-                height: 146px;
-            }
+            .grid-view, .timeline-grid { grid-template-columns: 1fr; }
+            .outer-corner-stand { right: -16px; bottom: -16px; width: 70px; height: 70px; }
 
             .header {
                 flex-wrap: nowrap;
@@ -1883,6 +1876,7 @@
             if (todo) todo.unread = false;
             saveNotifHistory();
 
+            // 開始新一輪後自動停響，無需再人手點鈴鐺
             stopRingingEffects();
 
             recalculateJobs(accId, category);
@@ -2015,6 +2009,7 @@
                     });
                     notif.onclick = function() {
                         try { window.focus(); } catch (e) {}
+                        // 點擊右下角彈窗即代表已知，直接停響並打開待辦清單
                         stopRingingEffects();
                         const dropdown = document.getElementById('notifDropdown');
                         if (dropdown) {
@@ -2577,7 +2572,6 @@
 
                 return `
                 <div class="account-column ${acc.id}">
-                    <img class="bear-top-peek" src="./${acc.standFile}" alt="${getDisplayAccountName(acc.id)}">
                     ${renderProfileHeader(acc)}
                     
                     <div class="section-block">
@@ -2648,6 +2642,9 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 直接站在欄位「框外角」的立牌小熊 -->
+                    <img class="outer-corner-stand" src="./${acc.standFile}" alt="">
                 </div>
             `}).join('');
         }
