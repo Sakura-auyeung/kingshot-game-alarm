@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <style>
-        /* 只載入你最喜歡的兩款神仙字體：貓啃什錦黑 & jf粉圓體 */
+        /* 載入貓啃什錦黑 & jf粉圓體 */
         @font-face {
             font-family: 'MaokenFont';
             src: url('./MaokenAssortedSans-TC.ttf') format('truetype');
@@ -26,17 +26,17 @@
             --cocoa-light: #8C6A58;
             --cream-bg: #FFFDF8;
 
-            /* Zoey（主號）：蜂蜜布丁黃 (鬆弛熊) */
-            --bg-z: rgba(255, 249, 224, 0.95);
-            --border-z: #F7D774;
-            --card-z: linear-gradient(135deg, #F7B733 0%, #E69A15 100%);
-            --shadow-z: rgba(230, 154, 21, 0.25);
-
             /* Howard：草莓櫻花粉 (小白熊) */
             --bg-h: rgba(255, 240, 244, 0.95);
             --border-h: #F8B4C8;
             --card-h: linear-gradient(135deg, #FF7EA5 0%, #EB5A87 100%);
             --shadow-h: rgba(235, 90, 135, 0.25);
+
+            /* Zoey（主號）：蜂蜜布丁黃 (鬆弛熊) */
+            --bg-z: rgba(255, 249, 224, 0.95);
+            --border-z: #F7D774;
+            --card-z: linear-gradient(135deg, #F7B733 0%, #E69A15 100%);
+            --shadow-z: rgba(230, 154, 21, 0.25);
 
             /* Patrick：清新抹茶薄荷綠 (茶小熊) */
             --bg-p: rgba(236, 250, 240, 0.95);
@@ -44,7 +44,7 @@
             --card-p: linear-gradient(135deg, #58C984 0%, #38A866 100%);
             --shadow-p: rgba(56, 168, 102, 0.25);
 
-            /* 標題：貓啃什錦黑（可切換粉圓體）；內文與計時：統一 jf粉圓體 */
+            /* 標題固定使用貓啃什錦黑；內文與計時使用 jf粉圓體 */
             --font-title: 'MaokenFont', 'HuninnFont', "PingFang HK", sans-serif;
             --font-body: 'HuninnFont', -apple-system, BlinkMacSystemFont, "PingFang HK", sans-serif;
         }
@@ -61,7 +61,7 @@
             background-repeat: repeat;
             background-size: 280px 280px;
             margin: 0;
-            padding: 28px 36px 130px 36px;
+            padding: 28px 36px 90px 36px;
             color: var(--cocoa);
             min-height: 100vh;
             position: relative;
@@ -127,7 +127,8 @@
         }
         .loading-text {
             font-family: var(--font-title);
-            font-size: 20px;
+            font-weight: normal;
+            font-size: 24px;
             letter-spacing: 3px;
             color: var(--cocoa);
             margin-top: 8px;
@@ -196,20 +197,39 @@
             border-color: #F5B7B1;
         }
 
+        .notif-badge {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+            border: 1.5px dashed #F8B4C8;
+            background: #FFF0F4;
+            color: #B8325A;
+            transition: transform 0.15s;
+        }
+        .notif-badge:hover { transform: scale(1.03); }
+        .notif-badge.granted {
+            background: #EEF7FF;
+            color: #2868B8;
+            border-color: #A8D1FF;
+            cursor: default;
+        }
+
         .header-btns {
             display: flex;
-            gap: 7px;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
         /* 糖果膠囊按鈕 */
         .pill-btn {
             border: 2px solid #FFF;
-            padding: 7px 13px;
+            padding: 7px 14px;
             border-radius: 999px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 12.5px;
+            font-size: 13px;
             color: #FFF;
             display: inline-flex;
             align-items: center;
@@ -231,10 +251,6 @@
             object-fit: contain;
         }
 
-        .btn-refresh-profile { background: linear-gradient(135deg, #5CD685, #38B864); }
-        .btn-refresh-profile:disabled { opacity: 0.65; cursor: wait; }
-        .btn-font-title { background: linear-gradient(135deg, #C07CEB, #A155D4); }
-        .btn-pancake { background: linear-gradient(135deg, #F7B733, #E69A15); }
         .btn-test { background: linear-gradient(135deg, #FF9966, #F27935); }
         .btn-event-toggle { background: #B8A99A; }
         .btn-event-toggle.active { background: linear-gradient(135deg, #FF85A1, #EB5A87); }
@@ -273,8 +289,8 @@
             pointer-events: none;
         }
 
-        .account-column.z { background-color: var(--bg-z); outline: 2px solid var(--border-z); }
         .account-column.h { background-color: var(--bg-h); outline: 2px solid var(--border-h); }
+        .account-column.z { background-color: var(--bg-z); outline: 2px solid var(--border-z); }
         .account-column.p { background-color: var(--bg-p); outline: 2px solid var(--border-p); }
 
         /* 公仔直接站在欄位「框外角」，完全不進框內、不擋任何職位空間 */
@@ -504,8 +520,8 @@
             transform: translateY(-2px);
         }
 
-        .z .timer-card { background: var(--card-z); box-shadow: 0 4px 12px var(--shadow-z); }
         .h .timer-card { background: var(--card-h); box-shadow: 0 4px 12px var(--shadow-h); }
+        .z .timer-card { background: var(--card-z); box-shadow: 0 4px 12px var(--shadow-z); }
         .p .timer-card { background: var(--card-p); box-shadow: 0 4px 12px var(--shadow-p); }
 
         .timer-card.master-card {
@@ -620,7 +636,7 @@
             background: rgba(255, 255, 255, 0.38);
         }
 
-        /* 職位預約白卡：標題維持原本大小（18px），只放大框「內」文字與下拉選單 */
+        /* 職位預約白卡：標題維持原本大小（18px），放大框內文字與下拉選單 */
         .job-section {
             background: rgba(255, 255, 255, 0.96);
             border-radius: 18px;
@@ -724,8 +740,8 @@
             color: var(--cocoa);
         }
 
-        .timeline-item.z { background-color: var(--bg-z); border-color: var(--border-z); }
         .timeline-item.h { background-color: var(--bg-h); border-color: var(--border-h); }
+        .timeline-item.z { background-color: var(--bg-z); border-color: var(--border-z); }
         .timeline-item.p { background-color: var(--bg-p); border-color: var(--border-p); }
 
         .tag {
@@ -742,21 +758,21 @@
         .tag-job-s { background: #EB5A87; }
         .tag-job-t { background: #5299E8; }
 
-/* 頁尾單獨 1 個大雲朵 (bg_cloud_pc.png) */
-.footer-clouds {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 180px; /* 先把高度放寬，避免雲朵上半部被裁切 */
-    background-image: url('./bg_cloud_pc.png');
-    background-repeat: no-repeat;
-    background-position: bottom center;
-    background-size: contain; /* 完整顯示整張圖片，不會被切掉 */
-    pointer-events: none;
-    z-index: 6; /* 調到卡片上方（原本是 1，被中間欄位擋住了） */
-    opacity: 0.95;
-}
+        /* 頁尾單獨 1 個雲朵：貼在整個網頁最底部，夾在圓點背景(body)與卡片框(z-index:4)之間，不影響網頁高度 */
+        .footer-clouds {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 160px;
+            background-image: url('./bg_cloud_pc.png');
+            background-repeat: no-repeat;
+            background-position: bottom center;
+            background-size: contain;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.96;
+        }
 
         /* 網頁內鬧鐘彈窗遮罩 */
         .alarm-modal-overlay {
@@ -854,10 +870,10 @@
         }
 
         @media (max-width: 950px) {
-            body { padding: 24px 24px 120px 18px; }
+            body { padding: 24px 24px 90px 18px; }
             .grid-view, .timeline-grid { grid-template-columns: 1fr; }
             .outer-corner-stand { right: -22px; bottom: -20px; width: 76px; height: 76px; }
-            .footer-clouds { background-size: 92% auto; }
+            .footer-clouds { height: 110px; }
         }
     </style>
 </head>
@@ -880,11 +896,9 @@
             <img class="header-mascot-img" src="./chara_face_1-1.png" alt="鬆弛熊">
             <h1>多帳戶鬧鐘助手</h1>
             <span class="sync-badge" id="syncBadge">⏳ 連線雲端中...</span>
+            <span class="notif-badge" id="notifBadge" onclick="requestDesktopNotificationPermission()">🔔 點擊開啟右下角桌面彈窗</span>
         </div>
         <div class="header-btns">
-            <button class="pill-btn btn-refresh-profile" id="refreshProfileBtn" onclick="refreshAllProfiles()">🔄 刷新戰力</button>
-            <button class="pill-btn btn-font-title" id="titleFontBtn" onclick="cycleTitleFont()">🔤 標題：貓啃什錦黑</button>
-            <button class="pill-btn btn-pancake" onclick="replaySplash()">🥞 開場動畫</button>
             <button class="pill-btn btn-event-toggle active" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光：顯示</button>
             <button class="pill-btn btn-test" onclick="testAlarm()">🔔 測試鈴聲</button>
             <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">
@@ -916,7 +930,7 @@
         </div>
     </div>
 
-    <!-- 頁尾單獨 1 個雲朵 -->
+    <!-- 頁尾單獨 1 個雲朵（貼在網頁最底部，位處背景與卡片框之間） -->
     <div class="footer-clouds"></div>
 
     <!-- 網頁內鬧鐘彈出視窗 -->
@@ -948,28 +962,16 @@
 
         const STORAGE_KEY = "multi_account_alarm_local_backup";
         const PROFILE_STORAGE_KEY = "multi_account_profiles_backup";
-        const TITLE_FONT_KEY = "multi_account_title_font_v3";
         const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
 
-        // Zoey（主號，黃色鬆弛熊）、Howard（粉色小白熊）、Patrick（綠色茶小熊）
+        // 順序改為：Howard（粉色小白熊）、Zoey（主號，黃色鬆弛熊）、Patrick（綠色茶小熊）
         const accounts = [
-            { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png', standFile: 'chara_stand_1-1.png' },
             { id: 'h', name: 'h', isMain: false, faceFile: 'chara_face_2-1.png', standFile: 'chara_stand_2-1.png' },
+            { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png', standFile: 'chara_stand_1-1.png' },
             { id: 'p', name: 'p', isMain: false, faceFile: 'chara_face_4-1.png', standFile: 'chara_stand_4-1.png' }
         ];
 
         let profiles = {
-            z: {
-                queryName: 'Zoey',
-                queryAlliance: 'TER',
-                name: 'Zoey',
-                alliance: 'TER',
-                levelLabel: 'TG8',
-                power: 430453250,
-                powerRank: 44,
-                avatar: 'https://got-global-avatar.akamaized.net/avatar/2026/11/07/v9JxWg_1794050377.png',
-                lastFetched: null
-            },
             h: {
                 queryName: 'Howard',
                 queryAlliance: '777',
@@ -979,6 +981,17 @@
                 power: 279000000,
                 powerRank: null,
                 avatar: '',
+                lastFetched: null
+            },
+            z: {
+                queryName: 'Zoey',
+                queryAlliance: 'TER',
+                name: 'Zoey',
+                alliance: 'TER',
+                levelLabel: 'TG8',
+                power: 430453250,
+                powerRank: 44,
+                avatar: 'https://got-global-avatar.akamaized.net/avatar/2026/11/07/v9JxWg_1794050377.png',
                 lastFetched: null
             },
             p: {
@@ -994,12 +1007,6 @@
             }
         };
 
-        const titleFonts = [
-            { label: '貓啃什錦黑', family: "'MaokenFont', 'HuninnFont', sans-serif" },
-            { label: 'jf粉圓體', family: "'HuninnFont', sans-serif" }
-        ];
-
-        let titleFontIdx = 0;
         let showSunlightEvent = true;
 
         // 士兵訓練與科技研究預設由 0天 00時 00分 開始
@@ -1036,6 +1043,7 @@
         let ringInterval = null;
         let titleBlinkInterval = null;
         let activeAlerts = [];
+        let activeSystemNotifications = [];
         let popupWin = null;
         let isInitialLoadDone = false;
         let hasPrunedInitialDrafts = false;
@@ -1052,27 +1060,54 @@
             }, 1350);
         }
 
-        function replaySplash() {
-            playSplashAnimation();
+        // 類似 YouTube 推送的 Windows / Chrome 系統右下角通知權限檢查與申請
+        function updateNotifBadgeUI() {
+            const badge = document.getElementById('notifBadge');
+            if (!badge) return;
+            if (!("Notification" in window)) {
+                badge.style.display = 'none';
+                return;
+            }
+            if (Notification.permission === 'granted') {
+                badge.innerText = '🖥️ 右下角系統彈窗：已開啟';
+                badge.classList.add('granted');
+            } else if (Notification.permission === 'denied') {
+                badge.innerText = '⚠️ 右下角通知被封鎖（請在網址列鎖頭開啟）';
+                badge.classList.remove('granted');
+            } else {
+                badge.innerText = '🔔 點擊開啟右下角桌面彈窗';
+                badge.classList.remove('granted');
+            }
         }
 
-        function initFontThemes() {
-            const savedTitle = localStorage.getItem(TITLE_FONT_KEY);
-            if (savedTitle !== null) titleFontIdx = parseInt(savedTitle, 10) % titleFonts.length;
-            applyFonts();
+        function requestDesktopNotificationPermission() {
+            if (!("Notification" in window)) return;
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then(() => {
+                    updateNotifBadgeUI();
+                });
+            } else {
+                updateNotifBadgeUI();
+            }
         }
 
-        function cycleTitleFont() {
-            titleFontIdx = (titleFontIdx + 1) % titleFonts.length;
-            localStorage.setItem(TITLE_FONT_KEY, String(titleFontIdx));
-            applyFonts();
-        }
-
-        function applyFonts() {
-            const tFont = titleFonts[titleFontIdx];
-            document.documentElement.style.setProperty('--font-title', tFont.family);
-            const tBtn = document.getElementById('titleFontBtn');
-            if (tBtn) tBtn.innerText = `🔤 標題：${tFont.label}`;
+        function sendSystemCornerNotification(message) {
+            if (!("Notification" in window)) return;
+            if (Notification.permission === 'granted') {
+                try {
+                    const notif = new Notification("⏰ 多帳戶鬧鐘時間到了！", {
+                        body: message,
+                        icon: "./chara_face_1-1.png",
+                        badge: "./chara_face_1-1.png",
+                        requireInteraction: true // 讓通知停留在 Windows 右下角直到你點擊關閉
+                    });
+                    notif.onclick = function() {
+                        try { window.focus(); } catch (e) {}
+                        notif.close();
+                    };
+                    activeSystemNotifications.push(notif);
+                } catch (e) {}
+            }
         }
 
         function formatPower(num) {
@@ -1122,16 +1157,10 @@
             return false;
         }
 
-        async function refreshAllProfiles(silent = false) {
-            const btn = document.getElementById('refreshProfileBtn');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerText = '⏳ 同步中...';
-            }
-
+        async function refreshAllProfiles() {
             const results = await Promise.all([
-                fetchSingleProfile('z'),
                 fetchSingleProfile('h'),
+                fetchSingleProfile('z'),
                 fetchSingleProfile('p')
             ]);
 
@@ -1139,13 +1168,6 @@
                 saveProfiles();
                 renderGrid();
                 updateTimeline();
-            } else if (!silent) {
-                alert('暫時無法連線至遊戲資料接口，請稍後再試（已保留上次同步的資料）。');
-            }
-
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = '🔄 刷新戰力';
             }
         }
 
@@ -1165,7 +1187,7 @@
             profiles[accId].alliance = newAlliance.trim();
             saveProfiles();
             renderGrid();
-            refreshAllProfiles(false);
+            refreshAllProfiles();
         }
 
         function saveProfiles() {
@@ -1249,7 +1271,7 @@
 
         function init() {
             playSplashAnimation();
-            initFontThemes();
+            updateNotifBadgeUI();
             loadLocalBackup();
             pruneUnstartedDrafts();
             loadLocalProfiles();
@@ -1258,7 +1280,7 @@
             setupFirebaseRealtimeListener();
             setupProfileListener();
             startBackgroundWorker();
-            refreshAllProfiles(true);
+            refreshAllProfiles();
         }
 
         function setupFirebaseRealtimeListener() {
@@ -1481,10 +1503,15 @@
                 activeAlerts.push(message);
             }
 
+            // 1. 發送類似 YouTube 推送的 Windows / Chrome 右下角原生桌面彈窗（即使縮小 Chrome 也會彈出）
+            sendSystemCornerNotification(message);
+
+            // 2. 更新網頁內彈窗
             const listEl = document.getElementById('alarmModalList');
             listEl.innerHTML = activeAlerts.map(msg => `<div>${msg}</div>`).join('');
             document.getElementById('alarmModalOverlay').style.display = 'flex';
 
+            // 3. 獨立小視窗與分頁閃爍提示
             openForcedPopup(activeAlerts);
 
             try { window.focus(); } catch (e) {}
@@ -1506,6 +1533,11 @@
             document.getElementById('alarmModalOverlay').style.display = 'none';
             activeAlerts = [];
 
+            activeSystemNotifications.forEach(n => {
+                try { n.close(); } catch (e) {}
+            });
+            activeSystemNotifications = [];
+
             if (popupWin && !popupWin.closed) {
                 popupWin.close();
             }
@@ -1522,6 +1554,7 @@
 
         function testAlarm() {
             initAudioContext();
+            requestDesktopNotificationPermission();
             const testKey = "test_" + Date.now();
             triggerAlarmAlert(testKey, `【測試】[${getDisplayAccountName('z')}] 士兵訓練 已完成！`);
         }
@@ -1536,6 +1569,7 @@
 
             if (autoStart) {
                 initAudioContext();
+                requestDesktopNotificationPermission();
                 const now = new Date();
                 const totalSeconds = (d * 86400) + (h * 3600) + (m * 60);
                 item.endTime = new Date(now.getTime() + totalSeconds * 1000);
@@ -1690,7 +1724,6 @@
                         <div class="preset-row">
                             <span style="font-size:11px; opacity:0.92; margin-right:2px;">周期:</span>
                             <button class="btn-preset" onclick="applyPreset('${accId}', 'sunlight', ${item.id}, 0, 8, 0, true)">▶ 8小時整</button>
-                            <button class="btn-preset" onclick="applyPreset('${accId}', 'sunlight', ${item.id}, 0, 8, 0, false)">填入8時</button>
                         </div>
                     `;
                 }
@@ -1793,6 +1826,7 @@
 
         function startTimer(accId, type, id) {
             initAudioContext();
+            requestDesktopNotificationPermission();
             const cardEl = document.getElementById(`card_${id}`);
             const item = store[accId][type].find(i => i.id === id);
 
