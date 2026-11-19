@@ -1378,30 +1378,31 @@
 
         let showSunlightEvent = true;
 
+        // store 包含職位確認狀態與手動鎖定狀態 (soldierJobLocked, techJobLocked)
         let store = {
             h: { 
                 soldiers: [{ id: 1, d: 0, h: 0, m: 0, endTime: null }], 
                 tech: [{ id: 2, d: 0, h: 0, m: 0, endTime: null }],
                 master: [{ id: 101, d: 0, h: 0, m: 10, endTime: null }],
                 sunlight: [{ id: 201, d: 0, h: 8, m: 0, endTime: null }],
-                soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false,
-                techJobTime: '', techJobDate: null, techJobConfirmed: false
+                soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false, soldierJobLocked: false,
+                techJobTime: '', techJobDate: null, techJobConfirmed: false, techJobLocked: false
             },
             z: { 
                 soldiers: [{ id: 3, d: 0, h: 0, m: 0, endTime: null }], 
                 tech: [{ id: 4, d: 0, h: 0, m: 0, endTime: null }],
                 master: [{ id: 102, d: 0, h: 0, m: 10, endTime: null }],
                 sunlight: [{ id: 202, d: 0, h: 8, m: 0, endTime: null }],
-                soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false,
-                techJobTime: '', techJobDate: null, techJobConfirmed: false
+                soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false, soldierJobLocked: false,
+                techJobTime: '', techJobDate: null, techJobConfirmed: false, techJobLocked: false
             },
             p: { 
                 soldiers: [{ id: 5, d: 0, h: 0, m: 0, endTime: null }], 
                 tech: [{ id: 6, d: 0, h: 0, m: 0, endTime: null }],
                 master: [{ id: 103, d: 0, h: 0, m: 10, endTime: null }],
                 sunlight: [{ id: 203, d: 0, h: 8, m: 0, endTime: null }],
-                soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false,
-                techJobTime: '', techJobDate: null, techJobConfirmed: false
+                soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false, soldierJobLocked: false,
+                techJobTime: '', techJobDate: null, techJobConfirmed: false, techJobLocked: false
             }
         };
 
@@ -1434,7 +1435,6 @@
         }
 
         // --- YouTube 同款右上角小鈴鐺 To-Do List 待辦清單 ---
-        // item: { id, accId, category ('soldiers'|'tech'|'master'|'sunlight'|'job_soldier'|'job_tech'), itemId, message, targetTimestamp, unread }
         let notifHistory = [];
         let triggeredEventKeys = new Set();
         let nextId = 300;
@@ -1444,7 +1444,6 @@
         let activeSystemNotifications = [];
         let isInitialLoadDone = false;
         let hasPrunedInitialDrafts = false;
-        let lastTimelineSignature = "";
 
         function loadNotifHistory() {
             try {
@@ -1508,7 +1507,6 @@
                         const safeId = escapeAttr(item.id);
                         let renewControlHtml = '';
 
-                        // 若尚未勾選完成，顯示對應的「直接輸入新一輪」操作區
                         if (item.unread && item.accId && item.category) {
                             if (['soldiers', 'tech', 'master', 'sunlight'].includes(item.category)) {
                                 let defD = 0, defH = 0, defM = 0;
@@ -1593,7 +1591,6 @@
             startNewRoundFromTodo(notifId, accId, category, itemId, d, h, m);
         }
 
-        // 在待辦清單內直接啟動新一輪倒數，並自動把該待辦勾選為完成
         function startNewRoundFromTodo(notifId, accId, category, itemId, d, h, m) {
             initAudioContext();
             requestDesktopNotificationPermission();
@@ -1618,12 +1615,11 @@
                 });
             }
 
-            // 標記該待辦已完成
             const todo = notifHistory.find(n => n.id === notifId);
             if (todo) todo.unread = false;
             saveNotifHistory();
 
-            recalculateJobs();
+            recalculateJobs(accId, category);
             renderGrid();
             updateTimeline(true);
             saveState();
@@ -1640,7 +1636,9 @@
 
         function confirmJobFromTodo(notifId, accId, jType) {
             const confKey = jType === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+            const lockKey = jType === 'soldier' ? 'soldierJobLocked' : 'techJobLocked';
             store[accId][confKey] = true;
+            store[accId][lockKey] = true;
             const todo = notifHistory.find(n => n.id === notifId);
             if (todo) todo.unread = false;
             saveNotifHistory();
@@ -2029,9 +2027,11 @@
                     soldierJobTime: accData.soldierJobTime || '',
                     soldierJobDate: accData.soldierJobDate ? accData.soldierJobDate.toISOString() : null,
                     soldierJobConfirmed: Boolean(accData.soldierJobConfirmed),
+                    soldierJobLocked: Boolean(accData.soldierJobLocked),
                     techJobTime: accData.techJobTime || '',
                     techJobDate: accData.techJobDate ? accData.techJobDate.toISOString() : null,
-                    techJobConfirmed: Boolean(accData.techJobConfirmed)
+                    techJobConfirmed: Boolean(accData.techJobConfirmed),
+                    techJobLocked: Boolean(accData.techJobLocked)
                 };
             });
 
@@ -2058,9 +2058,12 @@
                 store[acc.id].soldierJobTime = incoming.soldierJobTime || '';
                 store[acc.id].soldierJobDate = incoming.soldierJobDate ? new Date(incoming.soldierJobDate) : null;
                 store[acc.id].soldierJobConfirmed = Boolean(incoming.soldierJobConfirmed);
+                store[acc.id].soldierJobLocked = Boolean(incoming.soldierJobLocked || incoming.soldierJobConfirmed);
+
                 store[acc.id].techJobTime = incoming.techJobTime || '';
                 store[acc.id].techJobDate = incoming.techJobDate ? new Date(incoming.techJobDate) : null;
                 store[acc.id].techJobConfirmed = Boolean(incoming.techJobConfirmed);
+                store[acc.id].techJobLocked = Boolean(incoming.techJobLocked || incoming.techJobConfirmed);
             });
 
             if (parsed.nextId) nextId = parsed.nextId;
@@ -2159,7 +2162,6 @@
             } catch (e) {}
         }
 
-        // 統一觸發鬧鐘：寫入右上角 To-Do List 待辦清單 + Windows 右下角系統通知
         function triggerAlarmAlert(eventKey, message, targetTimestampMs, meta = {}) {
             if (triggeredEventKeys.has(eventKey)) return;
             triggeredEventKeys.add(eventKey);
@@ -2227,7 +2229,7 @@
                 const now = getAccurateNow();
                 const totalSeconds = (d * 86400) + (h * 3600) + (m * 60);
                 item.endTime = new Date(now.getTime() + totalSeconds * 1000);
-                recalculateJobs();
+                recalculateJobs(accId, type);
             }
 
             renderGrid();
@@ -2512,8 +2514,8 @@
 
         function deleteItem(accId, type, id) {
             store[accId][type] = store[accId][type].filter(item => item.id !== id);
+            recalculateJobs(accId, type);
             renderGrid();
-            recalculateJobs();
             saveState();
         }
 
@@ -2536,8 +2538,8 @@
                 const totalSeconds = (item.d * 86400) + (item.h * 3600) + (item.m * 60);
                 item.endTime = new Date(now.getTime() + totalSeconds * 1000);
 
+                recalculateJobs(accId, type);
                 renderGrid();
-                recalculateJobs();
                 saveState();
             }
         }
@@ -2552,8 +2554,8 @@
                     item.m = Math.floor((diffSec % 3600) / 60);
                 }
                 item.endTime = null;
+                recalculateJobs(accId, type);
                 renderGrid();
-                recalculateJobs();
                 saveState();
             }
         }
@@ -2618,7 +2620,6 @@
                     );
                 }
 
-                // 局部更新首頁看板「距離職位時間」
                 const sDistEl = document.getElementById(`home_dist_s_${acc.id}`);
                 if (sDistEl) sDistEl.innerText = getJobStatusMeta(acc.id, 'soldier').distText;
                 const tDistEl = document.getElementById(`home_dist_t_${acc.id}`);
@@ -2627,7 +2628,6 @@
 
             checkExpiredJobsAndAutoUpdate();
 
-            // 若時間線頁面正在顯示：只更新距離文字，絕不重畫 <select>（防止下拉選單秒關）
             if (document.getElementById('timelineView').style.display === 'block') {
                 updateTimelineDynamicTextsOnly();
             }
@@ -2643,9 +2643,11 @@
                         if (now - store[acc.id][dateKey] > 10 * 60 * 1000) {
                             const timeKey = dateKey.replace('Date', 'Time');
                             const confKey = dateKey.replace('Date', 'Confirmed');
+                            const lockKey = dateKey.replace('Date', 'Locked');
                             store[acc.id][timeKey] = '';
                             store[acc.id][dateKey] = null;
                             store[acc.id][confKey] = false;
+                            store[acc.id][lockKey] = false;
                             needUpdate = true;
                         }
                     }
@@ -2660,32 +2662,47 @@
             }
         }
 
-        function recalculateJobs() {
+        // 精準重算建議職位：
+        // 1. 若傳入 targetAccId 與 targetCategory，只處理該帳號的該項職位，不碰其他帳號與另一種職位
+        // 2. 只要該職位已按「✅ 已確認預約 (Confirmed)」或「手動調整過時間 (Locked)」，絕不還原覆蓋
+        function recalculateJobs(targetAccId = null, targetCategory = null) {
             const now = getAccurateNow();
 
             accounts.forEach(acc => {
-                let futureSoldierEnds = (store[acc.id].soldiers || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
-                if (futureSoldierEnds.length > 0) {
-                    futureSoldierEnds.sort((a, b) => a - b);
-                    const slotObj = calcRecommendedSlot(futureSoldierEnds[0]);
-                    store[acc.id].soldierJobTime = slotObj.timeStr;
-                    store[acc.id].soldierJobDate = slotObj.dateObj;
-                    store[acc.id].soldierJobConfirmed = false;
-                } else if (!store[acc.id].soldierJobConfirmed) {
-                    store[acc.id].soldierJobTime = '';
-                    store[acc.id].soldierJobDate = null;
+                if (targetAccId && acc.id !== targetAccId) return;
+
+                // 僅當沒有指定分類，或明確修改 'soldiers' 時才檢查士兵職位
+                if (!targetCategory || targetCategory === 'soldiers') {
+                    const isSoldierLocked = Boolean(store[acc.id].soldierJobConfirmed || store[acc.id].soldierJobLocked);
+                    if (!isSoldierLocked) {
+                        let futureSoldierEnds = (store[acc.id].soldiers || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
+                        if (futureSoldierEnds.length > 0) {
+                            futureSoldierEnds.sort((a, b) => a - b);
+                            const slotObj = calcRecommendedSlot(futureSoldierEnds[0]);
+                            store[acc.id].soldierJobTime = slotObj.timeStr;
+                            store[acc.id].soldierJobDate = slotObj.dateObj;
+                        } else {
+                            store[acc.id].soldierJobTime = '';
+                            store[acc.id].soldierJobDate = null;
+                        }
+                    }
                 }
 
-                let futureTechEnds = (store[acc.id].tech || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
-                if (futureTechEnds.length > 0) {
-                    futureTechEnds.sort((a, b) => a - b);
-                    const slotObj = calcRecommendedSlot(futureTechEnds[0]);
-                    store[acc.id].techJobTime = slotObj.timeStr;
-                    store[acc.id].techJobDate = slotObj.dateObj;
-                    store[acc.id].techJobConfirmed = false;
-                } else if (!store[acc.id].techJobConfirmed) {
-                    store[acc.id].techJobTime = '';
-                    store[acc.id].techJobDate = null;
+                // 僅當沒有指定分類，或明確修改 'tech' 時才檢查科技職位
+                if (!targetCategory || targetCategory === 'tech') {
+                    const isTechLocked = Boolean(store[acc.id].techJobConfirmed || store[acc.id].techJobLocked);
+                    if (!isTechLocked) {
+                        let futureTechEnds = (store[acc.id].tech || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
+                        if (futureTechEnds.length > 0) {
+                            futureTechEnds.sort((a, b) => a - b);
+                            const slotObj = calcRecommendedSlot(futureTechEnds[0]);
+                            store[acc.id].techJobTime = slotObj.timeStr;
+                            store[acc.id].techJobDate = slotObj.dateObj;
+                        } else {
+                            store[acc.id].techJobTime = '';
+                            store[acc.id].techJobDate = null;
+                        }
+                    }
                 }
             });
 
@@ -2727,6 +2744,7 @@
             const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
             const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
             const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+            const lockKey = type === 'soldier' ? 'soldierJobLocked' : 'techJobLocked';
 
             let curDate = store[accId][dateKey] || getAccurateNow();
             let newDate = new Date(curDate.getTime() + 30 * 60 * 1000);
@@ -2734,6 +2752,7 @@
             store[accId][dateKey] = newDate;
             store[accId][timeKey] = formatTimeHM(newDate);
             store[accId][confKey] = false;
+            store[accId][lockKey] = true; // 手動調整過時間，鎖定不被自動覆蓋
 
             renderGrid();
             updateTimeline(true);
@@ -2744,6 +2763,7 @@
             const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
             const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
             const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+            const lockKey = type === 'soldier' ? 'soldierJobLocked' : 'techJobLocked';
 
             store[accId][timeKey] = val;
             store[accId][confKey] = false;
@@ -2753,8 +2773,10 @@
                 d.setHours(h, m, 0, 0);
                 if (d < getAccurateNow()) d.setDate(d.getDate() + 1);
                 store[accId][dateKey] = d;
+                store[accId][lockKey] = true; // 手動選取了時段，鎖定不被自動覆蓋
             } else {
                 store[accId][dateKey] = null;
+                store[accId][lockKey] = false; // 選「無預約」則解除鎖定
             }
             renderGrid();
             updateTimeline(true);
@@ -2763,7 +2785,10 @@
 
         function toggleJobConfirmed(accId, type) {
             const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
-            store[accId][confKey] = !store[accId][confKey];
+            const lockKey = type === 'soldier' ? 'soldierJobLocked' : 'techJobLocked';
+            const nextState = !store[accId][confKey];
+            store[accId][confKey] = nextState;
+            store[accId][lockKey] = true; // 保持手動設定的預約時間不還原
             renderGrid();
             updateTimeline(true);
             saveState();
@@ -2781,7 +2806,6 @@
             return html;
         }
 
-        // 只更新時間線裡會隨時間變化的純文字（絕不重建 DOM，保護下拉選單不會秒關）
         function updateTimelineDynamicTextsOnly() {
             const now = getAccurateNow();
             accounts.forEach(acc => {
@@ -2796,7 +2820,6 @@
             });
         }
 
-        // 重繪時間線視圖（僅在狀態實際改變或手動切換時執行，且當使用者正在操作 <select> 時跳過重繪）
         function updateTimeline(forceRedraw = false) {
             const activeEl = document.activeElement;
             if (activeEl && activeEl.tagName === 'SELECT' && activeEl.closest('#timelineView')) {
