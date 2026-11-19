@@ -30,21 +30,17 @@
             --bg-h: rgba(255, 240, 244, 0.95);
             --border-h: #F8B4C8;
             --card-h: linear-gradient(135deg, #FF7EA5 0%, #EB5A87 100%);
-            --shadow-h: rgba(235, 90, 135, 0.25);
 
             /* Zoey（主號）：蜂蜜布丁黃 (鬆弛熊) */
             --bg-z: rgba(255, 249, 224, 0.95);
             --border-z: #F7D774;
             --card-z: linear-gradient(135deg, #F7B733 0%, #E69A15 100%);
-            --shadow-z: rgba(230, 154, 21, 0.25);
 
             /* Patrick：清新抹茶薄荷綠 (茶小熊) */
             --bg-p: rgba(236, 250, 240, 0.95);
             --border-p: #9CE0B4;
             --card-p: linear-gradient(135deg, #58C984 0%, #38A866 100%);
-            --shadow-p: rgba(56, 168, 102, 0.25);
 
-            /* 標題固定使用貓啃什錦黑；內文與計時使用 jf粉圓體 */
             --font-title: 'MaokenFont', 'HuninnFont', "PingFang HK", sans-serif;
             --font-body: 'HuninnFont', -apple-system, BlinkMacSystemFont, "PingFang HK", sans-serif;
         }
@@ -61,7 +57,7 @@
             background-repeat: repeat;
             background-size: 280px 280px;
             margin: 0;
-            padding: 28px 36px 90px 36px;
+            padding: 26px 36px 56px 36px;
             color: var(--cocoa);
             min-height: 100vh;
             position: relative;
@@ -140,12 +136,12 @@
             justify-content: space-between;
             align-items: center;
             max-width: 1240px;
-            margin: 0 auto 22px auto;
-            padding: 12px 20px;
+            margin: 0 auto 20px auto;
+            padding: 11px 20px;
             background: rgba(255, 255, 255, 0.95);
             border: 2.5px solid #F2DFC4;
             border-radius: 26px;
-            box-shadow: 0 6px 20px rgba(92, 61, 46, 0.08);
+            box-shadow: 0 5px 16px rgba(92, 61, 46, 0.07);
             flex-wrap: wrap;
             gap: 10px;
             position: relative;
@@ -160,8 +156,8 @@
         }
 
         .header-mascot-img {
-            width: 48px;
-            height: 48px;
+            width: 46px;
+            height: 46px;
             object-fit: contain;
             flex-shrink: 0;
             filter: drop-shadow(0 2px 4px rgba(92, 61, 46, 0.16));
@@ -171,7 +167,7 @@
         h1 {
             font-family: var(--font-title);
             font-weight: normal;
-            font-size: 27px;
+            font-size: 26px;
             margin: 0;
             letter-spacing: 1px;
             color: var(--cocoa);
@@ -236,7 +232,7 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            box-shadow: 0 3px 8px rgba(92, 61, 46, 0.14);
+            box-shadow: 0 2px 6px rgba(92, 61, 46, 0.12);
             transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s;
         }
         .pill-btn:hover {
@@ -276,7 +272,7 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            box-shadow: 0 3px 8px rgba(92, 61, 46, 0.1);
+            box-shadow: 0 2px 6px rgba(92, 61, 46, 0.1);
             transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .btn-bell:hover { transform: scale(1.08); }
@@ -310,12 +306,12 @@
             position: absolute;
             top: 46px;
             right: 0;
-            width: 400px;
+            width: 410px;
             max-width: 92vw;
             background: #FFFDF8;
             border: 2.5px solid #F2DFC4;
             border-radius: 22px;
-            box-shadow: 0 16px 36px rgba(92, 61, 46, 0.24);
+            box-shadow: 0 14px 32px rgba(92, 61, 46, 0.22);
             z-index: 9999;
             overflow: hidden;
             animation: fadeIn 0.15s ease;
@@ -354,75 +350,105 @@
         .btn-notif-mini:hover { background: #FFF0F4; border-color: #F8B4C8; }
 
         .notif-dropdown-list {
-            max-height: 430px;
+            max-height: 440px;
             overflow-y: auto;
             padding: 9px;
         }
 
-        /* 待辦清單單筆卡片 */
+        /* 待辦清單單筆卡片：未處理套用對應角色色；已處理轉藍色 */
         .todo-item {
-            padding: 10px 11px;
+            padding: 10px 12px;
             border-radius: 14px;
             margin-bottom: 8px;
-            background: #FFF;
             border: 1.5px solid #EFE4D6;
+            border-left-width: 6px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 7px;
             transition: all 0.15s;
         }
-        .todo-item.pending {
-            background: #FFF6F8;
-            border-color: #F8B4C8;
-            border-left: 5px solid #EB5A87;
+        .todo-item.pending.acc-h {
+            background: var(--bg-h);
+            border-color: var(--border-h);
+        }
+        .todo-item.pending.acc-z {
+            background: var(--bg-z);
+            border-color: var(--border-z);
+        }
+        .todo-item.pending.acc-p {
+            background: var(--bg-p);
+            border-color: var(--border-p);
         }
         .todo-item.done {
-            background: #FAF8F5;
-            opacity: 0.72;
-            border-left: 5px solid #A3DFB3;
+            background: #EBF5FF;
+            border-color: #93C5FD;
+            border-left-color: #3B82F6;
         }
 
         .todo-top-row {
             display: flex;
-            align-items: flex-start;
-            gap: 8px;
+            align-items: center;
+            gap: 10px;
         }
 
         .todo-checkbox {
-            width: 20px;
-            height: 20px;
-            border-radius: 6px;
-            border: 2px solid #DFCBB5;
+            width: 22px;
+            height: 22px;
+            border-radius: 7px;
+            border: 2px solid #CBB6A0;
             background: #FFF;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 13px;
+            font-weight: 800;
             flex-shrink: 0;
-            margin-top: 1px;
             padding: 0;
         }
         .todo-item.done .todo-checkbox {
-            background: #38B864;
-            border-color: #2B9650;
+            background: #3B82F6;
+            border-color: #2563EB;
             color: #FFF;
+        }
+
+        /* 佔滿 2 行高度的大型類別圖示 (⚔️ / 🔬 / 📖 / ☀️ / 🏛️) */
+        .todo-big-emoji {
+            font-size: 32px;
+            line-height: 1;
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.72);
+            border-radius: 10px;
+            border: 1px solid rgba(92, 61, 46, 0.1);
+        }
+        .todo-item.done .todo-big-emoji {
+            background: rgba(255, 255, 255, 0.85);
+            border-color: rgba(59, 130, 246, 0.25);
         }
 
         .todo-msg-wrap {
             flex: 1;
             min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
         }
 
         .todo-item-msg {
             font-size: 13.5px;
             font-weight: 700;
             color: var(--cocoa);
-            line-height: 1.35;
+            line-height: 1.3;
         }
         .todo-item.done .todo-item-msg {
             text-decoration: line-through;
-            color: var(--cocoa-light);
+            color: #2563EB;
         }
 
         .todo-item-meta {
@@ -431,19 +457,21 @@
             align-items: center;
             font-size: 11px;
             color: var(--cocoa-light);
-            margin-top: 2px;
+        }
+        .todo-item.done .todo-item-meta {
+            color: #4B7BEC;
         }
 
         /* 待辦清單內的「新一輪快捷輸入列」 */
         .todo-renew-box {
-            background: #FFFDF8;
-            border: 1px dashed #E2D0BC;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px dashed #D8C4AE;
             border-radius: 10px;
             padding: 6px 8px;
             display: flex;
             flex-direction: column;
             gap: 5px;
-            margin-left: 28px;
+            margin-left: 32px;
         }
 
         .todo-renew-row {
@@ -497,48 +525,38 @@
         }
         .btn-todo-preset:hover { background: #F2DFC8; }
 
-        /* 螢光筆 size 迷你日期膠囊（超緊湊，不撐高行距） */
-        .day-hl {
-            display: inline-block;
-            padding: 1px 5px;
-            border-radius: 4px;
-            font-size: 10.5px;
+        /* 時間線與職位欄「今天 / 明天」文字標示 */
+        .day-label-today {
+            color: #9E2A2B;
             font-weight: 800;
-            line-height: 1.1;
-            vertical-align: baseline;
-            margin-right: 2px;
-            letter-spacing: 0.3px;
+            margin-right: 3px;
         }
-        .day-hl.today {
-            background-color: #9E2A2B; /* 棕紅 / 深紅白字 */
-            color: #FFFFFF;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
-        }
-        .day-hl.tomorrow {
-            background-color: #1D4E89; /* 深藍白字 */
-            color: #FFFFFF;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+        .day-label-tomorrow {
+            color: #1D4E89;
+            font-weight: 800;
+            margin-right: 3px;
         }
 
         /* 3欄手賬卡片視圖 */
         .grid-view {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 32px;
+            gap: 30px;
             max-width: 1240px;
             margin: 0 auto;
             position: relative;
             z-index: 4;
         }
 
+        /* 適中偏緊的區塊間距，讓標題與計時框緊湊但不擁擠 */
         .account-column {
             border-radius: 26px;
-            padding: 16px 16px 22px 16px;
+            padding: 14px 15px 18px 15px;
             border: 3.5px solid #FFFFFF;
-            box-shadow: 0 10px 24px rgba(92, 61, 46, 0.09);
+            box-shadow: 0 6px 16px rgba(92, 61, 46, 0.07);
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 10px;
             position: relative;
             overflow: visible;
         }
@@ -557,7 +575,7 @@
         .account-column.z { background-color: var(--bg-z); outline: 2px solid var(--border-z); }
         .account-column.p { background-color: var(--bg-p); outline: 2px solid var(--border-p); }
 
-        /* 公仔直接站在欄位「框外角」，完全不進框內、不擋任何職位空間 */
+        /* 公仔直接站在欄位「框外角」 */
         .outer-corner-stand {
             position: absolute;
             bottom: -24px;
@@ -567,7 +585,7 @@
             object-fit: contain;
             pointer-events: none;
             z-index: 8;
-            filter: drop-shadow(0 4px 7px rgba(92, 61, 46, 0.24));
+            filter: drop-shadow(0 3px 6px rgba(92, 61, 46, 0.22));
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .account-column:hover .outer-corner-stand {
@@ -578,12 +596,12 @@
         .profile-card {
             background: rgba(255, 255, 255, 0.97);
             border-radius: 18px;
-            padding: 13px 14px;
+            padding: 11px 13px;
             display: flex;
             align-items: center;
-            gap: 13px;
+            gap: 12px;
             border: 2px solid rgba(92, 61, 46, 0.08);
-            box-shadow: 0 4px 12px rgba(92, 61, 46, 0.06);
+            box-shadow: 0 2px 6px rgba(92, 61, 46, 0.04);
             position: relative;
             z-index: 2;
         }
@@ -594,13 +612,13 @@
         }
 
         .profile-avatar {
-            width: 62px;
-            height: 62px;
-            border-radius: 16px;
+            width: 58px;
+            height: 58px;
+            border-radius: 15px;
             object-fit: cover;
             background: #F5EFE6;
             border: 2.5px solid #FFF;
-            box-shadow: 0 3px 8px rgba(92, 61, 46, 0.15);
+            box-shadow: 0 2px 5px rgba(92, 61, 46, 0.12);
             display: block;
         }
 
@@ -608,13 +626,13 @@
             position: absolute;
             bottom: -6px;
             right: -6px;
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             object-fit: contain;
             background: #FFF;
             border-radius: 50%;
             padding: 2px;
-            box-shadow: 0 2px 5px rgba(92, 61, 46, 0.22);
+            box-shadow: 0 2px 4px rgba(92, 61, 46, 0.18);
         }
 
         .profile-details {
@@ -632,9 +650,9 @@
         .profile-name {
             font-family: var(--font-title);
             font-weight: normal;
-            font-size: 27px;
+            font-size: 26px;
             color: var(--cocoa);
-            line-height: 1.15;
+            line-height: 1.1;
             letter-spacing: 0.5px;
         }
 
@@ -646,7 +664,6 @@
             background: linear-gradient(135deg, #FFD43B, #FAB005);
             color: var(--cocoa);
             border: 1px solid #FFF;
-            box-shadow: 0 2px 4px rgba(92, 61, 46, 0.12);
         }
 
         .profile-alliance {
@@ -662,14 +679,14 @@
             display: flex;
             align-items: center;
             gap: 7px;
-            margin-top: 6px;
+            margin-top: 5px;
             flex-wrap: wrap;
-            font-size: 13.5px;
+            font-size: 13px;
             font-weight: 700;
         }
 
         .stat-pill {
-            padding: 3px 11px;
+            padding: 2px 10px;
             border-radius: 999px;
         }
         .stat-pill.tg {
@@ -713,20 +730,22 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 21px;
+            font-size: 20px;
             letter-spacing: 0.8px;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             color: var(--cocoa);
             padding: 0 2px;
+            min-height: 26px;
         }
 
+        /* 士兵訓練的 + 號圓形改為天藍色 */
         .btn-add {
-            background: #5CD685;
+            background: linear-gradient(135deg, #5BB6FF 0%, #3498DB 100%);
             color: white;
             border: 2px solid #FFF;
             border-radius: 50%;
-            width: 26px;
-            height: 26px;
+            width: 25px;
+            height: 25px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
@@ -734,7 +753,7 @@
             align-items: center;
             justify-content: center;
             line-height: 1;
-            box-shadow: 0 2px 5px rgba(92, 61, 46, 0.15);
+            box-shadow: 0 2px 4px rgba(52, 152, 219, 0.25);
             transition: transform 0.2s;
         }
         .btn-add:hover { transform: scale(1.15); }
@@ -744,57 +763,67 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 9px;
+            margin-bottom: 6px;
+        }
+        .timer-item-row:last-child {
+            margin-bottom: 0;
         }
 
         .flower-seq-badge {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 34px;
-            height: 34px;
+            width: 32px;
+            height: 32px;
             flex-shrink: 0;
             background-image: url('./bg_epi_num.svg');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
             font-family: var(--font-body);
-            font-size: 15px;
+            font-size: 14.5px;
             font-weight: 800;
             color: #FFFFFF;
             text-shadow: 0 1px 2px rgba(92, 61, 46, 0.45);
-            filter: drop-shadow(0 2px 4px rgba(92, 61, 46, 0.15));
         }
 
-        /* 軟萌計時小卡片 */
+        /* 軟萌計時小卡片：收薄底部陰影，並支援「今天＝紅外粗框 / 明天＝藍外粗框」 */
         .timer-card {
             flex: 1;
             min-width: 0;
             color: white;
-            border-radius: 16px;
-            padding: 10px 12px;
+            border-radius: 15px;
+            padding: 9px 11px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             border: 2px solid rgba(255, 255, 255, 0.72);
+            box-shadow: 0 2px 5px rgba(92, 61, 46, 0.12);
             position: relative;
             transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .timer-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
 
-        .h .timer-card { background: var(--card-h); box-shadow: 0 4px 12px var(--shadow-h); }
-        .z .timer-card { background: var(--card-z); box-shadow: 0 4px 12px var(--shadow-z); }
-        .p .timer-card { background: var(--card-p); box-shadow: 0 4px 12px var(--shadow-p); }
+        .h .timer-card { background: var(--card-h); }
+        .z .timer-card { background: var(--card-z); }
+        .p .timer-card { background: var(--card-p); }
 
         .timer-card.master-card {
             border-left: 6px solid #FFF3A1;
         }
         .timer-card.sunlight-card {
             background: linear-gradient(135deg, #FFA24C 0%, #FF6F61 100%) !important;
-            box-shadow: 0 4px 12px rgba(255, 111, 97, 0.28) !important;
             border-left: 6px solid #FFF6D6;
+        }
+
+        /* 計時區「今天（紅外粗框）」與「明天（藍外粗框）」，不改變卡片內部底色 */
+        .timer-card.due-today {
+            border: 3.5px solid #B8292F !important;
+        }
+        .timer-card.due-tomorrow {
+            border: 3.5px solid #1D4E89 !important;
         }
 
         .timer-main-row {
@@ -808,23 +837,23 @@
         .timer-info {
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 2px;
         }
 
         .timer-display {
-            font-size: 21px;
+            font-size: 20px;
             font-weight: 700;
             font-family: var(--font-body);
             font-variant-numeric: tabular-nums;
             letter-spacing: 0.5px;
             text-shadow: 0 1px 2px rgba(92, 61, 46, 0.22);
-            line-height: 1.2;
+            line-height: 1.15;
         }
 
         .timer-sub {
             font-size: 11.5px;
             opacity: 0.96;
-            line-height: 1.25;
+            line-height: 1.2;
         }
 
         .timer-inputs {
@@ -836,9 +865,9 @@
 
         .time-input {
             width: 26px;
-            height: 26px;
+            height: 25px;
             border: 1.5px solid rgba(255, 255, 255, 0.85);
-            border-radius: 8px;
+            border-radius: 7px;
             background: rgba(255, 255, 255, 0.96);
             text-align: center;
             font-size: 13px;
@@ -858,7 +887,7 @@
             background: rgba(255, 255, 255, 0.28);
             border: 1.5px solid rgba(255, 255, 255, 0.6);
             color: white;
-            padding: 5px 10px;
+            padding: 4px 9px;
             border-radius: 999px;
             cursor: pointer;
             font-size: 12px;
@@ -882,7 +911,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 4px;
-            padding-top: 6px;
+            padding-top: 5px;
             border-top: 1px dashed rgba(255, 255, 255, 0.5);
         }
 
@@ -905,12 +934,12 @@
         .job-section {
             background: rgba(255, 255, 255, 0.96);
             border-radius: 18px;
-            padding: 13px 14px 14px 14px;
+            padding: 11px 13px 12px 13px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             border: 2px solid rgba(92, 61, 46, 0.08);
-            box-shadow: 0 4px 10px rgba(92, 61, 46, 0.05);
+            box-shadow: 0 2px 6px rgba(92, 61, 46, 0.04);
             position: relative;
             z-index: 2;
         }
@@ -920,7 +949,7 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1.5px dashed #E6D7C3;
-            padding-bottom: 5px;
+            padding-bottom: 4px;
         }
 
         .job-section-title {
@@ -949,17 +978,17 @@
             background: #FFFDF9;
             border: 1.5px solid #EFE4D4;
             border-radius: 12px;
-            padding: 8px 10px;
+            padding: 7px 10px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
         }
 
         .job-status-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 14.5px;
+            font-size: 14px;
             font-weight: 700;
             color: var(--cocoa);
         }
@@ -1024,7 +1053,7 @@
             border-radius: 24px;
             padding: 16px;
             border: 2.5px solid #F0DFC8;
-            box-shadow: 0 6px 18px rgba(92, 61, 46, 0.07);
+            box-shadow: 0 5px 14px rgba(92, 61, 46, 0.06);
             display: flex;
             flex-direction: column;
         }
@@ -1044,7 +1073,7 @@
 
         /* 框內滾動區 */
         .timeline-scroll-area {
-            max-height: 540px;
+            max-height: 550px;
             overflow-y: auto;
             padding-right: 4px;
         }
@@ -1060,46 +1089,73 @@
             border-radius: 999px;
         }
 
-        /* 不同日期之間的黃色手繪點點橫線分隔 (dot_yoko.png) */
+        /* 更細且更密的黃色手繪點點橫線分隔 (dot_yoko.png) */
         .date-dot-divider {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin: 12px 0 10px 0;
+            margin: 8px 2px;
         }
         .date-dot-line {
-            flex: 1;
-            height: 10px;
+            width: 100%;
+            height: 5px;
             background-image: url('./dot_yoko.png');
             background-repeat: repeat-x;
             background-position: left center;
-            background-size: auto 10px;
+            background-size: auto 5px;
         }
 
+        /* 時間線項目：左側加入熊頭 + 固定寬度人名，確保所有項目標籤整齊對齊 */
         .timeline-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 9px 11px;
-            margin-bottom: 8px;
+            padding: 8px 11px;
+            margin-bottom: 7px;
             border-radius: 14px;
             border-left: 6px solid;
             font-weight: 600;
             font-size: 13.5px;
             color: var(--cocoa);
-            gap: 6px;
+            gap: 8px;
         }
 
         .timeline-item.h { background-color: var(--bg-h); border-color: var(--border-h); }
         .timeline-item.z { background-color: var(--bg-z); border-color: var(--border-z); }
         .timeline-item.p { background-color: var(--bg-p); border-color: var(--border-p); }
 
+        .tl-left-group {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .tl-bear-icon {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            flex-shrink: 0;
+            margin-right: 6px;
+        }
+
+        .tl-acc-name {
+            width: 78px;
+            flex-shrink: 0;
+            font-size: 13.5px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .tag {
-            padding: 2px 8px;
+            padding: 2px 9px;
             border-radius: 999px;
             font-size: 11px;
             color: white;
-            margin-left: 4px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
         }
         .tag-soldier { background: #FF9F43; }
         .tag-tech { background: #7D83EB; }
@@ -1110,7 +1166,7 @@
         .job-manage-card {
             border-radius: 16px;
             padding: 11px 12px;
-            margin-bottom: 11px;
+            margin-bottom: 10px;
             border-left: 6px solid;
             display: flex;
             flex-direction: column;
@@ -1126,6 +1182,12 @@
             align-items: center;
             font-weight: 700;
             font-size: 15px;
+        }
+
+        .job-name-with-bear {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .job-manage-controls {
@@ -1194,22 +1256,6 @@
             font-weight: 700;
         }
 
-        /* 頁尾單獨 1 個雲朵 */
-        .footer-clouds {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 160px;
-            background-image: url('./bg_cloud_pc.png');
-            background-repeat: no-repeat;
-            background-position: bottom center;
-            background-size: contain;
-            pointer-events: none;
-            z-index: 1;
-            opacity: 0.96;
-        }
-
         @keyframes gentleFloat {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-4px); }
@@ -1230,10 +1276,9 @@
         }
 
         @media (max-width: 950px) {
-            body { padding: 24px 24px 90px 18px; }
+            body { padding: 24px 24px 56px 18px; }
             .grid-view, .timeline-grid { grid-template-columns: 1fr; }
             .outer-corner-stand { right: -22px; bottom: -20px; width: 76px; height: 76px; }
-            .footer-clouds { height: 110px; }
         }
     </style>
 </head>
@@ -1308,9 +1353,6 @@
         </div>
     </div>
 
-    <!-- 頁尾單獨 1 個雲朵 -->
-    <div class="footer-clouds"></div>
-
     <script>
         // --- 1. Firebase 專案設定 ---
         const firebaseConfig = {
@@ -1333,12 +1375,17 @@
         const NOTIF_HISTORY_KEY = "multi_account_notif_history_v2";
         const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
 
-        // 順序：Howard（粉色小白熊）、Zoey（主號，黃色鬆弛熊）、Patrick（綠色茶小熊）
+        // 順序：Howard（白熊）、Zoey（主號，懶熊）、Patrick（森熊/茶小熊）
         const accounts = [
             { id: 'h', name: 'h', isMain: false, faceFile: 'chara_face_2-1.png', standFile: 'chara_stand_2-1.png' },
             { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png', standFile: 'chara_stand_1-1.png' },
             { id: 'p', name: 'p', isMain: false, faceFile: 'chara_face_4-1.png', standFile: 'chara_stand_4-1.png' }
         ];
+
+        function getBearFaceFile(accId) {
+            const acc = accounts.find(a => a.id === accId);
+            return acc ? `./${acc.faceFile}` : './chara_face_1-1.png';
+        }
 
         let profiles = {
             h: {
@@ -1378,7 +1425,6 @@
 
         let showSunlightEvent = true;
 
-        // store 包含職位確認狀態與手動鎖定狀態 (soldierJobLocked, techJobLocked)
         let store = {
             h: { 
                 soldiers: [{ id: 1, d: 0, h: 0, m: 0, endTime: null }], 
@@ -1406,7 +1452,7 @@
             }
         };
 
-        // --- 全自動標準時間偏差校正（方案 A） ---
+        // --- 全自動標準時間偏差校正 ---
         let serverTimeOffsetMs = 0;
         function getAccurateNow() {
             return new Date(Date.now() + serverTimeOffsetMs);
@@ -1476,6 +1522,24 @@
             return String(str).replace(/'/g, "\\'").replace(/"/g, "&quot;");
         }
 
+        function getCategoryEmoji(category, message = '') {
+            if (category === 'soldiers' || category === 'job_soldier') return '⚔️';
+            if (category === 'tech' || category === 'job_tech') return '🔬';
+            if (category === 'master') return '📖';
+            if (category === 'sunlight') return '☀️';
+            if (message.includes('科技')) return '🔬';
+            if (message.includes('大師')) return '📖';
+            if (message.includes('沐光')) return '☀️';
+            return '⚔️';
+        }
+
+        function inferAccIdFromMessage(msg) {
+            if (!msg) return 'z';
+            if (msg.includes(getDisplayAccountName('h')) || msg.includes('[h]')) return 'h';
+            if (msg.includes(getDisplayAccountName('p')) || msg.includes('[p]')) return 'p';
+            return 'z';
+        }
+
         function renderBellUI() {
             const unreadCount = notifHistory.filter(n => n.unread).length;
             const badge = document.getElementById('bellCountBadge');
@@ -1505,9 +1569,13 @@
                 } else {
                     listEl.innerHTML = notifHistory.map((item, idx) => {
                         const safeId = escapeAttr(item.id);
+                        const accId = item.accId || inferAccIdFromMessage(item.message);
+                        const bigEmoji = getCategoryEmoji(item.category, item.message);
+                        // 清理文字內重複的 emoji，交給左側 2 行高的大圖示呈現
+                        const cleanMessage = String(item.message).replace(/\s*(⚔️|🔬|📖|☀️)\s*/g, ' ').replace(/\s+/g, ' ').trim();
                         let renewControlHtml = '';
 
-                        if (item.unread && item.accId && item.category) {
+                        if (item.unread && accId && item.category) {
                             if (['soldiers', 'tech', 'master', 'sunlight'].includes(item.category)) {
                                 let defD = 0, defH = 0, defM = 0;
                                 if (item.category === 'master') defM = 10;
@@ -1517,18 +1585,18 @@
                                 if (item.category === 'master') {
                                     presetBtns = `
                                         <div class="todo-presets">
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${item.accId}', 'master', ${item.itemId || 'null'}, 0, 0, 10)">10分</button>
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${item.accId}', 'master', ${item.itemId || 'null'}, 0, 2, 0)">2時</button>
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${item.accId}', 'master', ${item.itemId || 'null'}, 0, 10, 0)">10時</button>
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${item.accId}', 'master', ${item.itemId || 'null'}, 0, 23, 0)">23時</button>
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${item.accId}', 'master', ${item.itemId || 'null'}, 3, 0, 0)">3天</button>
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${item.accId}', 'master', ${item.itemId || 'null'}, 5, 0, 0)">5天</button>
+                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 0, 10)">10分</button>
+                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 2, 0)">2時</button>
+                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 10, 0)">10時</button>
+                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 23, 0)">23時</button>
+                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 3, 0, 0)">3天</button>
+                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 5, 0, 0)">5天</button>
                                         </div>
                                     `;
                                 } else if (item.category === 'sunlight') {
                                     presetBtns = `
                                         <div class="todo-presets">
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${item.accId}', 'sunlight', ${item.itemId || 'null'}, 0, 8, 0)">▶ 8小時整</button>
+                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'sunlight', ${item.itemId || 'null'}, 0, 8, 0)">▶ 8小時整</button>
                                         </div>
                                     `;
                                 }
@@ -1540,7 +1608,7 @@
                                             <input type="text" class="todo-mini-input" id="todo_d_${idx}" value="${defD}" maxlength="2" onfocus="this.select()">天
                                             <input type="text" class="todo-mini-input" id="todo_h_${idx}" value="${formatPad(defH)}" maxlength="2" onfocus="this.select()">時
                                             <input type="text" class="todo-mini-input" id="todo_m_${idx}" value="${formatPad(defM)}" maxlength="2" onfocus="this.select()">分
-                                            <button class="btn-todo-start" onclick="submitTodoCustomRound(${idx}, '${safeId}', '${item.accId}', '${item.category}', ${item.itemId || 'null'})">▶ 開始新一輪</button>
+                                            <button class="btn-todo-start" onclick="submitTodoCustomRound(${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">▶ 開始新一輪</button>
                                         </div>
                                         ${presetBtns}
                                     </div>
@@ -1551,22 +1619,25 @@
                                     <div class="todo-renew-box">
                                         <div class="todo-renew-row">
                                             <span style="font-weight:700;">職位處理:</span>
-                                            <button class="btn-todo-preset" onclick="shiftJobFromTodo('${safeId}', '${item.accId}', '${jType}')">延後 +30分</button>
-                                            <button class="btn-todo-start" onclick="confirmJobFromTodo('${safeId}', '${item.accId}', '${jType}')">✅ 已領職位並完成</button>
+                                            <button class="btn-todo-preset" onclick="shiftJobFromTodo('${safeId}', '${accId}', '${jType}')">延後 +30分</button>
+                                            <button class="btn-todo-start" onclick="confirmJobFromTodo('${safeId}', '${accId}', '${jType}')">✅ 已領職位並完成</button>
                                         </div>
                                     </div>
                                 `;
                             }
                         }
 
+                        const cardStateClass = item.unread ? `pending acc-${accId}` : 'done';
+
                         return `
-                            <div class="todo-item ${item.unread ? 'pending' : 'done'}">
+                            <div class="todo-item ${cardStateClass}">
                                 <div class="todo-top-row">
                                     <button class="todo-checkbox" title="${item.unread ? '點擊標記為已完成' : '標記為未完成'}" onclick="toggleTodoDone('${safeId}')">
                                         ${item.unread ? '' : '✓'}
                                     </button>
+                                    <div class="todo-big-emoji">${bigEmoji}</div>
                                     <div class="todo-msg-wrap">
-                                        <div class="todo-item-msg">${item.message}</div>
+                                        <div class="todo-item-msg">${cleanMessage}</div>
                                         <div class="todo-item-meta">
                                             <span>🕒 ${formatRelativeAgo(item.targetTimestamp)}</span>
                                             <span>${item.unread ? '待處理' : '已完成'}</span>
@@ -1597,6 +1668,9 @@
 
             if (!store[accId] || !store[accId][category]) return;
             let targetItem = itemId ? store[accId][category].find(i => i.id === itemId) : null;
+            if (!targetItem && (category === 'tech' || category === 'master') && store[accId][category].length > 0) {
+                targetItem = store[accId][category][0];
+            }
 
             const now = getAccurateNow();
             const totalSeconds = (d * 86400) + (h * 3600) + (m * 60);
@@ -1749,14 +1823,16 @@
             }
         }
 
-        function sendSystemCornerNotification(message) {
+        // 右下角 YouTube 式系統彈窗：使用對應角色的熊頭（白熊 / 懶熊 / 森熊）
+        function sendSystemCornerNotification(message, accId = 'z') {
             if (!("Notification" in window)) return;
             if (Notification.permission === 'granted') {
                 try {
+                    const bearIcon = getBearFaceFile(accId);
                     const notif = new Notification("⏰ 多帳戶鬧鐘時間到了！", {
                         body: message,
-                        icon: "./chara_face_1-1.png",
-                        badge: "./chara_face_1-1.png",
+                        icon: bearIcon,
+                        badge: bearIcon,
                         requireInteraction: true
                     });
                     notif.onclick = function() {
@@ -1770,21 +1846,21 @@
             }
         }
 
-        // --- 日期格式化：今天（棕紅白字螢光筆）、明天（深藍白字螢光筆）、其他（MM/DD） ---
-        function getDayTagHtml(dateObj) {
-            if (!dateObj) return '';
+        // --- 日期判斷與格式化 ---
+        function getDayDiffFromToday(dateObj) {
+            if (!dateObj) return null;
             const now = getAccurateNow();
             const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
             const targetStart = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).getTime();
-            const diffDays = Math.round((targetStart - todayStart) / 86400000);
+            return Math.round((targetStart - todayStart) / 86400000);
+        }
 
-            if (diffDays === 0) {
-                return `<span class="day-hl today">今天</span>`;
-            } else if (diffDays === 1) {
-                return `<span class="day-hl tomorrow">明天</span>`;
-            } else {
-                return `${dateObj.getMonth() + 1}/${dateObj.getDate()} `;
-            }
+        function getDayLabelHtml(dateObj) {
+            const diffDays = getDayDiffFromToday(dateObj);
+            if (diffDays === null) return '';
+            if (diffDays === 0) return `<span class="day-label-today">今天</span>`;
+            if (diffDays === 1) return `<span class="day-label-tomorrow">明天</span>`;
+            return `${dateObj.getMonth() + 1}/${dateObj.getDate()} `;
         }
 
         function getDateGroupKey(dateObj) {
@@ -1796,7 +1872,7 @@
         function formatTimeHM(date) { return !date ? '--:--' : `${formatPad(date.getHours())}:${formatPad(date.getMinutes())}`; }
         function formatDateTimeHtml(date) {
             if (!date) return '--:--';
-            return `${getDayTagHtml(date)}${formatTimeHM(date)}`;
+            return `${getDayLabelHtml(date)}${formatTimeHM(date)}`;
         }
 
         function formatDurationShort(ms) {
@@ -1939,17 +2015,32 @@
             }
         }
 
+        // 確保大師技能與科技研究永遠只有 1 個項目，並清理多餘空白草稿
         function pruneUnstartedDrafts() {
             let changed = false;
             accounts.forEach(acc => {
                 ['soldiers', 'tech', 'master', 'sunlight'].forEach(type => {
                     const list = store[acc.id][type] || [];
+
+                    // 科技研究與大師技能只能有 1 個
+                    if (type === 'tech' || type === 'master') {
+                        if (list.length === 0) {
+                            store[acc.id][type] = [{ id: ++nextId, d: 0, h: 0, m: type === 'master' ? 10 : 0, endTime: null }];
+                            changed = true;
+                        } else if (list.length > 1) {
+                            const activeOne = list.find(i => i.endTime !== null) || list[0];
+                            store[acc.id][type] = [activeOne];
+                            changed = true;
+                        }
+                        return;
+                    }
+
                     const running = list.filter(i => i.endTime !== null);
                     const unstarted = list.filter(i => i.endTime === null);
 
                     if (unstarted.length > 1) {
                         const firstDraft = unstarted[0];
-                        if (type === 'soldiers' || type === 'tech') {
+                        if (type === 'soldiers') {
                             firstDraft.d = 0;
                             firstDraft.h = 0;
                             firstDraft.m = 0;
@@ -1958,7 +2049,6 @@
                         changed = true;
                     } else if (unstarted.length === 0 && running.length === 0) {
                         let defD = 0, defH = 0, defM = 0;
-                        if (type === 'master') defM = 10;
                         if (type === 'sunlight') defH = 8;
                         store[acc.id][type] = [{ id: ++nextId, d: defD, h: defH, m: defM, endTime: null }];
                         changed = true;
@@ -1999,6 +2089,8 @@
                         if (pruneUnstartedDrafts()) {
                             saveState();
                         }
+                    } else {
+                        pruneUnstartedDrafts();
                     }
                     saveLocalBackup();
                     updateSunlightBtnUI();
@@ -2170,10 +2262,11 @@
             const nowMs = getAccurateNow().getTime();
             const actualTargetMs = targetTimestampMs || nowMs;
             const isMissedOffline = (nowMs - actualTargetMs) > 90 * 1000;
+            const targetAccId = meta.accId || inferAccIdFromMessage(message);
 
             notifHistory.unshift({
                 id: eventKey,
-                accId: meta.accId || null,
+                accId: targetAccId,
                 category: meta.category || null,
                 itemId: meta.itemId || null,
                 message: message,
@@ -2184,7 +2277,7 @@
             renderBellUI();
 
             if (!isMissedOffline) {
-                sendSystemCornerNotification(message);
+                sendSystemCornerNotification(message, targetAccId);
 
                 if (!titleBlinkInterval) {
                     let toggle = false;
@@ -2276,7 +2369,7 @@
             }
 
             const diffMs = jobDate.getTime() - now.getTime();
-            const dateHtml = `${getDayTagHtml(jobDate)}${jobTime}`;
+            const dateHtml = `${getDayLabelHtml(jobDate)}${jobTime}`;
 
             if (diffMs <= 0 && diffMs >= -10 * 60 * 1000) {
                 const remainCoolMin = Math.ceil((10 * 60 * 1000 + diffMs) / 60000);
@@ -2302,8 +2395,9 @@
 
         function renderSectionCards(accId, type, list) {
             let activeSeq = 0;
+            const showSeq = (type === 'soldiers' || type === 'sunlight');
             return (list || []).map(item => {
-                const seqNum = item.endTime !== null ? ++activeSeq : null;
+                const seqNum = (showSeq && item.endTime !== null) ? ++activeSeq : null;
                 return renderTimerCard(accId, type, item, seqNum);
             }).join('');
         }
@@ -2332,7 +2426,6 @@
                     <div class="section-block">
                         <div class="section-header">
                             <span>🔬 科技研究</span>
-                            <button class="btn-add" onclick="addItem('${acc.id}', 'tech')">+</button>
                         </div>
                         <div>
                             ${renderSectionCards(acc.id, 'tech', data.tech)}
@@ -2342,7 +2435,6 @@
                     <div class="section-block">
                         <div class="section-header">
                             <span>📖 大師技能</span>
-                            <button class="btn-add" onclick="addItem('${acc.id}', 'master')">+</button>
                         </div>
                         <div>
                             ${renderSectionCards(acc.id, 'master', data.master)}
@@ -2400,6 +2492,15 @@
             const isRunning = item.endTime !== null;
             let extraCardClass = '';
             let presetsHtml = '';
+            const isSingleSlotType = (type === 'tech' || type === 'master');
+
+            // 計時區「今天（紅外粗框）」與「明天（藍外粗框）」
+            let dueBorderClass = '';
+            if (isRunning && item.endTime) {
+                const dayDiff = getDayDiffFromToday(item.endTime);
+                if (dayDiff === 0) dueBorderClass = 'due-today';
+                else if (dayDiff === 1) dueBorderClass = 'due-tomorrow';
+            }
 
             if (type === 'master') {
                 extraCardClass = 'master-card';
@@ -2431,7 +2532,7 @@
             return `
             <div class="timer-item-row">
                 ${seqNum !== null ? `<span class="flower-seq-badge">${seqNum}</span>` : ''}
-                <div class="timer-card ${extraCardClass}" id="card_${item.id}">
+                <div class="timer-card ${extraCardClass} ${dueBorderClass}" id="card_${item.id}">
                     <div class="timer-main-row">
                         <div class="timer-info">
                             <div class="timer-display" id="disp_${item.id}">
@@ -2464,7 +2565,7 @@
                             ` : `
                                 <button class="btn-action" onclick="editRunningTimer('${accId}', '${type}', ${item.id})">✏️ 修改</button>
                             `}
-                            <button class="btn-del" title="刪除此項" onclick="deleteItem('${accId}', '${type}', ${item.id})">✕</button>
+                            ${!isSingleSlotType ? `<button class="btn-del" title="刪除此項" onclick="deleteItem('${accId}', '${type}', ${item.id})">✕</button>` : ''}
                         </div>
                     </div>
                     ${presetsHtml}
@@ -2504,16 +2605,28 @@
         }
 
         function addItem(accId, type) {
+            // 科技研究與大師技能只能 1 個，不允許新增第 2 個
+            if (type === 'tech' || type === 'master') return;
+
             let defD = 0, defH = 0, defM = 0;
-            if (type === 'master') { defM = 10; }
-            else if (type === 'sunlight') { defH = 8; }
+            if (type === 'sunlight') { defH = 8; }
 
             store[accId][type].push({ id: ++nextId, d: defD, h: defH, m: defM, endTime: null });
             renderGrid();
         }
 
         function deleteItem(accId, type, id) {
-            store[accId][type] = store[accId][type].filter(item => item.id !== id);
+            if (type === 'tech' || type === 'master') {
+                const item = store[accId][type][0];
+                if (item) {
+                    item.d = 0;
+                    item.h = 0;
+                    item.m = type === 'master' ? 10 : 0;
+                    item.endTime = null;
+                }
+            } else {
+                store[accId][type] = store[accId][type].filter(item => item.id !== id);
+            }
             recalculateJobs(accId, type);
             renderGrid();
             saveState();
@@ -2575,6 +2688,7 @@
                     if (type === 'sunlight' && !showSunlightEvent) return;
 
                     const typeName = typeNames[type];
+                    const showNum = (type === 'soldiers' || type === 'sunlight');
                     (store[acc.id][type] || []).forEach((item, idx) => {
                         if (item.endTime) {
                             const diff = Math.floor((item.endTime - now) / 1000);
@@ -2583,9 +2697,10 @@
                             if (diff <= 0) {
                                 if (disp) disp.innerText = "00:00 (完結)";
                                 const eventKey = `task_${item.id}_${item.endTime.getTime()}`;
+                                const numSuffix = showNum ? ` #${idx + 1}` : '';
                                 triggerAlarmAlert(
                                     eventKey,
-                                    `[${displayName}] ${typeName} #${idx + 1} 已經完成！`,
+                                    `[${displayName}] ${typeName}${numSuffix} 已經完成！`,
                                     item.endTime.getTime(),
                                     { accId: acc.id, category: type, itemId: item.id }
                                 );
@@ -2662,16 +2777,12 @@
             }
         }
 
-        // 精準重算建議職位：
-        // 1. 若傳入 targetAccId 與 targetCategory，只處理該帳號的該項職位，不碰其他帳號與另一種職位
-        // 2. 只要該職位已按「✅ 已確認預約 (Confirmed)」或「手動調整過時間 (Locked)」，絕不還原覆蓋
         function recalculateJobs(targetAccId = null, targetCategory = null) {
             const now = getAccurateNow();
 
             accounts.forEach(acc => {
                 if (targetAccId && acc.id !== targetAccId) return;
 
-                // 僅當沒有指定分類，或明確修改 'soldiers' 時才檢查士兵職位
                 if (!targetCategory || targetCategory === 'soldiers') {
                     const isSoldierLocked = Boolean(store[acc.id].soldierJobConfirmed || store[acc.id].soldierJobLocked);
                     if (!isSoldierLocked) {
@@ -2688,7 +2799,6 @@
                     }
                 }
 
-                // 僅當沒有指定分類，或明確修改 'tech' 時才檢查科技職位
                 if (!targetCategory || targetCategory === 'tech') {
                     const isTechLocked = Boolean(store[acc.id].techJobConfirmed || store[acc.id].techJobLocked);
                     if (!isTechLocked) {
@@ -2752,7 +2862,7 @@
             store[accId][dateKey] = newDate;
             store[accId][timeKey] = formatTimeHM(newDate);
             store[accId][confKey] = false;
-            store[accId][lockKey] = true; // 手動調整過時間，鎖定不被自動覆蓋
+            store[accId][lockKey] = true;
 
             renderGrid();
             updateTimeline(true);
@@ -2773,10 +2883,10 @@
                 d.setHours(h, m, 0, 0);
                 if (d < getAccurateNow()) d.setDate(d.getDate() + 1);
                 store[accId][dateKey] = d;
-                store[accId][lockKey] = true; // 手動選取了時段，鎖定不被自動覆蓋
+                store[accId][lockKey] = true;
             } else {
                 store[accId][dateKey] = null;
-                store[accId][lockKey] = false; // 選「無預約」則解除鎖定
+                store[accId][lockKey] = false;
             }
             renderGrid();
             updateTimeline(true);
@@ -2788,7 +2898,7 @@
             const lockKey = type === 'soldier' ? 'soldierJobLocked' : 'techJobLocked';
             const nextState = !store[accId][confKey];
             store[accId][confKey] = nextState;
-            store[accId][lockKey] = true; // 保持手動設定的預約時間不還原
+            store[accId][lockKey] = true;
             renderGrid();
             updateTimeline(true);
             saveState();
@@ -2835,25 +2945,27 @@
 
             accounts.forEach(acc => {
                 const displayName = getDisplayAccountName(acc.id);
+                const bearFace = getBearFaceFile(acc.id);
+
                 (store[acc.id].soldiers || []).forEach((item, idx) => {
                     if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, label: `士兵 #${idx + 1}`, tagClass: 'tag-soldier' });
+                        tasksList.push({ acc: displayName, accId: acc.id, bearFace, time: item.endTime, label: `士兵 #${idx + 1}`, tagClass: 'tag-soldier' });
                     }
                 });
-                (store[acc.id].tech || []).forEach((item, idx) => {
+                (store[acc.id].tech || []).forEach((item) => {
                     if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, label: `科技 #${idx + 1}`, tagClass: 'tag-tech' });
+                        tasksList.push({ acc: displayName, accId: acc.id, bearFace, time: item.endTime, label: `科技研究`, tagClass: 'tag-tech' });
                     }
                 });
-                (store[acc.id].master || []).forEach((item, idx) => {
+                (store[acc.id].master || []).forEach((item) => {
                     if (item.endTime) {
-                        tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, label: `📖 大師技能 #${idx + 1}`, tagClass: 'tag-master' });
+                        tasksList.push({ acc: displayName, accId: acc.id, bearFace, time: item.endTime, label: `📖 大師技能`, tagClass: 'tag-master' });
                     }
                 });
                 if (showSunlightEvent) {
                     (store[acc.id].sunlight || []).forEach((item, idx) => {
                         if (item.endTime) {
-                            tasksList.push({ acc: displayName, accId: acc.id, time: item.endTime, label: `☀️ 沐光之旅 #${idx + 1}`, tagClass: 'tag-sunlight' });
+                            tasksList.push({ acc: displayName, accId: acc.id, bearFace, time: item.endTime, label: `☀️ 沐光之旅 #${idx + 1}`, tagClass: 'tag-sunlight' });
                         }
                     });
                 }
@@ -2881,8 +2993,9 @@
 
                         html += `
                             <div class="timeline-item ${item.accId}">
-                                <div>
-                                    <span style="font-size: 14.5px; margin-right: 4px;">[${item.acc}]</span>
+                                <div class="tl-left-group">
+                                    <img class="tl-bear-icon" src="${item.bearFace}" alt="">
+                                    <span class="tl-acc-name">[${item.acc}]</span>
                                     <span class="tag ${item.tagClass}">${item.label}</span>
                                 </div>
                                 <div style="white-space:nowrap;">${formatDateTimeHtml(item.time)}</div>
@@ -2914,6 +3027,7 @@
 
             container.innerHTML = accounts.map(acc => {
                 const displayName = getDisplayAccountName(acc.id);
+                const bearFace = getBearFaceFile(acc.id);
                 const curTimeStr = store[acc.id][timeKey];
                 const curDate = store[acc.id][dateKey];
                 const isConfirmed = Boolean(store[acc.id][confKey]);
@@ -2938,7 +3052,10 @@
                 return `
                     <div class="job-manage-card ${acc.id}">
                         <div class="job-manage-top">
-                            <span>[${displayName}]</span>
+                            <span class="job-name-with-bear">
+                                <img class="tl-bear-icon" src="${bearFace}" alt="">
+                                [${displayName}]
+                            </span>
                             <span>${dateBadgeHtml}</span>
                         </div>
 
