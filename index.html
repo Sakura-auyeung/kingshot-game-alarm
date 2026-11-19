@@ -882,7 +882,11 @@
         .timer-sub {
             font-size: 11px;
             opacity: 0.96;
-            line-height: 1.2;
+            line-height: 1.25;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2px;
         }
 
         .timer-inputs {
@@ -1020,6 +1024,7 @@
             font-size: 13.5px;
             font-weight: 700;
             color: var(--cocoa);
+            gap: 4px;
         }
 
         .job-status-bottom {
@@ -1035,6 +1040,7 @@
             font-weight: 700;
             padding: 2px 7px;
             border-radius: 999px;
+            white-space: nowrap;
         }
         .status-pill.confirmed {
             background: #E8F8EC;
@@ -1353,7 +1359,6 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
-            /* 手機版收埋冗長狀態字，保持上面清爽 */
             .sync-badge,
             .notif-badge {
                 display: none !important;
@@ -1625,7 +1630,6 @@
         let nextId = 300;
         let audioCtx = null;
         let ringInterval = null;
-        let titleBlinkInterval = null;
         let activeSystemNotifications = [];
         let isInitialLoadDone = false;
 
@@ -1872,6 +1876,9 @@
             if (todo) todo.unread = false;
             saveNotifHistory();
 
+            // 開始新一輪後自動停響，無需再人手點鈴鐺
+            stopRingingEffects();
+
             recalculateJobs(accId, category);
             renderGrid();
             updateTimeline(true);
@@ -1885,6 +1892,7 @@
             const todo = notifHistory.find(n => n.id === notifId);
             if (todo) todo.unread = false;
             saveNotifHistory();
+            stopRingingEffects();
             renderBellUI();
         }
 
@@ -1896,6 +1904,7 @@
             const todo = notifHistory.find(n => n.id === notifId);
             if (todo) todo.unread = false;
             saveNotifHistory();
+            stopRingingEffects();
             renderGrid();
             updateTimeline(true);
             saveState();
@@ -1954,10 +1963,6 @@
                 clearInterval(ringInterval);
                 ringInterval = null;
             }
-            if (titleBlinkInterval) {
-                clearInterval(titleBlinkInterval);
-                titleBlinkInterval = null;
-            }
             document.title = ORIGINAL_TITLE;
         }
 
@@ -2004,8 +2009,13 @@
                     });
                     notif.onclick = function() {
                         try { window.focus(); } catch (e) {}
+                        // 點擊右下角彈窗即代表已知，直接停響並打開待辦清單
+                        stopRingingEffects();
                         const dropdown = document.getElementById('notifDropdown');
-                        if (dropdown) dropdown.classList.add('open');
+                        if (dropdown) {
+                            renderBellUI();
+                            dropdown.classList.add('open');
+                        }
                         notif.close();
                     };
                     activeSystemNotifications.push(notif);
@@ -2435,14 +2445,6 @@
             if (!isMissedOffline) {
                 sendSystemCornerNotification(message, targetAccId);
 
-                if (!titleBlinkInterval) {
-                    let toggle = false;
-                    titleBlinkInterval = setInterval(() => {
-                        document.title = toggle ? "【⏰ 時間到了！】" : "【🔔 快看鬧鐘！】";
-                        toggle = !toggle;
-                    }, 600);
-                }
-
                 playBeepOnce();
                 if (!ringInterval) {
                     ringInterval = setInterval(playBeepOnce, 2000);
@@ -2521,11 +2523,11 @@
             const isConfirmed = type === 'soldier' ? store[accId].soldierJobConfirmed : store[accId].techJobConfirmed;
 
             if (!jobDate || !jobTime) {
-                return { hasJob: false, dueBorderClass: '', statusHtml: `<span class="status-pill none">無預約</span>`, distText: '--', dateText: '--' };
+                return { hasJob: false, dueBorderClass: '', statusHtml: `<span class="status-pill none">無預約</span>`, distText: '--', dateHtml: '--' };
             }
 
             const diffMs = jobDate.getTime() - now.getTime();
-            const dateText = `${getDayPlainText(jobDate)}${jobTime}`;
+            const dateHtml = `${getDayHlHtml(jobDate)}${jobTime}`;
             const dueBorderClass = getDueBorderClass(jobDate);
 
             if (diffMs <= 0 && diffMs >= -10 * 60 * 1000) {
@@ -2535,7 +2537,7 @@
                     dueBorderClass,
                     statusHtml: `<span class="status-pill cooldown">⚠️ 10分冷卻剩 ${remainCoolMin}分</span>`,
                     distText: '進行中',
-                    dateText
+                    dateHtml
                 };
             }
 
@@ -2548,7 +2550,7 @@
                 dueBorderClass,
                 statusHtml,
                 distText: formatDurationShort(diffMs),
-                dateText
+                dateHtml
             };
         }
 
@@ -2620,7 +2622,7 @@
                         
                         <div class="job-status-card ${sMeta.dueBorderClass}" id="home_job_s_${acc.id}">
                             <div class="job-status-top">
-                                <span>⚔️ 士兵：${sMeta.dateText}</span>
+                                <span>⚔️ 士兵：${sMeta.dateHtml}</span>
                                 ${sMeta.statusHtml}
                             </div>
                             <div class="job-status-bottom">
@@ -2631,7 +2633,7 @@
 
                         <div class="job-status-card ${tMeta.dueBorderClass}" id="home_job_t_${acc.id}">
                             <div class="job-status-top">
-                                <span>🔬 科技：${tMeta.dateText}</span>
+                                <span>🔬 科技：${tMeta.dateHtml}</span>
                                 ${tMeta.statusHtml}
                             </div>
                             <div class="job-status-bottom">
@@ -2694,7 +2696,7 @@
                                 ${isRunning ? '--:--' : `${item.d}天 ${formatPad(item.h)}:${formatPad(item.m)}`}
                             </div>
                             <span class="timer-sub" id="sub_${item.id}">
-                                ${isRunning ? '完結: ' + formatDateTimePlain(item.endTime) : '設定時間後按開始'}
+                                ${isRunning ? '完結: ' + formatDateTimeHlHtml(item.endTime) : '設定時間後按開始'}
                             </span>
                         </div>
 
