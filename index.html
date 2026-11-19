@@ -57,7 +57,7 @@
             background-repeat: repeat;
             background-size: 280px 280px;
             margin: 0;
-            padding: 26px 36px 56px 36px;
+            padding: 26px 28px 56px 28px;
             color: var(--cocoa);
             min-height: 100vh;
             position: relative;
@@ -85,7 +85,7 @@
             z-index: 10;
         }
 
-        /* 日本官網同款 SHAKI!! 熱鬆餅開場動畫遮罩（真實載入連動） */
+        /* 日本官網同款 SHAKI!! 熱鬆餅開場動畫遮罩 */
         .loading-splash {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -130,14 +130,14 @@
             margin-top: 8px;
         }
 
-        /* 頂部可愛橫幅列 */
+        /* 頂部可愛橫幅列（收返緊湊寬度 1240px） */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            max-width: 1380px;
+            max-width: 1240px;
             margin: 0 auto 20px auto;
-            padding: 11px 20px;
+            padding: 11px 18px;
             background: rgba(255, 255, 255, 0.95);
             border: 2.5px solid #F2DFC4;
             border-radius: 26px;
@@ -145,7 +145,7 @@
             flex-wrap: wrap;
             gap: 10px;
             position: relative;
-            z-index: 20;
+            z-index: 30;
         }
 
         .title-group {
@@ -167,7 +167,7 @@
         h1 {
             font-family: var(--font-title);
             font-weight: normal;
-            font-size: 26px;
+            font-size: 25px;
             margin: 0;
             letter-spacing: 1px;
             color: var(--cocoa);
@@ -176,7 +176,7 @@
         .sync-badge {
             font-size: 12px;
             font-weight: 600;
-            padding: 4px 12px;
+            padding: 4px 11px;
             border-radius: 999px;
             background: #F5EFE6;
             color: var(--cocoa-light);
@@ -196,7 +196,7 @@
         .notif-badge {
             font-size: 12px;
             font-weight: 600;
-            padding: 4px 12px;
+            padding: 4px 11px;
             border-radius: 999px;
             cursor: pointer;
             border: 1.5px dashed #F8B4C8;
@@ -223,7 +223,7 @@
         /* 糖果膠囊按鈕 */
         .pill-btn {
             border: 2px solid #FFF;
-            padding: 7px 14px;
+            padding: 7px 13px;
             border-radius: 999px;
             cursor: pointer;
             font-weight: 600;
@@ -234,6 +234,7 @@
             gap: 5px;
             box-shadow: 0 2px 6px rgba(92, 61, 46, 0.12);
             transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s;
+            white-space: nowrap;
         }
         .pill-btn:hover {
             transform: translateY(-2px) scale(1.03);
@@ -254,10 +255,11 @@
         .btn-event-toggle.active { background: linear-gradient(135deg, #FF85A1, #EB5A87); }
         .btn-toggle { background: linear-gradient(135deg, #5AA9FF, #3B88E8); }
 
-        /* YouTube 同款右上角小鈴鐺 To-Do List 待辦清單按鈕與面板 */
+        /* 右上角小鈴鐺 To-Do List 待辦清單按鈕與面板 */
         .bell-wrapper {
             position: relative;
             display: inline-flex;
+            flex-shrink: 0;
         }
 
         .btn-bell {
@@ -312,7 +314,7 @@
             border: 2.5px solid #F2DFC4;
             border-radius: 22px;
             box-shadow: 0 14px 32px rgba(92, 61, 46, 0.22);
-            z-index: 9999;
+            z-index: 10000;
             overflow: hidden;
             animation: fadeIn 0.15s ease;
         }
@@ -330,11 +332,13 @@
             font-family: var(--font-title);
             font-size: 18px;
             color: var(--cocoa);
+            gap: 8px;
         }
 
         .notif-header-actions {
             display: flex;
             gap: 6px;
+            flex-shrink: 0;
         }
 
         .btn-notif-mini {
@@ -346,6 +350,7 @@
             background: #FFF;
             color: var(--cocoa);
             cursor: pointer;
+            white-space: nowrap;
         }
         .btn-notif-mini:hover { background: #FFF0F4; border-color: #F8B4C8; }
 
@@ -412,7 +417,6 @@
             color: #FFF;
         }
 
-        /* 佔滿 2 行高度的大型類別圖示 */
         .todo-big-emoji {
             font-size: 32px;
             line-height: 1;
@@ -477,7 +481,7 @@
         .todo-renew-row {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
             flex-wrap: wrap;
             font-size: 11.5px;
         }
@@ -535,7 +539,7 @@
         }
         .btn-todo-preset:hover { background: #F2DFC8; }
 
-        /* 螢光筆 size 迷你日期膠囊（保留在時間線） */
+        /* 螢光筆 size 迷你日期膠囊 */
         .day-hl {
             display: inline-block;
             padding: 1px 5px;
@@ -558,35 +562,34 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
         }
 
-        /* 3欄手賬卡片視圖 */
+        /* 3欄手賬卡片視圖（收返緊湊欄寬與間距） */
         .grid-view {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 30px;
-            max-width: 1380px;
+            gap: 22px;
+            max-width: 1240px;
             margin: 0 auto;
             position: relative;
             z-index: 4;
         }
 
         .account-column {
-            border-radius: 26px;
-            padding: 14px 15px 18px 15px;
+            border-radius: 24px;
+            padding: 13px 13px 16px 13px;
             border: 3.5px solid #FFFFFF;
             box-shadow: 0 6px 16px rgba(92, 61, 46, 0.07);
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 9px;
             position: relative;
             overflow: visible;
         }
 
-        /* 內層虛線手賬縫邊 */
         .account-column::before {
             content: "";
             position: absolute;
             top: 6px; left: 6px; right: 6px; bottom: 6px;
-            border-radius: 20px;
+            border-radius: 19px;
             border: 1.5px dashed rgba(92, 61, 46, 0.18);
             pointer-events: none;
         }
@@ -598,10 +601,10 @@
         /* 公仔直接站在欄位「框外角」 */
         .outer-corner-stand {
             position: absolute;
-            bottom: -24px;
-            right: -34px;
-            width: 84px;
-            height: 84px;
+            bottom: -22px;
+            right: -28px;
+            width: 80px;
+            height: 80px;
             object-fit: contain;
             pointer-events: none;
             z-index: 8;
@@ -615,11 +618,11 @@
         /* 遊戲角色名片貼紙 */
         .profile-card {
             background: rgba(255, 255, 255, 0.97);
-            border-radius: 18px;
-            padding: 11px 13px;
+            border-radius: 17px;
+            padding: 10px 12px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 11px;
             border: 2px solid rgba(92, 61, 46, 0.08);
             box-shadow: 0 2px 6px rgba(92, 61, 46, 0.04);
             position: relative;
@@ -632,9 +635,9 @@
         }
 
         .profile-avatar {
-            width: 58px;
-            height: 58px;
-            border-radius: 15px;
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
             object-fit: cover;
             background: #F5EFE6;
             border: 2.5px solid #FFF;
@@ -646,8 +649,8 @@
             position: absolute;
             bottom: -6px;
             right: -6px;
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
             object-fit: contain;
             background: #FFF;
             border-radius: 50%;
@@ -670,16 +673,16 @@
         .profile-name {
             font-family: var(--font-title);
             font-weight: normal;
-            font-size: 26px;
+            font-size: 25px;
             color: var(--cocoa);
             line-height: 1.1;
             letter-spacing: 0.5px;
         }
 
         .main-crown-badge {
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 700;
-            padding: 2px 9px;
+            padding: 2px 8px;
             border-radius: 999px;
             background: linear-gradient(135deg, #FFD43B, #FAB005);
             color: var(--cocoa);
@@ -687,9 +690,9 @@
         }
 
         .profile-alliance {
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 700;
-            padding: 2px 9px;
+            padding: 2px 8px;
             border-radius: 999px;
             background: var(--cocoa);
             color: #FFFDF6;
@@ -698,15 +701,15 @@
         .profile-stats-row {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 6px;
             margin-top: 5px;
             flex-wrap: wrap;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 700;
         }
 
         .stat-pill {
-            padding: 2px 10px;
+            padding: 2px 9px;
             border-radius: 999px;
         }
         .stat-pill.tg {
@@ -750,23 +753,22 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 20px;
+            font-size: 19px;
             letter-spacing: 0.8px;
             margin-bottom: 5px;
             color: var(--cocoa);
             padding: 0 2px;
-            min-height: 26px;
+            min-height: 25px;
         }
 
-        /* 士兵訓練與沐光之旅的 + 號圓形為天藍色 */
         .btn-add {
             background: linear-gradient(135deg, #5BB6FF 0%, #3498DB 100%);
             color: white;
             border: 2px solid #FFF;
             border-radius: 50%;
-            width: 25px;
-            height: 25px;
-            font-size: 16px;
+            width: 24px;
+            height: 24px;
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
@@ -778,21 +780,21 @@
         }
         .btn-add:hover { transform: scale(1.15); }
 
-        /* 四張計時卡片左側統一預留 30px 欄寬（小花在左側），左邊緣筆直對齊同一條垂直線 */
+        /* 四張計時卡片左側統一預留 28px 欄寬 */
         .timer-item-row {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             width: 100%;
-            margin-bottom: 7px;
+            margin-bottom: 6px;
         }
         .timer-item-row:last-child {
             margin-bottom: 0;
         }
 
         .left-slot-box {
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             flex-shrink: 0;
             display: inline-flex;
             align-items: center;
@@ -803,29 +805,28 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 29px;
-            height: 29px;
+            width: 28px;
+            height: 28px;
             background-image: url('./bg_epi_num.svg');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
             font-family: var(--font-body);
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 800;
             color: #FFFFFF;
             text-shadow: 0 1px 2px rgba(92, 61, 46, 0.45);
         }
 
-        /* 軟萌計時小卡片：支援「今天＝紅外粗框 / 明天＝藍外粗框」 */
         .timer-card {
             flex: 1;
             min-width: 0;
             color: white;
-            border-radius: 15px;
-            padding: 9px 11px;
+            border-radius: 14px;
+            padding: 8px 10px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
             border: 2px solid rgba(255, 255, 255, 0.72);
             box-shadow: 0 2px 5px rgba(92, 61, 46, 0.12);
             position: relative;
@@ -847,7 +848,6 @@
             border-left: 6px solid #FFF6D6;
         }
 
-        /* 今天（棕紅外粗框）與明天（深藍外粗框），不改變卡片內部底色 */
         .due-today {
             border: 3.5px solid #B8292F !important;
         }
@@ -860,7 +860,7 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            gap: 6px;
+            gap: 5px;
         }
 
         .timer-info {
@@ -870,17 +870,17 @@
         }
 
         .timer-display {
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 700;
             font-family: var(--font-body);
             font-variant-numeric: tabular-nums;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
             text-shadow: 0 1px 2px rgba(92, 61, 46, 0.22);
             line-height: 1.15;
         }
 
         .timer-sub {
-            font-size: 11.5px;
+            font-size: 11px;
             opacity: 0.96;
             line-height: 1.2;
         }
@@ -893,13 +893,13 @@
         }
 
         .time-input {
-            width: 26px;
-            height: 25px;
+            width: 25px;
+            height: 24px;
             border: 1.5px solid rgba(255, 255, 255, 0.85);
             border-radius: 7px;
             background: rgba(255, 255, 255, 0.96);
             text-align: center;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 700;
             font-family: var(--font-body);
             color: var(--cocoa);
@@ -909,17 +909,17 @@
         .timer-actions {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .btn-action {
             background: rgba(255, 255, 255, 0.28);
             border: 1.5px solid rgba(255, 255, 255, 0.6);
             color: white;
-            padding: 4px 9px;
+            padding: 4px 8px;
             border-radius: 999px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 600;
             white-space: nowrap;
             transition: background 0.15s;
@@ -930,9 +930,9 @@
             background: none;
             border: none;
             color: rgba(255, 255, 255, 0.85);
-            font-size: 14px;
+            font-size: 13.5px;
             cursor: pointer;
-            padding: 0 3px;
+            padding: 0 2px;
         }
         .btn-del:hover { color: white; }
 
@@ -949,8 +949,8 @@
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.45);
             border-radius: 999px;
-            padding: 2px 8px;
-            font-size: 11px;
+            padding: 2px 7px;
+            font-size: 10.5px;
             font-weight: 600;
             cursor: pointer;
             transition: background 0.15s;
@@ -962,11 +962,11 @@
         /* 首頁職位預約「狀態顯示看板」 */
         .job-section {
             background: rgba(255, 255, 255, 0.96);
-            border-radius: 18px;
-            padding: 11px 13px 12px 13px;
+            border-radius: 17px;
+            padding: 10px 12px 11px 12px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 7px;
             border: 2px solid rgba(92, 61, 46, 0.08);
             box-shadow: 0 2px 6px rgba(92, 61, 46, 0.04);
             position: relative;
@@ -984,14 +984,14 @@
         .job-section-title {
             font-family: var(--font-title);
             font-weight: normal;
-            font-size: 18px;
+            font-size: 17.5px;
             color: var(--cocoa);
         }
 
         .btn-goto-timeline {
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 700;
-            padding: 3px 9px;
+            padding: 3px 8px;
             border-radius: 999px;
             border: 1px solid #DFCBB5;
             background: #FAF3E8;
@@ -1006,8 +1006,8 @@
         .job-status-card {
             background: #FFFDF9;
             border: 1.5px solid #EFE4D4;
-            border-radius: 12px;
-            padding: 7px 10px;
+            border-radius: 11px;
+            padding: 6px 9px;
             display: flex;
             flex-direction: column;
             gap: 3px;
@@ -1017,7 +1017,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 700;
             color: var(--cocoa);
         }
@@ -1026,14 +1026,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 12px;
+            font-size: 11.5px;
             color: var(--cocoa-light);
         }
 
         .status-pill {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
-            padding: 2px 8px;
+            padding: 2px 7px;
             border-radius: 999px;
         }
         .status-pill.confirmed {
@@ -1061,10 +1061,10 @@
             color: #5C3D2E;
         }
 
-        /* 打直獨立拆分欄位視圖（後面頁）：寬框、無捲軸 */
+        /* 打直獨立拆分欄位視圖（後面頁，同為 1240px 寬度） */
         .timeline-view {
             display: none;
-            max-width: 1380px;
+            max-width: 1240px;
             margin: 0 auto;
             position: relative;
             z-index: 4;
@@ -1073,14 +1073,14 @@
         .timeline-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
+            gap: 20px;
             align-items: start;
         }
 
         .timeline-column {
             background: rgba(255, 255, 255, 0.96);
             border-radius: 24px;
-            padding: 18px 18px 20px 18px;
+            padding: 16px 16px 18px 16px;
             border: 2.5px solid #F0DFC8;
             box-shadow: 0 5px 14px rgba(92, 61, 46, 0.06);
             display: flex;
@@ -1092,20 +1092,19 @@
             font-weight: normal;
             margin-top: 0;
             margin-bottom: 14px;
-            font-size: 20px;
+            font-size: 19px;
             text-align: center;
             padding-bottom: 8px;
             border-bottom: 2px dashed #EFE2D0;
             color: var(--cocoa);
         }
 
-        /* 無捲軸自然展開區，左側留足空間給突出去的超大熊頭徽章貼紙 */
+        /* 無捲軸自然展開區，左側留足空間給往左大大突出的熊頭徽章貼紙 */
         .timeline-list-body {
-            padding-left: 18px;
+            padding-left: 24px;
             overflow: visible;
         }
 
-        /* 更細且更密的黃色手繪點點橫線分隔 (dot_yoko.png) */
         .date-dot-divider {
             display: flex;
             align-items: center;
@@ -1120,20 +1119,19 @@
             background-size: auto 5px;
         }
 
-        /* 時間線項目：超大無框熊頭徽章貼紙 */
         .timeline-item {
             position: relative;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 9px 12px 9px 44px;
+            padding: 9px 11px 9px 42px;
             margin-bottom: 11px;
             border-radius: 14px;
             border-left: 6px solid;
             font-weight: 600;
-            font-size: 13.5px;
+            font-size: 13px;
             color: var(--cocoa);
-            gap: 8px;
+            gap: 6px;
             overflow: visible;
         }
 
@@ -1150,11 +1148,11 @@
 
         .tl-bear-sticker {
             position: absolute;
-            left: -24px;
+            left: -26px;
             top: 50%;
             transform: translateY(-50%);
-            width: 66px;
-            height: 66px;
+            width: 64px;
+            height: 64px;
             object-fit: contain;
             pointer-events: none;
             z-index: 6;
@@ -1162,9 +1160,9 @@
         }
 
         .tl-acc-name {
-            width: 82px;
+            width: 76px;
             flex-shrink: 0;
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
@@ -1172,7 +1170,7 @@
         }
 
         .tag {
-            padding: 2px 9px;
+            padding: 2px 8px;
             border-radius: 999px;
             font-size: 11px;
             color: white;
@@ -1202,12 +1200,12 @@
             background: #F3E4CE;
         }
 
-        /* 後面頁：職位預約管理卡片 — 熊頭向上移並放大遮角 */
+        /* 後面頁：職位預約管理卡片 — 熊頭往上小小、往左大大突出遮角 */
         .job-manage-card {
             position: relative;
             border-radius: 16px;
-            padding: 13px 14px 12px 16px;
-            margin-top: 12px;
+            padding: 13px 13px 12px 15px;
+            margin-top: 14px;
             margin-bottom: 14px;
             border-left: 6px solid;
             display: flex;
@@ -1224,16 +1222,16 @@
             justify-content: space-between;
             align-items: center;
             font-weight: 700;
-            font-size: 15.5px;
-            padding-left: 40px;
+            font-size: 15px;
+            padding-left: 34px;
         }
 
         .job-bear-sticker {
             position: absolute;
-            left: -30px;
-            top: -18px;
-            width: 82px;
-            height: 82px;
+            left: -38px;
+            top: -22px;
+            width: 84px;
+            height: 84px;
             object-fit: contain;
             pointer-events: none;
             z-index: 6;
@@ -1243,16 +1241,16 @@
         .job-manage-controls {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             flex-wrap: wrap;
         }
 
         select {
-            padding: 4px 10px;
+            padding: 4px 9px;
             border-radius: 999px;
             border: 1.5px solid #DFCBB5;
             background: #FFFDF9;
-            font-size: 13.5px;
+            font-size: 13px;
             font-weight: 700;
             color: var(--cocoa);
         }
@@ -1261,21 +1259,21 @@
             background: #FFA24C;
             color: white;
             border: none;
-            padding: 4px 10px;
+            padding: 4px 9px;
             border-radius: 999px;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 700;
             cursor: pointer;
         }
         .btn-shift:hover { background: #EB8931; }
 
         .btn-confirm-job {
-            padding: 4px 11px;
+            padding: 4px 10px;
             border-radius: 999px;
             border: 1.5px solid #DFCBB5;
             background: #FFFFFF;
             color: var(--cocoa);
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.15s;
@@ -1290,7 +1288,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 12px;
+            font-size: 11.5px;
             color: var(--cocoa-light);
             flex-wrap: wrap;
             gap: 4px;
@@ -1325,10 +1323,69 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* 手機版精簡頂部與右上角小鬧鐘固定 */
         @media (max-width: 950px) {
-            body { padding: 24px 24px 56px 18px; }
+            body { padding: 20px 14px 56px 14px; }
             .grid-view, .timeline-grid { grid-template-columns: 1fr; }
-            .outer-corner-stand { right: -22px; bottom: -20px; width: 76px; height: 76px; }
+            .outer-corner-stand { right: -16px; bottom: -16px; width: 70px; height: 70px; }
+
+            .header {
+                flex-wrap: nowrap;
+                padding: 8px 12px;
+                border-radius: 20px;
+                margin-bottom: 14px;
+                gap: 6px;
+            }
+            .title-group {
+                flex-wrap: nowrap;
+                gap: 7px;
+                min-width: 0;
+                flex: 1;
+            }
+            .header-mascot-img {
+                width: 34px;
+                height: 34px;
+            }
+            h1 {
+                font-size: 19px;
+                letter-spacing: 0.3px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            /* 手機版收埋冗長狀態字，保持上面清爽 */
+            .sync-badge,
+            .notif-badge {
+                display: none !important;
+            }
+            .header-btns {
+                flex-wrap: nowrap;
+                gap: 5px;
+                flex-shrink: 0;
+            }
+            .pill-btn {
+                padding: 5px 8px;
+                font-size: 11px;
+                gap: 3px;
+            }
+            .btn-icon-svg {
+                width: 12px;
+                height: 12px;
+            }
+            .btn-bell {
+                width: 34px;
+                height: 34px;
+                font-size: 16px;
+            }
+            .notif-dropdown {
+                position: fixed;
+                top: 62px;
+                left: 10px;
+                right: 10px;
+                width: auto;
+                max-width: none;
+                z-index: 10000;
+            }
         }
     </style>
 </head>
@@ -1360,7 +1417,7 @@
                 <img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換時間線
             </button>
 
-            <!-- YouTube 同款右上角小鈴鐺 To-Do List 待辦清單 -->
+            <!-- 右上角小鈴鐺 To-Do List 待辦清單 -->
             <div class="bell-wrapper" id="bellWrapper">
                 <button class="btn-bell" id="bellBtn" title="待辦清單與提醒紀錄" onclick="toggleBellDropdown(event)">
                     🔔
@@ -1383,7 +1440,7 @@
     <!-- 前面頁：3欄視圖 -->
     <div class="grid-view" id="gridView"></div>
 
-    <!-- 後面頁：打直獨立拆分 3 欄（寬框、無捲軸） -->
+    <!-- 後面頁：打直獨立拆分 3 欄 -->
     <div class="timeline-view" id="timelineView">
         <div class="timeline-grid">
             <div class="timeline-column">
@@ -1554,7 +1611,6 @@
         function setupAutoTimeSync() {
             db.ref(".info/serverTimeOffset").on("value", (snap) => {
                 const offset = snap.val();
-                // 僅接受合理偏移（±12小時內），避免異常數值令計時突變
                 if (typeof offset === "number" && Math.abs(offset) < 12 * 3600 * 1000) {
                     serverTimeOffsetMs = offset;
                     renderGrid();
@@ -1683,12 +1739,20 @@
                                 }
 
                                 renewControlHtml = `
-                                    <div class="todo-renew-box">
+                                    <div class="todo-renew-box" id="todo_box_${idx}">
                                         <div class="todo-renew-row">
                                             <span style="font-weight:700;">新一輪:</span>
-                                            <input type="text" class="todo-mini-input" id="todo_d_${idx}" value="${defD}" maxlength="2" onfocus="this.select()">天
-                                            <input type="text" class="todo-mini-input" id="todo_h_${idx}" value="${formatPad(defH)}" maxlength="2" onfocus="this.select()">時
-                                            <input type="text" class="todo-mini-input" id="todo_m_${idx}" value="${formatPad(defM)}" maxlength="2" onfocus="this.select()">分
+                                            <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_d_${idx}" value="${defD}" maxlength="2"
+                                                onfocus="this.select()"
+                                                onkeydown="handleTodoArrowNav(event, null, 'todo_h_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
+                                                onkeyup="autoJumpTodoInput(event, this, 'todo_h_${idx}')">天
+                                            <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_h_${idx}" value="${formatPad(defH)}" maxlength="2"
+                                                onfocus="this.select()"
+                                                onkeydown="handleTodoArrowNav(event, 'todo_d_${idx}', 'todo_m_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
+                                                onkeyup="autoJumpTodoInput(event, this, 'todo_m_${idx}')">時
+                                            <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_m_${idx}" value="${formatPad(defM)}" maxlength="2"
+                                                onfocus="this.select()"
+                                                onkeydown="handleTodoArrowNav(event, 'todo_h_${idx}', null, ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">分
                                             <button class="btn-todo-start" onclick="submitTodoCustomRound(${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">▶ 開始新一輪</button>
                                         </div>
                                         ${presetBtns}
@@ -1733,6 +1797,36 @@
                             </div>
                         `;
                     }).join('');
+                }
+            }
+        }
+
+        function handleTodoArrowNav(event, prevFieldId, nextFieldId, idx, notifId, accId, category, itemId) {
+            const parentBox = document.getElementById(`todo_box_${idx}`);
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                submitTodoCustomRound(idx, notifId, accId, category, itemId);
+                return;
+            }
+            if (event.key === 'ArrowLeft' && prevFieldId && parentBox) {
+                event.preventDefault();
+                const prevInput = parentBox.querySelector('#' + prevFieldId);
+                if (prevInput) { prevInput.focus(); prevInput.select(); }
+            }
+            if (event.key === 'ArrowRight' && nextFieldId && parentBox) {
+                event.preventDefault();
+                const nextInput = parentBox.querySelector('#' + nextFieldId);
+                if (nextInput) { nextInput.focus(); nextInput.select(); }
+            }
+        }
+
+        function autoJumpTodoInput(event, currentInput, nextFieldId) {
+            const isNumberKey = (event.key >= '0' && event.key <= '9');
+            if (isNumberKey && currentInput.value.length >= 2 && nextFieldId) {
+                const parentBox = currentInput.closest('.todo-renew-box');
+                if (parentBox) {
+                    const nextInput = parentBox.querySelector('#' + nextFieldId);
+                    if (nextInput) { nextInput.focus(); nextInput.select(); }
                 }
             }
         }
@@ -2097,7 +2191,6 @@
             }
         }
 
-        // 只清理未開始草稿，絕不改動進行中計時
         function pruneUnstartedDraftsOnly() {
             accounts.forEach(acc => {
                 ['soldiers', 'sunlight'].forEach(type => {
@@ -2148,7 +2241,6 @@
 
                 if (cloudData && cloudData.store) {
                     const incomingUpdatedAt = Number(cloudData.updatedAt) || 0;
-                    // 若本機有更新的狀態且尚未寫入完成，避免被較舊雲端快照倒退覆蓋
                     if (!isInitialLoadDone || incomingUpdatedAt >= latestStateUpdatedAt) {
                         applySerializedState(cloudData);
                         pruneUnstartedDraftsOnly();
@@ -2609,17 +2701,17 @@
                         <div class="timer-actions">
                             ${!isRunning ? `
                                 <div class="timer-inputs">
-                                    <input type="text" class="time-input input-d" id="in_d_${item.id}" value="${item.d}" 
+                                    <input type="text" inputmode="numeric" pattern="[0-9]*" class="time-input input-d" id="in_d_${item.id}" value="${item.d}" 
                                         maxlength="2" 
                                         onfocus="this.select()"
                                         onkeydown="handleArrowNav(event, null, 'in_h_${item.id}', '${accId}', '${type}', ${item.id})"
                                         onkeyup="autoJumpOnNumber(event, this, 'in_h_${item.id}')">天
-                                    <input type="text" class="time-input input-h" id="in_h_${item.id}" value="${formatPad(item.h)}" 
+                                    <input type="text" inputmode="numeric" pattern="[0-9]*" class="time-input input-h" id="in_h_${item.id}" value="${formatPad(item.h)}" 
                                         maxlength="2" 
                                         onfocus="this.select()"
                                         onkeydown="handleArrowNav(event, 'in_d_${item.id}', 'in_m_${item.id}', '${accId}', '${type}', ${item.id})"
                                         onkeyup="autoJumpOnNumber(event, this, 'in_m_${item.id}')">時
-                                    <input type="text" class="time-input input-m" id="in_m_${item.id}" value="${formatPad(item.m)}" 
+                                    <input type="text" inputmode="numeric" pattern="[0-9]*" class="time-input input-m" id="in_m_${item.id}" value="${formatPad(item.m)}" 
                                         maxlength="2" 
                                         onfocus="this.select()"
                                         onkeydown="handleArrowNav(event, 'in_h_${item.id}', null, '${accId}', '${type}', ${item.id})">分
@@ -2810,7 +2902,6 @@
             }
         }
 
-        // 只清理逾時超過 10 分鐘的個別職位預約，不會重設其他計時或覆蓋雲端
         function checkExpiredJobsQuietly() {
             const now = getAccurateNow();
             let changed = false;
