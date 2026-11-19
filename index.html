@@ -21,6 +21,7 @@
         }
 
         :root {
+            /* San-X 療癒可可棕主色調 */
             --cocoa: #5C3D2E;
             --cocoa-light: #8C6A58;
             --cream-bg: #FFFDF8;
@@ -43,6 +44,7 @@
             --card-p: linear-gradient(135deg, #58C984 0%, #38A866 100%);
             --shadow-p: rgba(56, 168, 102, 0.25);
 
+            /* 標題：貓啃什錦黑（可切換粉圓體）；內文與計時：統一 jf粉圓體 */
             --font-title: 'MaokenFont', 'HuninnFont', "PingFang HK", sans-serif;
             --font-body: 'HuninnFont', -apple-system, BlinkMacSystemFont, "PingFang HK", sans-serif;
         }
@@ -51,6 +53,7 @@
             box-sizing: border-box;
         }
 
+        /* 全頁彩色手繪蠟筆圓點背景 (bg_dot_2.jpg) */
         body {
             font-family: var(--font-body);
             background-color: var(--cream-bg);
@@ -58,7 +61,7 @@
             background-repeat: repeat;
             background-size: 280px 280px;
             margin: 0;
-            padding: 20px 26px 120px 26px;
+            padding: 28px 36px 130px 36px;
             color: var(--cocoa);
             min-height: 100vh;
             position: relative;
@@ -69,6 +72,21 @@
         button, select, input {
             font-family: var(--font-body);
             color: var(--cocoa);
+        }
+
+        /* 頁面最上方雙色黃波浪花邊 (bg_frill.png) */
+        .header-frill {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 16px;
+            background-image: url('./bg_frill.png');
+            background-repeat: repeat-x;
+            background-position: top center;
+            background-size: 64px 16px;
+            pointer-events: none;
+            z-index: 10;
         }
 
         /* 日本官網同款 SHAKI!! 熱鬆餅開場動畫遮罩 */
@@ -115,11 +133,12 @@
             margin-top: 8px;
         }
 
+        /* 頂部可愛橫幅列 */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            max-width: 1220px;
+            max-width: 1240px;
             margin: 0 auto 22px auto;
             padding: 12px 20px;
             background: rgba(255, 255, 255, 0.95);
@@ -183,6 +202,7 @@
             flex-wrap: wrap;
         }
 
+        /* 糖果膠囊按鈕 */
         .pill-btn {
             border: 2px solid #FFF;
             padding: 7px 13px;
@@ -220,29 +240,30 @@
         .btn-event-toggle.active { background: linear-gradient(135deg, #FF85A1, #EB5A87); }
         .btn-toggle { background: linear-gradient(135deg, #5AA9FF, #3B88E8); }
 
+        /* 3欄手賬卡片視圖 */
         .grid-view {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            max-width: 1220px;
+            gap: 32px;
+            max-width: 1240px;
             margin: 0 auto;
             position: relative;
             z-index: 4;
         }
 
-        /* 允許公仔跨出欄外 */
         .account-column {
             border-radius: 26px;
-            padding: 16px 16px 24px 16px;
+            padding: 16px 16px 22px 16px;
             border: 3.5px solid #FFFFFF;
             box-shadow: 0 10px 24px rgba(92, 61, 46, 0.09);
             display: flex;
             flex-direction: column;
             gap: 14px;
             position: relative;
-            overflow: visible !important;
+            overflow: visible;
         }
 
+        /* 內層虛線手賬縫邊 */
         .account-column::before {
             content: "";
             position: absolute;
@@ -256,30 +277,31 @@
         .account-column.h { background-color: var(--bg-h); outline: 2px solid var(--border-h); }
         .account-column.p { background-color: var(--bg-p); outline: 2px solid var(--border-p); }
 
-        /* 右下角跨出欄外的大隻立牌貼紙 */
-        .corner-stand-sticker {
+        /* 公仔直接站在欄位「框外角」，完全不進框內、不擋任何職位空間 */
+        .outer-corner-stand {
             position: absolute;
-            bottom: -32px;
-            right: -32px;
-            width: 135px;
-            height: 135px;
+            bottom: -24px;
+            right: -34px;
+            width: 84px;
+            height: 84px;
             object-fit: contain;
             pointer-events: none;
-            z-index: 20;
-            filter: drop-shadow(0 5px 10px rgba(92, 61, 46, 0.28));
+            z-index: 8;
+            filter: drop-shadow(0 4px 7px rgba(92, 61, 46, 0.24));
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .account-column:hover .corner-stand-sticker {
+        .account-column:hover .outer-corner-stand {
             transform: translateY(-4px) rotate(-4deg) scale(1.06);
         }
 
+        /* 遊戲角色名片貼紙 */
         .profile-card {
             background: rgba(255, 255, 255, 0.97);
             border-radius: 18px;
-            padding: 10px 12px;
+            padding: 13px 14px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 13px;
             border: 2px solid rgba(92, 61, 46, 0.08);
             box-shadow: 0 4px 12px rgba(92, 61, 46, 0.06);
             position: relative;
@@ -292,9 +314,9 @@
         }
 
         .profile-avatar {
-            width: 52px;
-            height: 52px;
-            border-radius: 14px;
+            width: 62px;
+            height: 62px;
+            border-radius: 16px;
             object-fit: cover;
             background: #F5EFE6;
             border: 2.5px solid #FFF;
@@ -304,10 +326,10 @@
 
         .avatar-chara-badge {
             position: absolute;
-            bottom: -5px;
-            right: -5px;
-            width: 26px;
-            height: 26px;
+            bottom: -6px;
+            right: -6px;
+            width: 30px;
+            height: 30px;
             object-fit: contain;
             background: #FFF;
             border-radius: 50%;
@@ -330,43 +352,55 @@
         .profile-name {
             font-family: var(--font-title);
             font-weight: normal;
-            font-size: 22px;
+            font-size: 27px;
             color: var(--cocoa);
             line-height: 1.15;
             letter-spacing: 0.5px;
         }
 
         .main-crown-badge {
-            font-size: 10.5px;
+            font-size: 11.5px;
             font-weight: 700;
-            padding: 1px 7px;
+            padding: 2px 9px;
             border-radius: 999px;
             background: linear-gradient(135deg, #FFD43B, #FAB005);
             color: var(--cocoa);
             border: 1px solid #FFF;
+            box-shadow: 0 2px 4px rgba(92, 61, 46, 0.12);
         }
 
         .profile-alliance {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
-            padding: 1px 7px;
+            padding: 2px 9px;
             border-radius: 999px;
             background: var(--cocoa);
             color: #FFFDF6;
         }
 
-        /* 簡化並精簡戰力資訊行，不佔空間 */
         .profile-stats-row {
             display: flex;
             align-items: center;
-            gap: 6px;
-            margin-top: 3px;
-            font-size: 11.5px;
-            font-weight: 600;
-            color: var(--cocoa-light);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            gap: 7px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+            font-size: 13.5px;
+            font-weight: 700;
+        }
+
+        .stat-pill {
+            padding: 3px 11px;
+            border-radius: 999px;
+        }
+        .stat-pill.tg {
+            background: #FFF3D6;
+            color: #9C5A00;
+            border: 1px solid #F7D774;
+        }
+        .stat-pill.power {
+            background: #FFF0F4;
+            color: #B8325A;
+            border: 1px solid #F8B4C8;
         }
 
         .btn-edit-profile {
@@ -376,10 +410,10 @@
             background: #FAF4EB;
             border: 1px solid #EADBC8;
             border-radius: 50%;
-            width: 23px;
-            height: 23px;
+            width: 24px;
+            height: 24px;
             cursor: pointer;
-            font-size: 10px;
+            font-size: 11px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -393,7 +427,6 @@
             z-index: 2;
         }
 
-        /* 小花朵數字徽章移到標題右邊 */
         .section-header {
             font-family: var(--font-title);
             font-weight: normal;
@@ -405,29 +438,6 @@
             margin-bottom: 8px;
             color: var(--cocoa);
             padding: 0 2px;
-        }
-
-        .section-title-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .flower-count-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 25px;
-            height: 25px;
-            background-image: url('./bg_epi_num.svg');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            font-family: var(--font-body);
-            font-size: 12.5px;
-            font-weight: 800;
-            color: #FFFFFF;
-            text-shadow: 0 1px 1px rgba(92, 61, 46, 0.45);
         }
 
         .btn-add {
@@ -449,11 +459,40 @@
         }
         .btn-add:hover { transform: scale(1.15); }
 
+        /* 計時卡片列：已開始的計時卡片旁顯示小花朵編號（1, 2...） */
+        .timer-item-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 9px;
+        }
+
+        .flower-seq-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+            background-image: url('./bg_epi_num.svg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            font-family: var(--font-body);
+            font-size: 15px;
+            font-weight: 800;
+            color: #FFFFFF;
+            text-shadow: 0 1px 2px rgba(92, 61, 46, 0.45);
+            filter: drop-shadow(0 2px 4px rgba(92, 61, 46, 0.15));
+        }
+
+        /* 軟萌計時小卡片 */
         .timer-card {
+            flex: 1;
+            min-width: 0;
             color: white;
             border-radius: 16px;
             padding: 10px 12px;
-            margin-bottom: 9px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -483,6 +522,7 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
+            gap: 6px;
         }
 
         .timer-info {
@@ -492,7 +532,7 @@
         }
 
         .timer-display {
-            font-size: 22px;
+            font-size: 21px;
             font-weight: 700;
             font-family: var(--font-body);
             font-variant-numeric: tabular-nums;
@@ -502,7 +542,7 @@
         }
 
         .timer-sub {
-            font-size: 11.5px;
+            font-size: 11px;
             opacity: 0.94;
         }
 
@@ -514,7 +554,7 @@
         }
 
         .time-input {
-            width: 27px;
+            width: 26px;
             height: 26px;
             border: 1.5px solid rgba(255, 255, 255, 0.85);
             border-radius: 8px;
@@ -580,14 +620,14 @@
             background: rgba(255, 255, 255, 0.38);
         }
 
-        /* 職位預約白卡與內部文字放大 */
+        /* 職位預約白卡：標題維持原本大小（18px），只放大框「內」文字與下拉選單 */
         .job-section {
             background: rgba(255, 255, 255, 0.96);
             border-radius: 18px;
-            padding: 12px 13px 14px 13px;
+            padding: 13px 14px 15px 14px;
             display: flex;
             flex-direction: column;
-            gap: 9px;
+            gap: 11px;
             border: 2px solid rgba(92, 61, 46, 0.08);
             box-shadow: 0 4px 10px rgba(92, 61, 46, 0.05);
             position: relative;
@@ -597,7 +637,7 @@
         .job-section-title {
             font-family: var(--font-title);
             font-weight: normal;
-            font-size: 19px;
+            font-size: 18px;
             border-bottom: 1.5px dashed #E6D7C3;
             padding-bottom: 5px;
             color: var(--cocoa);
@@ -607,8 +647,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 14.5px;
-            font-weight: 600;
+            font-size: 16.5px;
+            font-weight: 700;
             color: var(--cocoa);
             gap: 6px;
         }
@@ -617,28 +657,29 @@
             background: #FFA24C;
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 5px 11px;
             border-radius: 999px;
-            font-size: 12.5px;
-            font-weight: 600;
+            font-size: 13.5px;
+            font-weight: 700;
             cursor: pointer;
-            margin-left: 3px;
+            margin-left: 4px;
         }
         .btn-shift:hover { background: #EB8931; }
 
         select {
-            padding: 5px 10px;
+            padding: 5px 11px;
             border-radius: 999px;
             border: 1.5px solid #DFCBB5;
             background: #FFFDF9;
-            font-size: 13.5px;
-            font-weight: 600;
+            font-size: 15px;
+            font-weight: 700;
             color: var(--cocoa);
         }
 
+        /* 打直獨立拆分欄位視圖 */
         .timeline-view {
             display: none;
-            max-width: 1220px;
+            max-width: 1240px;
             margin: 0 auto;
             position: relative;
             z-index: 4;
@@ -701,35 +742,23 @@
         .tag-job-s { background: #EB5A87; }
         .tag-job-t { background: #5299E8; }
 
+        /* 頁尾單獨 1 個大雲朵 (bg_cloud_pc.png) */
         .footer-clouds {
-            position: fixed;
-            bottom: 12px;
-            left: 0;
-            width: 100%;
-            height: 76px;
-            background-image: url('./bg_cloud_pc.png');
-            background-repeat: repeat-x;
-            background-position: bottom center;
-            background-size: auto 76px;
-            pointer-events: none;
-            z-index: 1;
-            opacity: 0.92;
-        }
-
-        .footer-frill {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 16px;
-            background-image: url('./bg_frill.png');
-            background-repeat: repeat-x;
-            background-position: top center;
-            background-size: 64px 16px;
+            height: 82px;
+            background-image: url('./bg_cloud_pc.png');
+            background-repeat: no-repeat;
+            background-position: bottom center;
+            background-size: auto 82px;
             pointer-events: none;
-            z-index: 2;
+            z-index: 1;
+            opacity: 0.94;
         }
 
+        /* 網頁內鬧鐘彈窗遮罩 */
         .alarm-modal-overlay {
             display: none;
             position: fixed;
@@ -825,14 +854,19 @@
         }
 
         @media (max-width: 950px) {
+            body { padding: 24px 24px 120px 18px; }
             .grid-view, .timeline-grid { grid-template-columns: 1fr; }
-            .corner-stand-sticker { width: 110px; height: 110px; right: -16px; bottom: -20px; }
+            .outer-corner-stand { right: -22px; bottom: -20px; width: 76px; height: 76px; }
+            .footer-clouds { background-size: 92% auto; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 日本官網同款熱鬆餅 SHAKI!! 開場動畫 -->
+    <!-- 頁面最上方雙色黃波浪花邊 -->
+    <div class="header-frill"></div>
+
+    <!-- 日本官網同款熱鬆餅 SHAKI!! 開場載入動畫 -->
     <div class="loading-splash" id="loadingSplash">
         <div class="loading-stage">
             <img class="loading-frame frame-1" src="./img_op_1.png" alt="">
@@ -882,10 +916,10 @@
         </div>
     </div>
 
+    <!-- 頁尾單獨 1 個雲朵 -->
     <div class="footer-clouds"></div>
-    <div class="footer-frill"></div>
 
-    <!-- 網頁內鬧鐘彈窗遮罩 -->
+    <!-- 網頁內鬧鐘彈出視窗 -->
     <div class="alarm-modal-overlay" id="alarmModalOverlay">
         <div class="alarm-modal">
             <div class="alarm-modal-icon">⏰</div>
@@ -896,6 +930,7 @@
     </div>
 
     <script>
+        // --- 1. Firebase 專案設定 ---
         const firebaseConfig = {
             apiKey: "AIzaSyDjQS9NNkUwZ8bTeNb75WFp3at2jjKzWac",
             authDomain: "kingshot-game-alarm.firebaseapp.com",
@@ -916,6 +951,7 @@
         const TITLE_FONT_KEY = "multi_account_title_font_v3";
         const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
 
+        // Zoey（主號，黃色鬆弛熊）、Howard（粉色小白熊）、Patrick（綠色茶小熊）
         const accounts = [
             { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png', standFile: 'chara_stand_1-1.png' },
             { id: 'h', name: 'h', isMain: false, faceFile: 'chara_face_2-1.png', standFile: 'chara_stand_2-1.png' },
@@ -966,28 +1002,29 @@
         let titleFontIdx = 0;
         let showSunlightEvent = true;
 
+        // 士兵訓練與科技研究預設由 0天 00時 00分 開始
         let store = {
             h: { 
-                soldiers: [], 
-                tech: [],
-                master: [],
-                sunlight: [],
+                soldiers: [{ id: 1, d: 0, h: 0, m: 0, endTime: null }], 
+                tech: [{ id: 2, d: 0, h: 0, m: 0, endTime: null }],
+                master: [{ id: 101, d: 0, h: 0, m: 10, endTime: null }],
+                sunlight: [{ id: 201, d: 0, h: 8, m: 0, endTime: null }],
                 soldierJobTime: '', soldierJobDate: null, 
                 techJobTime: '', techJobDate: null 
             },
             z: { 
-                soldiers: [], 
-                tech: [],
-                master: [],
-                sunlight: [],
+                soldiers: [{ id: 3, d: 0, h: 0, m: 0, endTime: null }], 
+                tech: [{ id: 4, d: 0, h: 0, m: 0, endTime: null }],
+                master: [{ id: 102, d: 0, h: 0, m: 10, endTime: null }],
+                sunlight: [{ id: 202, d: 0, h: 8, m: 0, endTime: null }],
                 soldierJobTime: '', soldierJobDate: null, 
                 techJobTime: '', techJobDate: null 
             },
             p: { 
-                soldiers: [], 
-                tech: [],
-                master: [],
-                sunlight: [],
+                soldiers: [{ id: 5, d: 0, h: 0, m: 0, endTime: null }], 
+                tech: [{ id: 6, d: 0, h: 0, m: 0, endTime: null }],
+                master: [{ id: 103, d: 0, h: 0, m: 10, endTime: null }],
+                sunlight: [{ id: 203, d: 0, h: 8, m: 0, endTime: null }],
                 soldierJobTime: '', soldierJobDate: null, 
                 techJobTime: '', techJobDate: null 
             }
@@ -1001,16 +1038,23 @@
         let activeAlerts = [];
         let popupWin = null;
         let isInitialLoadDone = false;
+        let hasPrunedInitialDrafts = false;
 
         function playSplashAnimation() {
             const splash = document.getElementById('loadingSplash');
             if (!splash) return;
             splash.classList.remove('hidden', 'shaki');
-            setTimeout(() => { splash.classList.add('shaki'); }, 550);
-            setTimeout(() => { splash.classList.add('hidden'); }, 1350);
+            setTimeout(() => {
+                splash.classList.add('shaki');
+            }, 550);
+            setTimeout(() => {
+                splash.classList.add('hidden');
+            }, 1350);
         }
 
-        function replaySplash() { playSplashAnimation(); }
+        function replaySplash() {
+            playSplashAnimation();
+        }
 
         function initFontThemes() {
             const savedTitle = localStorage.getItem(TITLE_FONT_KEY);
@@ -1174,10 +1218,40 @@
             }
         }
 
+        function pruneUnstartedDrafts() {
+            let changed = false;
+            accounts.forEach(acc => {
+                ['soldiers', 'tech', 'master', 'sunlight'].forEach(type => {
+                    const list = store[acc.id][type] || [];
+                    const running = list.filter(i => i.endTime !== null);
+                    const unstarted = list.filter(i => i.endTime === null);
+
+                    if (unstarted.length > 1) {
+                        const firstDraft = unstarted[0];
+                        if (type === 'soldiers' || type === 'tech') {
+                            firstDraft.d = 0;
+                            firstDraft.h = 0;
+                            firstDraft.m = 0;
+                        }
+                        store[acc.id][type] = [...running, firstDraft];
+                        changed = true;
+                    } else if (unstarted.length === 0 && running.length === 0) {
+                        let defD = 0, defH = 0, defM = 0;
+                        if (type === 'master') defM = 10;
+                        if (type === 'sunlight') defH = 8;
+                        store[acc.id][type] = [{ id: ++nextId, d: defD, h: defH, m: defM, endTime: null }];
+                        changed = true;
+                    }
+                });
+            });
+            return changed;
+        }
+
         function init() {
             playSplashAnimation();
             initFontThemes();
             loadLocalBackup();
+            pruneUnstartedDrafts();
             loadLocalProfiles();
             updateSunlightBtnUI();
             renderGrid();
@@ -1197,6 +1271,12 @@
 
                 if (cloudData && cloudData.store) {
                     applySerializedState(cloudData);
+                    if (!hasPrunedInitialDrafts) {
+                        hasPrunedInitialDrafts = true;
+                        if (pruneUnstartedDrafts()) {
+                            saveState();
+                        }
+                    }
                     saveLocalBackup();
                     updateSunlightBtnUI();
                     renderGrid();
@@ -1208,6 +1288,7 @@
             }, (error) => {
                 badge.innerText = "🔴 雲端連線異常";
                 badge.className = "sync-badge error";
+                console.error("Firebase Error:", error);
             });
         }
 
@@ -1215,17 +1296,11 @@
             const serializedStore = {};
             accounts.forEach(acc => {
                 const accData = store[acc.id];
-                /* 濾掉尚未按開始的空白草稿，避免 F5 重整保留 */
-                const validSoldiers = (accData.soldiers || []).filter(i => i.endTime !== null);
-                const validTech = (accData.tech || []).filter(i => i.endTime !== null);
-                const validMaster = (accData.master || []).filter(i => i.endTime !== null);
-                const validSunlight = (accData.sunlight || []).filter(i => i.endTime !== null);
-
                 serializedStore[acc.id] = {
-                    soldiers: validSoldiers.map(i => ({ ...i, endTime: i.endTime.toISOString() })),
-                    tech: validTech.map(i => ({ ...i, endTime: i.endTime.toISOString() })),
-                    master: validMaster.map(i => ({ ...i, endTime: i.endTime.toISOString() })),
-                    sunlight: validSunlight.map(i => ({ ...i, endTime: i.endTime.toISOString() })),
+                    soldiers: (accData.soldiers || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
+                    tech: (accData.tech || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
+                    master: (accData.master || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
+                    sunlight: (accData.sunlight || []).map(i => ({ ...i, endTime: i.endTime ? i.endTime.toISOString() : null })),
                     soldierJobTime: accData.soldierJobTime || '',
                     soldierJobDate: accData.soldierJobDate ? accData.soldierJobDate.toISOString() : null,
                     techJobTime: accData.techJobTime || '',
@@ -1362,7 +1437,9 @@
                 const left = (screen.width - width) / 2;
                 const top = (screen.height - height) / 2;
 
-                if (popupWin && !popupWin.closed) { popupWin.close(); }
+                if (popupWin && !popupWin.closed) {
+                    popupWin.close();
+                }
 
                 popupWin = window.open(
                     "",
@@ -1428,9 +1505,18 @@
         function dismissAlarm() {
             document.getElementById('alarmModalOverlay').style.display = 'none';
             activeAlerts = [];
-            if (popupWin && !popupWin.closed) { popupWin.close(); }
-            if (ringInterval) { clearInterval(ringInterval); ringInterval = null; }
-            if (titleBlinkInterval) { clearInterval(titleBlinkInterval); titleBlinkInterval = null; }
+
+            if (popupWin && !popupWin.closed) {
+                popupWin.close();
+            }
+            if (ringInterval) {
+                clearInterval(ringInterval);
+                ringInterval = null;
+            }
+            if (titleBlinkInterval) {
+                clearInterval(titleBlinkInterval);
+                titleBlinkInterval = null;
+            }
             document.title = ORIGINAL_TITLE;
         }
 
@@ -1465,9 +1551,6 @@
             const p = profiles[accId] || {};
             const fallbackAvatar = `./${acc.faceFile}`;
             const avatarSrc = p.avatar ? p.avatar : fallbackAvatar;
-            const rankText = p.powerRank ? `戰力#${p.powerRank}` : '';
-            const syncTimeText = p.lastFetched ? `更新: ${formatTimeHM(new Date(p.lastFetched))}` : '';
-            const statsJoined = [syncTimeText, rankText].filter(Boolean).join(' · ');
 
             return `
                 <div class="profile-card">
@@ -1482,8 +1565,8 @@
                             ${p.alliance ? `<span class="profile-alliance">[${p.alliance}]</span>` : ''}
                         </div>
                         <div class="profile-stats-row">
-                            <span style="color:#B8325A; font-weight:700;">⚔️ ${formatPower(p.power)}</span>
-                            <span>${statsJoined}</span>
+                            <span class="stat-pill tg">${p.levelLabel || '--'}</span>
+                            <span class="stat-pill power">⚔️ ${formatPower(p.power)}</span>
                         </div>
                     </div>
                     <button class="btn-edit-profile" title="修改角色名或聯盟標籤" onclick="editAccountQuery('${accId}')">✏️</button>
@@ -1491,18 +1574,18 @@
             `;
         }
 
-        function getActiveCount(list) {
-            return (list || []).filter(item => item.endTime !== null).length;
+        function renderSectionCards(accId, type, list) {
+            let activeSeq = 0;
+            return (list || []).map(item => {
+                const seqNum = item.endTime !== null ? ++activeSeq : null;
+                return renderTimerCard(accId, type, item, seqNum);
+            }).join('');
         }
 
         function renderGrid() {
             const grid = document.getElementById('gridView');
             grid.innerHTML = accounts.map(acc => {
                 const data = store[acc.id];
-                const sActive = getActiveCount(data.soldiers);
-                const tActive = getActiveCount(data.tech);
-                const mActive = getActiveCount(data.master);
-                const sunActive = getActiveCount(data.sunlight);
 
                 return `
                 <div class="account-column ${acc.id}">
@@ -1510,54 +1593,42 @@
                     
                     <div class="section-block">
                         <div class="section-header">
-                            <div class="section-title-left">
-                                <span>⚔️ 士兵訓練</span>
-                                ${sActive > 0 ? `<span class="flower-count-badge">${sActive}</span>` : ''}
-                            </div>
+                            <span>⚔️ 士兵訓練</span>
                             <button class="btn-add" onclick="addItem('${acc.id}', 'soldiers')">+</button>
                         </div>
                         <div>
-                            ${(data.soldiers || []).map(item => renderTimerCard(acc.id, 'soldiers', item)).join('')}
+                            ${renderSectionCards(acc.id, 'soldiers', data.soldiers)}
                         </div>
                     </div>
 
                     <div class="section-block">
                         <div class="section-header">
-                            <div class="section-title-left">
-                                <span>🔬 科技研究</span>
-                                ${tActive > 0 ? `<span class="flower-count-badge">${tActive}</span>` : ''}
-                            </div>
+                            <span>🔬 科技研究</span>
                             <button class="btn-add" onclick="addItem('${acc.id}', 'tech')">+</button>
                         </div>
                         <div>
-                            ${(data.tech || []).map(item => renderTimerCard(acc.id, 'tech', item)).join('')}
+                            ${renderSectionCards(acc.id, 'tech', data.tech)}
                         </div>
                     </div>
 
                     <div class="section-block">
                         <div class="section-header">
-                            <div class="section-title-left">
-                                <span>📖 大師技能</span>
-                                ${mActive > 0 ? `<span class="flower-count-badge">${mActive}</span>` : ''}
-                            </div>
+                            <span>📖 大師技能</span>
                             <button class="btn-add" onclick="addItem('${acc.id}', 'master')">+</button>
                         </div>
                         <div>
-                            ${(data.master || []).map(item => renderTimerCard(acc.id, 'master', item)).join('')}
+                            ${renderSectionCards(acc.id, 'master', data.master)}
                         </div>
                     </div>
 
                     ${showSunlightEvent ? `
                     <div class="section-block">
                         <div class="section-header">
-                            <div class="section-title-left">
-                                <span>☀️ 沐光之旅</span>
-                                ${sunActive > 0 ? `<span class="flower-count-badge">${sunActive}</span>` : ''}
-                            </div>
+                            <span>☀️ 沐光之旅</span>
                             <button class="btn-add" onclick="addItem('${acc.id}', 'sunlight')">+</button>
                         </div>
                         <div>
-                            ${(data.sunlight || []).map(item => renderTimerCard(acc.id, 'sunlight', item)).join('')}
+                            ${renderSectionCards(acc.id, 'sunlight', data.sunlight)}
                         </div>
                     </div>
                     ` : ''}
@@ -1586,13 +1657,13 @@
                         </div>
                     </div>
 
-                    <!-- 真正跨出欄外的立牌公仔 -->
-                    <img class="corner-stand-sticker" src="./${acc.standFile}" alt="">
+                    <!-- 直接站在欄位「框外角」的立牌小熊 -->
+                    <img class="outer-corner-stand" src="./${acc.standFile}" alt="">
                 </div>
             `}).join('');
         }
 
-        function renderTimerCard(accId, type, item) {
+        function renderTimerCard(accId, type, item, seqNum) {
             const isRunning = item.endTime !== null;
             let extraCardClass = '';
             let presetsHtml = '';
@@ -1626,43 +1697,46 @@
             }
             
             return `
-            <div class="timer-card ${extraCardClass}" id="card_${item.id}">
-                <div class="timer-main-row">
-                    <div class="timer-info">
-                        <div class="timer-display" id="disp_${item.id}">
-                            ${isRunning ? '--:--' : `${item.d}天 ${formatPad(item.h)}:${formatPad(item.m)}`}
-                        </div>
-                        <span class="timer-sub" id="sub_${item.id}">
-                            ${isRunning ? '完結: ' + formatDateTime(item.endTime) : '自訂或點下方快捷'}
-                        </span>
-                    </div>
-
-                    <div class="timer-actions">
-                        ${!isRunning ? `
-                            <div class="timer-inputs">
-                                <input type="text" class="time-input input-d" id="in_d_${item.id}" value="${item.d}" 
-                                    maxlength="2" 
-                                    onfocus="this.select()"
-                                    onkeydown="handleArrowNav(event, null, 'in_h_${item.id}', '${accId}', '${type}', ${item.id})"
-                                    onkeyup="autoJumpOnNumber(event, this, 'in_h_${item.id}')">天
-                                <input type="text" class="time-input input-h" id="in_h_${item.id}" value="${formatPad(item.h)}" 
-                                    maxlength="2" 
-                                    onfocus="this.select()"
-                                    onkeydown="handleArrowNav(event, 'in_d_${item.id}', 'in_m_${item.id}', '${accId}', '${type}', ${item.id})"
-                                    onkeyup="autoJumpOnNumber(event, this, 'in_m_${item.id}')">時
-                                <input type="text" class="time-input input-m" id="in_m_${item.id}" value="${formatPad(item.m)}" 
-                                    maxlength="2" 
-                                    onfocus="this.select()"
-                                    onkeydown="handleArrowNav(event, 'in_h_${item.id}', null, '${accId}', '${type}', ${item.id})">分
+            <div class="timer-item-row">
+                ${seqNum !== null ? `<span class="flower-seq-badge">${seqNum}</span>` : ''}
+                <div class="timer-card ${extraCardClass}" id="card_${item.id}">
+                    <div class="timer-main-row">
+                        <div class="timer-info">
+                            <div class="timer-display" id="disp_${item.id}">
+                                ${isRunning ? '--:--' : `${item.d}天 ${formatPad(item.h)}:${formatPad(item.m)}`}
                             </div>
-                            <button class="btn-action" onclick="startTimer('${accId}', '${type}', ${item.id})">▶ 開始</button>
-                        ` : `
-                            <button class="btn-action" onclick="stopTimer('${accId}', '${type}', ${item.id})">■ 重設</button>
-                        `}
-                        <button class="btn-del" onclick="deleteItem('${accId}', '${type}', ${item.id})">✕</button>
+                            <span class="timer-sub" id="sub_${item.id}">
+                                ${isRunning ? '完結: ' + formatDateTime(item.endTime) : '設定時間後按開始'}
+                            </span>
+                        </div>
+
+                        <div class="timer-actions">
+                            ${!isRunning ? `
+                                <div class="timer-inputs">
+                                    <input type="text" class="time-input input-d" id="in_d_${item.id}" value="${item.d}" 
+                                        maxlength="2" 
+                                        onfocus="this.select()"
+                                        onkeydown="handleArrowNav(event, null, 'in_h_${item.id}', '${accId}', '${type}', ${item.id})"
+                                        onkeyup="autoJumpOnNumber(event, this, 'in_h_${item.id}')">天
+                                    <input type="text" class="time-input input-h" id="in_h_${item.id}" value="${formatPad(item.h)}" 
+                                        maxlength="2" 
+                                        onfocus="this.select()"
+                                        onkeydown="handleArrowNav(event, 'in_d_${item.id}', 'in_m_${item.id}', '${accId}', '${type}', ${item.id})"
+                                        onkeyup="autoJumpOnNumber(event, this, 'in_m_${item.id}')">時
+                                    <input type="text" class="time-input input-m" id="in_m_${item.id}" value="${formatPad(item.m)}" 
+                                        maxlength="2" 
+                                        onfocus="this.select()"
+                                        onkeydown="handleArrowNav(event, 'in_h_${item.id}', null, '${accId}', '${type}', ${item.id})">分
+                                </div>
+                                <button class="btn-action" onclick="startTimer('${accId}', '${type}', ${item.id})">▶ 開始</button>
+                            ` : `
+                                <button class="btn-action" onclick="editRunningTimer('${accId}', '${type}', ${item.id})">✏️ 修改</button>
+                            `}
+                            <button class="btn-del" title="刪除此項" onclick="deleteItem('${accId}', '${type}', ${item.id})">✕</button>
+                        </div>
                     </div>
+                    ${presetsHtml}
                 </div>
-                ${presetsHtml}
             </div>
             `;
         }
@@ -1702,14 +1776,12 @@
         function formatDateTime(date) { return !date ? '--:--' : `${date.getMonth() + 1}/${date.getDate()} ${formatTimeHM(date)}`; }
 
         function addItem(accId, type) {
-            let defD = 0, defH = 0, defM = 18;
-            if (type === 'tech') { defH = 2; defM = 30; }
-            else if (type === 'master') { defH = 0; defM = 10; }
-            else if (type === 'sunlight') { defH = 8; defM = 0; }
+            let defD = 0, defH = 0, defM = 0;
+            if (type === 'master') { defM = 10; }
+            else if (type === 'sunlight') { defH = 8; }
 
             store[accId][type].push({ id: ++nextId, d: defD, h: defH, m: defM, endTime: null });
             renderGrid();
-            /* 不主動 saveState，確保按 F5 重整不會保留未開始的草稿 */
         }
 
         function deleteItem(accId, type, id) {
@@ -1739,13 +1811,19 @@
 
                 renderGrid();
                 recalculateJobs();
-                saveState(); /* 只有正式點擊開始倒數的項目才會儲存 */
+                saveState();
             }
         }
 
-        function stopTimer(accId, type, id) {
+        function editRunningTimer(accId, type, id) {
             const item = store[accId][type].find(i => i.id === id);
             if (item) {
+                if (item.endTime) {
+                    const diffSec = Math.max(0, Math.ceil((item.endTime - new Date()) / 1000));
+                    item.d = Math.floor(diffSec / 86400);
+                    item.h = Math.floor((diffSec % 86400) / 3600);
+                    item.m = Math.floor((diffSec % 3600) / 60);
+                }
                 item.endTime = null;
                 renderGrid();
                 recalculateJobs();
