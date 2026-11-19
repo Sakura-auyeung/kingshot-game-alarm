@@ -250,7 +250,6 @@
             object-fit: contain;
         }
 
-        .btn-bear-style { background: linear-gradient(135deg, #FF9EBB, #E56B94); }
         .btn-test { background: linear-gradient(135deg, #FF9966, #F27935); }
         .btn-event-toggle { background: #B8A99A; }
         .btn-event-toggle.active { background: linear-gradient(135deg, #FF85A1, #EB5A87); }
@@ -563,13 +562,13 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
         }
 
-        /* 3欄手賬卡片視圖 */
+        /* 3欄手賬卡片視圖（取消頂部斷裂留白，保持連貫緊湊） */
         .grid-view {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 22px;
             max-width: 1240px;
-            margin: 0 auto;
+            margin: 26px auto 0 auto;
             position: relative;
             z-index: 4;
         }
@@ -599,78 +598,21 @@
         .account-column.z { background-color: var(--bg-z); outline: 2px solid var(--border-z); }
         .account-column.p { background-color: var(--bg-p); outline: 2px solid var(--border-p); }
 
-        /* --- 三款立牌顯示樣式（由 bear-style-0 / 1 / 2 控制） --- */
-        .bear-stage-stand {
+        /* 放大貼頂探頭立牌小熊（直接跨過卡片頂框邊緣，唔留空隙斷裂） */
+        .bear-top-peek {
+            position: absolute;
+            top: -124px;
+            right: 8px;
+            width: 196px;
+            height: 196px;
             object-fit: contain;
             pointer-events: none;
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            filter: drop-shadow(0 5px 10px rgba(92, 61, 46, 0.22));
-        }
-
-        /* 款 0：卡片底舞台大立牌 */
-        body.bear-style-0 .account-column {
-            padding-bottom: 18px;
-        }
-        body.bear-style-0 .bear-stage-stand {
-            display: block;
-            width: 190px;
-            height: 190px;
-            margin: 8px auto 0 auto;
-            position: relative;
-            z-index: 5;
-        }
-        body.bear-style-0 .account-column:hover .bear-stage-stand {
-            transform: translateY(-6px) scale(1.05);
-        }
-        body.bear-style-0 .group-photo-banner {
-            display: none;
-        }
-
-        /* 款 1：卡片頂探頭大立牌 */
-        body.bear-style-1 .grid-view {
-            margin-top: 96px;
-        }
-        body.bear-style-1 .bear-stage-stand {
-            position: absolute;
-            top: -116px;
-            right: 14px;
-            width: 156px;
-            height: 156px;
             z-index: 9;
-        }
-        body.bear-style-1 .account-column:hover .bear-stage-stand {
-            transform: translateY(-8px) rotate(-3deg) scale(1.06);
-        }
-        body.bear-style-1 .group-photo-banner {
-            display: none;
-        }
-
-        /* 款 2：頁面最底三熊大合照 */
-        body.bear-style-2 .bear-stage-stand {
-            display: none;
-        }
-        body.bear-style-2 .group-photo-banner {
-            display: flex;
-            grid-column: 1 / -1;
-            justify-content: center;
-            align-items: flex-end;
-            gap: 28px;
-            margin-top: 14px;
-            padding: 18px 24px 12px 24px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 3px dashed #E6CBB0;
-            border-radius: 28px;
-            box-shadow: 0 6px 18px rgba(92, 61, 46, 0.08);
-        }
-        .group-photo-bear {
-            width: 210px;
-            height: 210px;
-            object-fit: contain;
-            filter: drop-shadow(0 6px 12px rgba(92, 61, 46, 0.22));
+            filter: drop-shadow(0 0 2px #FFF) drop-shadow(0 5px 10px rgba(92, 61, 46, 0.24));
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .group-photo-bear:hover {
-            transform: translateY(-8px) scale(1.05);
+        .account-column:hover .bear-top-peek {
+            transform: translateY(-6px) rotate(-2deg) scale(1.04);
         }
 
         /* 遊戲角色名片貼紙 */
@@ -1385,31 +1327,19 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 手機版精簡頂部與三款立牌自適應 */
+        /* 手機版精簡頂部與立牌自適應 */
         @media (max-width: 950px) {
             body { padding: 20px 14px 56px 14px; }
-            .grid-view, .timeline-grid { grid-template-columns: 1fr; }
-
-            body.bear-style-0 .bear-stage-stand {
-                width: 148px;
-                height: 148px;
+            .grid-view, .timeline-grid {
+                grid-template-columns: 1fr;
+                margin-top: 12px;
+                row-gap: 78px;
             }
-            body.bear-style-1 .grid-view {
-                margin-top: 76px;
-            }
-            body.bear-style-1 .bear-stage-stand {
+            .bear-top-peek {
                 top: -92px;
-                right: 10px;
-                width: 124px;
-                height: 124px;
-            }
-            body.bear-style-2 .group-photo-banner {
-                gap: 8px;
-                padding: 12px 10px 8px 10px;
-            }
-            .group-photo-bear {
-                width: 96px;
-                height: 96px;
+                right: 6px;
+                width: 146px;
+                height: 146px;
             }
 
             .header {
@@ -1471,7 +1401,7 @@
         }
     </style>
 </head>
-<body class="bear-style-0">
+<body>
 
     <!-- 頁面最上方雙色黃波浪花邊 -->
     <div class="header-frill"></div>
@@ -1493,7 +1423,6 @@
             <span class="notif-badge" id="notifBadge" onclick="requestDesktopNotificationPermission()">🔔 點擊開啟右下角桌面彈窗</span>
         </div>
         <div class="header-btns">
-            <button class="pill-btn btn-bear-style" id="bearStyleBtn" onclick="cycleBearStyle()">🐻 款1:底舞台</button>
             <button class="pill-btn btn-event-toggle active" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光：顯示</button>
             <button class="pill-btn btn-test" onclick="testAlarm()">🔔 測試鈴聲</button>
             <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">
@@ -1563,7 +1492,6 @@
         const STORAGE_KEY = "multi_account_alarm_local_backup";
         const PROFILE_STORAGE_KEY = "multi_account_profiles_backup";
         const NOTIF_HISTORY_KEY = "multi_account_notif_history_v2";
-        const BEAR_STYLE_KEY = "multi_account_bear_style_v1";
         const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
 
         // 順序：Howard（白熊）、Zoey（主號，懶熊）、Patrick（森熊/茶小熊）
@@ -1572,26 +1500,6 @@
             { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png', standFile: 'chara_stand_1-1.png' },
             { id: 'p', name: 'p', isMain: false, faceFile: 'chara_face_4-1.png', standFile: 'chara_stand_4-1.png' }
         ];
-
-        const bearStyleLabels = [
-            "🐻 款1:底舞台",
-            "🐻 款2:頂探頭",
-            "🐻 款3:大合照"
-        ];
-        let currentBearStyle = 0;
-
-        function applyBearStyle(styleIndex) {
-            currentBearStyle = ((styleIndex % 3) + 3) % 3;
-            document.body.classList.remove("bear-style-0", "bear-style-1", "bear-style-2");
-            document.body.classList.add(`bear-style-${currentBearStyle}`);
-            const btn = document.getElementById("bearStyleBtn");
-            if (btn) btn.innerText = bearStyleLabels[currentBearStyle];
-            try { localStorage.setItem(BEAR_STYLE_KEY, String(currentBearStyle)); } catch (e) {}
-        }
-
-        function cycleBearStyle() {
-            applyBearStyle(currentBearStyle + 1);
-        }
 
         function getBearFaceFile(accId) {
             const acc = accounts.find(a => a.id === accId);
@@ -2330,10 +2238,6 @@
             loadLocalBackup();
             pruneUnstartedDraftsOnly();
             loadLocalProfiles();
-            try {
-                const savedBear = localStorage.getItem(BEAR_STYLE_KEY);
-                if (savedBear !== null) applyBearStyle(parseInt(savedBear, 10) || 0);
-            } catch (e) {}
             updateSunlightBtnUI();
             renderGrid();
             setupFirebaseRealtimeListener();
@@ -2666,14 +2570,14 @@
 
         function renderGrid() {
             const grid = document.getElementById('gridView');
-            const colsHtml = accounts.map(acc => {
+            grid.innerHTML = accounts.map(acc => {
                 const data = store[acc.id];
                 const sMeta = getJobStatusMeta(acc.id, 'soldier');
                 const tMeta = getJobStatusMeta(acc.id, 'tech');
 
                 return `
                 <div class="account-column ${acc.id}">
-                    <img class="bear-stage-stand" src="./${acc.standFile}" alt="${getDisplayAccountName(acc.id)}">
+                    <img class="bear-top-peek" src="./${acc.standFile}" alt="${getDisplayAccountName(acc.id)}">
                     ${renderProfileHeader(acc)}
                     
                     <div class="section-block">
@@ -2746,14 +2650,6 @@
                     </div>
                 </div>
             `}).join('');
-
-            const groupBannerHtml = `
-                <div class="group-photo-banner">
-                    ${accounts.map(acc => `<img class="group-photo-bear" src="./${acc.standFile}" alt="${getDisplayAccountName(acc.id)}">`).join('')}
-                </div>
-            `;
-
-            grid.innerHTML = colsHtml + groupBannerHtml;
         }
 
         function renderTimerCard(accId, type, item, seqNum) {
