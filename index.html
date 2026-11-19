@@ -85,7 +85,7 @@
             z-index: 10;
         }
 
-        /* 日本官網同款 SHAKI!! 熱鬆餅開場動畫遮罩 */
+        /* 日本官網同款 SHAKI!! 熱鬆餅開場動畫遮罩（真實載入連動） */
         .loading-splash {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -95,7 +95,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: opacity 0.45s ease, visibility 0.45s ease;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
         }
         .loading-splash.hidden {
             opacity: 0;
@@ -119,7 +119,7 @@
         .loading-splash.shaki .loading-frame.frame-1 { opacity: 0; }
         .loading-splash.shaki .loading-frame.frame-2 {
             opacity: 1;
-            animation: shakiPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: shakiPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .loading-text {
             font-family: var(--font-title);
@@ -412,7 +412,7 @@
             color: #FFF;
         }
 
-        /* 佔滿 2 行高度的大型類別圖示 (⚔️ / 🔬 / 📖 / ☀️ / 🏛️) */
+        /* 佔滿 2 行高度的大型類別圖示 */
         .todo-big-emoji {
             font-size: 32px;
             line-height: 1;
@@ -525,16 +525,27 @@
         }
         .btn-todo-preset:hover { background: #F2DFC8; }
 
-        /* 時間線與職位欄「今天 / 明天」文字標示 */
-        .day-label-today {
-            color: #9E2A2B;
+        /* 螢光筆 size 迷你日期膠囊（保留在時間線） */
+        .day-hl {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 10.5px;
             font-weight: 800;
+            line-height: 1.1;
+            vertical-align: baseline;
             margin-right: 3px;
+            letter-spacing: 0.3px;
         }
-        .day-label-tomorrow {
-            color: #1D4E89;
-            font-weight: 800;
-            margin-right: 3px;
+        .day-hl.today {
+            background-color: #9E2A2B;
+            color: #FFFFFF;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+        }
+        .day-hl.tomorrow {
+            background-color: #1D4E89;
+            color: #FFFFFF;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
         }
 
         /* 3欄手賬卡片視圖 */
@@ -548,7 +559,6 @@
             z-index: 4;
         }
 
-        /* 適中偏緊的區塊間距，讓標題與計時框緊湊但不擁擠 */
         .account-column {
             border-radius: 26px;
             padding: 14px 15px 18px 15px;
@@ -738,7 +748,7 @@
             min-height: 26px;
         }
 
-        /* 士兵訓練的 + 號圓形改為天藍色 */
+        /* 士兵訓練與沐光之旅的 + 號圓形為天藍色 */
         .btn-add {
             background: linear-gradient(135deg, #5BB6FF 0%, #3498DB 100%);
             color: white;
@@ -758,39 +768,42 @@
         }
         .btn-add:hover { transform: scale(1.15); }
 
-        /* 計時卡片列：已開始的計時卡片旁顯示小花朵編號（1, 2...） */
+        /* 方案 A：計時卡片全寬對齊，小花編號浮貼在卡片左上角邊緣 */
         .timer-item-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 6px;
+            position: relative;
+            width: 100%;
+            margin-bottom: 7px;
         }
         .timer-item-row:last-child {
             margin-bottom: 0;
         }
 
         .flower-seq-badge {
+            position: absolute;
+            top: -8px;
+            left: -7px;
+            z-index: 5;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 32px;
-            height: 32px;
-            flex-shrink: 0;
+            width: 25px;
+            height: 25px;
             background-image: url('./bg_epi_num.svg');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
             font-family: var(--font-body);
-            font-size: 14.5px;
+            font-size: 12px;
             font-weight: 800;
             color: #FFFFFF;
-            text-shadow: 0 1px 2px rgba(92, 61, 46, 0.45);
+            text-shadow: 0 1px 2px rgba(92, 61, 46, 0.55);
+            filter: drop-shadow(0 1px 2px rgba(92, 61, 46, 0.28));
+            pointer-events: none;
         }
 
-        /* 軟萌計時小卡片：收薄底部陰影，並支援「今天＝紅外粗框 / 明天＝藍外粗框」 */
+        /* 軟萌計時小卡片：全寬 100% 對齊，支援「今天＝紅外粗框 / 明天＝藍外粗框」 */
         .timer-card {
-            flex: 1;
-            min-width: 0;
+            width: 100%;
             color: white;
             border-radius: 15px;
             padding: 9px 11px;
@@ -818,11 +831,11 @@
             border-left: 6px solid #FFF6D6;
         }
 
-        /* 計時區「今天（紅外粗框）」與「明天（藍外粗框）」，不改變卡片內部底色 */
-        .timer-card.due-today {
+        /* 今天（棕紅外粗框）與明天（深藍外粗框），不改變卡片內部底色 */
+        .due-today {
             border: 3.5px solid #B8292F !important;
         }
-        .timer-card.due-tomorrow {
+        .due-tomorrow {
             border: 3.5px solid #1D4E89 !important;
         }
 
@@ -1104,7 +1117,7 @@
             background-size: auto 5px;
         }
 
-        /* 時間線項目：左側加入熊頭 + 固定寬度人名，確保所有項目標籤整齊對齊 */
+        /* 時間線項目：無框中心裁切放大熊頭 + 固定寬度人名對齊 */
         .timeline-item {
             display: flex;
             align-items: center;
@@ -1130,12 +1143,24 @@
             flex: 1;
         }
 
-        .tl-bear-icon {
-            width: 22px;
-            height: 22px;
-            object-fit: contain;
+        /* 固定 24x24 容器（不放大外框），內部圖片從中心 scale(1.48) 裁切掉透明邊 */
+        .tl-bear-crop {
+            width: 24px;
+            height: 24px;
             flex-shrink: 0;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             margin-right: 6px;
+        }
+
+        .tl-bear-crop img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transform: scale(1.48);
+            transform-origin: center center;
         }
 
         .tl-acc-name {
@@ -1187,7 +1212,6 @@
         .job-name-with-bear {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
         }
 
         .job-manage-controls {
@@ -1287,7 +1311,7 @@
     <!-- 頁面最上方雙色黃波浪花邊 -->
     <div class="header-frill"></div>
 
-    <!-- 日本官網同款熱鬆餅 SHAKI!! 開場載入動畫 -->
+    <!-- 日本官網同款熱鬆餅 SHAKI!! 開場載入動畫（真實載入連動） -->
     <div class="loading-splash" id="loadingSplash">
         <div class="loading-stage">
             <img class="loading-frame frame-1" src="./img_op_1.png" alt="">
@@ -1452,6 +1476,50 @@
             }
         };
 
+        // --- 真實載入連動控制 ---
+        let splashStartTime = 0;
+        let isFirebaseFirstLoaded = false;
+        let isSplashHidden = false;
+
+        function startSplashLoader() {
+            const splash = document.getElementById('loadingSplash');
+            if (!splash) return;
+            splashStartTime = Date.now();
+            splash.classList.remove('hidden', 'shaki');
+
+            // 0.35 秒切換 SHAKI!! 鬆餅圖
+            setTimeout(() => {
+                if (!isSplashHidden) {
+                    splash.classList.add('shaki');
+                }
+            }, 350);
+
+            // 離線或超時保護：最多 2.5 秒必收起遮罩
+            setTimeout(() => {
+                hideSplashScreen();
+            }, 2500);
+        }
+
+        function notifyDataReadyForSplash() {
+            if (isFirebaseFirstLoaded) return;
+            isFirebaseFirstLoaded = true;
+            const elapsed = Date.now() - splashStartTime;
+            // 至少讓 SHAKI!! 露臉至 0.65 秒，若資料已載入完畢就立刻收起
+            const minVisibleMs = 650;
+            const remain = Math.max(0, minVisibleMs - elapsed);
+            setTimeout(hideSplashScreen, remain);
+        }
+
+        function hideSplashScreen() {
+            if (isSplashHidden) return;
+            isSplashHidden = true;
+            const splash = document.getElementById('loadingSplash');
+            if (splash) {
+                splash.classList.add('shaki');
+                splash.classList.add('hidden');
+            }
+        }
+
         // --- 全自動標準時間偏差校正 ---
         let serverTimeOffsetMs = 0;
         function getAccurateNow() {
@@ -1571,7 +1639,6 @@
                         const safeId = escapeAttr(item.id);
                         const accId = item.accId || inferAccIdFromMessage(item.message);
                         const bigEmoji = getCategoryEmoji(item.category, item.message);
-                        // 清理文字內重複的 emoji，交給左側 2 行高的大圖示呈現
                         const cleanMessage = String(item.message).replace(/\s*(⚔️|🔬|📖|☀️)\s*/g, ' ').replace(/\s+/g, ' ').trim();
                         let renewControlHtml = '';
 
@@ -1781,18 +1848,6 @@
             document.title = ORIGINAL_TITLE;
         }
 
-        function playSplashAnimation() {
-            const splash = document.getElementById('loadingSplash');
-            if (!splash) return;
-            splash.classList.remove('hidden', 'shaki');
-            setTimeout(() => {
-                splash.classList.add('shaki');
-            }, 550);
-            setTimeout(() => {
-                splash.classList.add('hidden');
-            }, 1350);
-        }
-
         function updateNotifBadgeUI() {
             const badge = document.getElementById('notifBadge');
             if (!badge) return;
@@ -1855,11 +1910,28 @@
             return Math.round((targetStart - todayStart) / 86400000);
         }
 
-        function getDayLabelHtml(dateObj) {
+        function getDueBorderClass(dateObj) {
+            const diffDays = getDayDiffFromToday(dateObj);
+            if (diffDays === 0) return 'due-today';
+            if (diffDays === 1) return 'due-tomorrow';
+            return '';
+        }
+
+        // 螢光筆膠囊（今天＝棕紅底白字 / 明天＝深藍底白字）
+        function getDayHlHtml(dateObj) {
             const diffDays = getDayDiffFromToday(dateObj);
             if (diffDays === null) return '';
-            if (diffDays === 0) return `<span class="day-label-today">今天</span>`;
-            if (diffDays === 1) return `<span class="day-label-tomorrow">明天</span>`;
+            if (diffDays === 0) return `<span class="day-hl today">今天</span>`;
+            if (diffDays === 1) return `<span class="day-hl tomorrow">明天</span>`;
+            return `${dateObj.getMonth() + 1}/${dateObj.getDate()} `;
+        }
+
+        // 純文字版今天/明天（用於計時卡片內小字，因為外框已是紅/藍粗框）
+        function getDayPlainText(dateObj) {
+            const diffDays = getDayDiffFromToday(dateObj);
+            if (diffDays === null) return '';
+            if (diffDays === 0) return '今天 ';
+            if (diffDays === 1) return '明天 ';
             return `${dateObj.getMonth() + 1}/${dateObj.getDate()} `;
         }
 
@@ -1870,9 +1942,13 @@
 
         function formatPad(num) { return String(num).padStart(2, '0'); }
         function formatTimeHM(date) { return !date ? '--:--' : `${formatPad(date.getHours())}:${formatPad(date.getMinutes())}`; }
-        function formatDateTimeHtml(date) {
+        function formatDateTimeHlHtml(date) {
             if (!date) return '--:--';
-            return `${getDayLabelHtml(date)}${formatTimeHM(date)}`;
+            return `${getDayHlHtml(date)}${formatTimeHM(date)}`;
+        }
+        function formatDateTimePlain(date) {
+            if (!date) return '--:--';
+            return `${getDayPlainText(date)}${formatTimeHM(date)}`;
         }
 
         function formatDurationShort(ms) {
@@ -2015,14 +2091,12 @@
             }
         }
 
-        // 確保大師技能與科技研究永遠只有 1 個項目，並清理多餘空白草稿
         function pruneUnstartedDrafts() {
             let changed = false;
             accounts.forEach(acc => {
                 ['soldiers', 'tech', 'master', 'sunlight'].forEach(type => {
                     const list = store[acc.id][type] || [];
 
-                    // 科技研究與大師技能只能有 1 個
                     if (type === 'tech' || type === 'master') {
                         if (list.length === 0) {
                             store[acc.id][type] = [{ id: ++nextId, d: 0, h: 0, m: type === 'master' ? 10 : 0, endTime: null }];
@@ -2059,7 +2133,7 @@
         }
 
         function init() {
-            playSplashAnimation();
+            startSplashLoader();
             setupAutoTimeSync();
             updateNotifBadgeUI();
             loadNotifHistory();
@@ -2100,9 +2174,12 @@
                     saveState();
                 }
                 isInitialLoadDone = true;
+                // 雲端資料真正載入完成後，觸發開場遮罩收起
+                notifyDataReadyForSplash();
             }, (error) => {
                 badge.innerText = "🔴 雲端連線異常";
                 badge.className = "sync-badge error";
+                notifyDataReadyForSplash();
                 console.error("Firebase Error:", error);
             });
         }
@@ -2365,19 +2442,21 @@
             const isConfirmed = type === 'soldier' ? store[accId].soldierJobConfirmed : store[accId].techJobConfirmed;
 
             if (!jobDate || !jobTime) {
-                return { hasJob: false, statusHtml: `<span class="status-pill none">無預約</span>`, distText: '--', dateHtml: '--' };
+                return { hasJob: false, dueBorderClass: '', statusHtml: `<span class="status-pill none">無預約</span>`, distText: '--', dateText: '--' };
             }
 
             const diffMs = jobDate.getTime() - now.getTime();
-            const dateHtml = `${getDayLabelHtml(jobDate)}${jobTime}`;
+            const dateText = `${getDayPlainText(jobDate)}${jobTime}`;
+            const dueBorderClass = getDueBorderClass(jobDate);
 
             if (diffMs <= 0 && diffMs >= -10 * 60 * 1000) {
                 const remainCoolMin = Math.ceil((10 * 60 * 1000 + diffMs) / 60000);
                 return {
                     hasJob: true,
+                    dueBorderClass,
                     statusHtml: `<span class="status-pill cooldown">⚠️ 10分冷卻剩 ${remainCoolMin}分</span>`,
                     distText: '進行中',
-                    dateHtml
+                    dateText
                 };
             }
 
@@ -2387,9 +2466,10 @@
 
             return {
                 hasJob: true,
+                dueBorderClass,
                 statusHtml,
                 distText: formatDurationShort(diffMs),
-                dateHtml
+                dateText
             };
         }
 
@@ -2459,9 +2539,9 @@
                             <button class="btn-goto-timeline" onclick="openTimelineView()">去時間線設定 ➔</button>
                         </div>
                         
-                        <div class="job-status-card" id="home_job_s_${acc.id}">
+                        <div class="job-status-card ${sMeta.dueBorderClass}" id="home_job_s_${acc.id}">
                             <div class="job-status-top">
-                                <span>⚔️ 士兵：${sMeta.dateHtml}</span>
+                                <span>⚔️ 士兵：${sMeta.dateText}</span>
                                 ${sMeta.statusHtml}
                             </div>
                             <div class="job-status-bottom">
@@ -2470,9 +2550,9 @@
                             </div>
                         </div>
 
-                        <div class="job-status-card" id="home_job_t_${acc.id}">
+                        <div class="job-status-card ${tMeta.dueBorderClass}" id="home_job_t_${acc.id}">
                             <div class="job-status-top">
-                                <span>🔬 科技：${tMeta.dateHtml}</span>
+                                <span>🔬 科技：${tMeta.dateText}</span>
                                 ${tMeta.statusHtml}
                             </div>
                             <div class="job-status-bottom">
@@ -2495,12 +2575,7 @@
             const isSingleSlotType = (type === 'tech' || type === 'master');
 
             // 計時區「今天（紅外粗框）」與「明天（藍外粗框）」
-            let dueBorderClass = '';
-            if (isRunning && item.endTime) {
-                const dayDiff = getDayDiffFromToday(item.endTime);
-                if (dayDiff === 0) dueBorderClass = 'due-today';
-                else if (dayDiff === 1) dueBorderClass = 'due-tomorrow';
-            }
+            const dueBorderClass = (isRunning && item.endTime) ? getDueBorderClass(item.endTime) : '';
 
             if (type === 'master') {
                 extraCardClass = 'master-card';
@@ -2539,7 +2614,7 @@
                                 ${isRunning ? '--:--' : `${item.d}天 ${formatPad(item.h)}:${formatPad(item.m)}`}
                             </div>
                             <span class="timer-sub" id="sub_${item.id}">
-                                ${isRunning ? '完結: ' + formatDateTimeHtml(item.endTime) : '設定時間後按開始'}
+                                ${isRunning ? '完結: ' + formatDateTimePlain(item.endTime) : '設定時間後按開始'}
                             </span>
                         </div>
 
@@ -2605,7 +2680,6 @@
         }
 
         function addItem(accId, type) {
-            // 科技研究與大師技能只能 1 個，不允許新增第 2 個
             if (type === 'tech' || type === 'master') return;
 
             let defD = 0, defH = 0, defM = 0;
@@ -2994,11 +3068,11 @@
                         html += `
                             <div class="timeline-item ${item.accId}">
                                 <div class="tl-left-group">
-                                    <img class="tl-bear-icon" src="${item.bearFace}" alt="">
+                                    <span class="tl-bear-crop"><img src="${item.bearFace}" alt=""></span>
                                     <span class="tl-acc-name">[${item.acc}]</span>
                                     <span class="tag ${item.tagClass}">${item.label}</span>
                                 </div>
-                                <div style="white-space:nowrap;">${formatDateTimeHtml(item.time)}</div>
+                                <div style="white-space:nowrap;">${formatDateTimeHlHtml(item.time)}</div>
                             </div>
                         `;
                     });
@@ -3047,13 +3121,13 @@
                 }
 
                 const distStr = curDate ? formatDurationShort(curDate.getTime() - now.getTime()) : '尚未設定時間';
-                const dateBadgeHtml = curDate ? formatDateTimeHtml(curDate) : '--';
+                const dateBadgeHtml = curDate ? formatDateTimeHlHtml(curDate) : '--';
 
                 return `
                     <div class="job-manage-card ${acc.id}">
                         <div class="job-manage-top">
                             <span class="job-name-with-bear">
-                                <img class="tl-bear-icon" src="${bearFace}" alt="">
+                                <span class="tl-bear-crop"><img src="${bearFace}" alt=""></span>
                                 [${displayName}]
                             </span>
                             <span>${dateBadgeHtml}</span>
