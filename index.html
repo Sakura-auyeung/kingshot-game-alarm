@@ -206,9 +206,9 @@
         }
         .notif-badge:hover { transform: scale(1.03); }
         .notif-badge.granted {
-            background: #EEF7FF;
-            color: #2868B8;
-            border-color: #A8D1FF;
+            background: #EAF8FF;
+            color: #0077B6;
+            border-color: #80D8FF;
             cursor: default;
         }
 
@@ -355,7 +355,7 @@
             padding: 9px;
         }
 
-        /* 待辦清單單筆卡片：未處理套用對應角色色；已處理轉藍色 */
+        /* 待辦清單單筆卡片：未處理套用對應角色色；已處理轉你指定的清爽冰藍＋天藍配色 */
         .todo-item {
             padding: 10px 12px;
             border-radius: 14px;
@@ -380,9 +380,9 @@
             border-color: var(--border-p);
         }
         .todo-item.done {
-            background: #EBF5FF;
-            border-color: #93C5FD;
-            border-left-color: #3B82F6;
+            background: #EAF8FF;
+            border-color: #BAE6FD;
+            border-left-color: #00A8F3;
         }
 
         .todo-top-row {
@@ -407,8 +407,8 @@
             padding: 0;
         }
         .todo-item.done .todo-checkbox {
-            background: #3B82F6;
-            border-color: #2563EB;
+            background: #00A8F3;
+            border-color: #0284C7;
             color: #FFF;
         }
 
@@ -427,8 +427,8 @@
             border: 1px solid rgba(92, 61, 46, 0.1);
         }
         .todo-item.done .todo-big-emoji {
-            background: rgba(255, 255, 255, 0.85);
-            border-color: rgba(59, 130, 246, 0.25);
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(0, 168, 243, 0.28);
         }
 
         .todo-msg-wrap {
@@ -448,7 +448,7 @@
         }
         .todo-item.done .todo-item-msg {
             text-decoration: line-through;
-            color: #2563EB;
+            color: #0077B6;
         }
 
         .todo-item-meta {
@@ -459,7 +459,7 @@
             color: var(--cocoa-light);
         }
         .todo-item.done .todo-item-meta {
-            color: #4B7BEC;
+            color: #0284C7;
         }
 
         /* 待辦清單內的「新一輪快捷輸入列」 */
@@ -768,9 +768,11 @@
         }
         .btn-add:hover { transform: scale(1.15); }
 
-        /* 方案 A：計時卡片全寬對齊，小花編號浮貼在卡片左上角邊緣 */
+        /* 方案 B：四張計時卡片左側統一預留 34px 欄寬（小花在左側），左邊緣筆直對齊同一條垂直線 */
         .timer-item-row {
-            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 6px;
             width: 100%;
             margin-bottom: 7px;
         }
@@ -778,32 +780,36 @@
             margin-bottom: 0;
         }
 
-        .flower-seq-badge {
-            position: absolute;
-            top: -8px;
-            left: -7px;
-            z-index: 5;
+        .left-slot-box {
+            width: 30px;
+            height: 30px;
+            flex-shrink: 0;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 25px;
-            height: 25px;
+        }
+
+        .flower-seq-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 29px;
+            height: 29px;
             background-image: url('./bg_epi_num.svg');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
             font-family: var(--font-body);
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 800;
             color: #FFFFFF;
-            text-shadow: 0 1px 2px rgba(92, 61, 46, 0.55);
-            filter: drop-shadow(0 1px 2px rgba(92, 61, 46, 0.28));
-            pointer-events: none;
+            text-shadow: 0 1px 2px rgba(92, 61, 46, 0.45);
         }
 
-        /* 軟萌計時小卡片：全寬 100% 對齊，支援「今天＝紅外粗框 / 明天＝藍外粗框」 */
+        /* 軟萌計時小卡片：支援「今天＝紅外粗框 / 明天＝藍外粗框」 */
         .timer-card {
-            width: 100%;
+            flex: 1;
+            min-width: 0;
             color: white;
             border-radius: 15px;
             padding: 9px 11px;
@@ -1084,10 +1090,11 @@
             flex-shrink: 0;
         }
 
-        /* 框內滾動區 */
+        /* 框內滾動區（左側預留空間給突出左邊框的大型熊頭貼紙） */
         .timeline-scroll-area {
             max-height: 550px;
             overflow-y: auto;
+            padding-left: 14px;
             padding-right: 4px;
         }
         .timeline-scroll-area::-webkit-scrollbar {
@@ -1117,19 +1124,21 @@
             background-size: auto 5px;
         }
 
-        /* 時間線項目：無框中心裁切放大熊頭 + 固定寬度人名對齊 */
+        /* 時間線項目：無框大型熊頭貼紙（直接突出去遮住左邊框，行高完全不撐大） */
         .timeline-item {
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 8px 11px;
-            margin-bottom: 7px;
+            padding: 8px 11px 8px 34px;
+            margin-bottom: 8px;
             border-radius: 14px;
             border-left: 6px solid;
             font-weight: 600;
             font-size: 13.5px;
             color: var(--cocoa);
             gap: 8px;
+            overflow: visible;
         }
 
         .timeline-item.h { background-color: var(--bg-h); border-color: var(--border-h); }
@@ -1143,24 +1152,18 @@
             flex: 1;
         }
 
-        /* 固定 24x24 容器（不放大外框），內部圖片從中心 scale(1.48) 裁切掉透明邊 */
-        .tl-bear-crop {
-            width: 24px;
-            height: 24px;
-            flex-shrink: 0;
-            overflow: hidden;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 6px;
-        }
-
-        .tl-bear-crop img {
-            width: 100%;
-            height: 100%;
+        /* 超大無框熊頭：直接向左突出去遮住彩色左邊框，不增加任何行高 */
+        .tl-bear-sticker {
+            position: absolute;
+            left: -16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
             object-fit: contain;
-            transform: scale(1.48);
-            transform-origin: center center;
+            pointer-events: none;
+            z-index: 5;
+            filter: drop-shadow(0 1px 2px rgba(92, 61, 46, 0.16));
         }
 
         .tl-acc-name {
@@ -1187,15 +1190,17 @@
         .tag-master { background: #5CD685; }
         .tag-sunlight { background: #FF6F61; }
 
-        /* 後面頁：職位預約設定與防撞管理卡片 */
+        /* 後面頁：職位預約設定與防撞管理卡片（熊頭同樣突出去遮住左邊框） */
         .job-manage-card {
+            position: relative;
             border-radius: 16px;
-            padding: 11px 12px;
-            margin-bottom: 10px;
+            padding: 11px 12px 11px 14px;
+            margin-bottom: 11px;
             border-left: 6px solid;
             display: flex;
             flex-direction: column;
             gap: 7px;
+            overflow: visible;
         }
         .job-manage-card.h { background-color: var(--bg-h); border-color: var(--border-h); }
         .job-manage-card.z { background-color: var(--bg-z); border-color: var(--border-z); }
@@ -1207,11 +1212,19 @@
             align-items: center;
             font-weight: 700;
             font-size: 15px;
+            padding-left: 22px;
         }
 
-        .job-name-with-bear {
-            display: inline-flex;
-            align-items: center;
+        .job-bear-sticker {
+            position: absolute;
+            left: -16px;
+            top: 4px;
+            width: 46px;
+            height: 46px;
+            object-fit: contain;
+            pointer-events: none;
+            z-index: 5;
+            filter: drop-shadow(0 1px 2px rgba(92, 61, 46, 0.16));
         }
 
         .job-manage-controls {
@@ -1487,14 +1500,12 @@
             splashStartTime = Date.now();
             splash.classList.remove('hidden', 'shaki');
 
-            // 0.35 秒切換 SHAKI!! 鬆餅圖
             setTimeout(() => {
                 if (!isSplashHidden) {
                     splash.classList.add('shaki');
                 }
             }, 350);
 
-            // 離線或超時保護：最多 2.5 秒必收起遮罩
             setTimeout(() => {
                 hideSplashScreen();
             }, 2500);
@@ -1504,7 +1515,6 @@
             if (isFirebaseFirstLoaded) return;
             isFirebaseFirstLoaded = true;
             const elapsed = Date.now() - splashStartTime;
-            // 至少讓 SHAKI!! 露臉至 0.65 秒，若資料已載入完畢就立刻收起
             const minVisibleMs = 650;
             const remain = Math.max(0, minVisibleMs - elapsed);
             setTimeout(hideSplashScreen, remain);
@@ -2174,7 +2184,6 @@
                     saveState();
                 }
                 isInitialLoadDone = true;
-                // 雲端資料真正載入完成後，觸發開場遮罩收起
                 notifyDataReadyForSplash();
             }, (error) => {
                 badge.innerText = "🔴 雲端連線異常";
@@ -2604,9 +2613,12 @@
                 }
             }
             
+            // 方案 B：左側固定預留 30px 對齊槽位，小花編號放在左側，四張卡片左邊緣筆直對齊同一垂直線
             return `
             <div class="timer-item-row">
-                ${seqNum !== null ? `<span class="flower-seq-badge">${seqNum}</span>` : ''}
+                <div class="left-slot-box">
+                    ${seqNum !== null ? `<span class="flower-seq-badge">${seqNum}</span>` : ''}
+                </div>
                 <div class="timer-card ${extraCardClass} ${dueBorderClass}" id="card_${item.id}">
                     <div class="timer-main-row">
                         <div class="timer-info">
@@ -3067,8 +3079,8 @@
 
                         html += `
                             <div class="timeline-item ${item.accId}">
+                                <img class="tl-bear-sticker" src="${item.bearFace}" alt="">
                                 <div class="tl-left-group">
-                                    <span class="tl-bear-crop"><img src="${item.bearFace}" alt=""></span>
                                     <span class="tl-acc-name">[${item.acc}]</span>
                                     <span class="tag ${item.tagClass}">${item.label}</span>
                                 </div>
@@ -3125,11 +3137,9 @@
 
                 return `
                     <div class="job-manage-card ${acc.id}">
+                        <img class="job-bear-sticker" src="${bearFace}" alt="">
                         <div class="job-manage-top">
-                            <span class="job-name-with-bear">
-                                <span class="tl-bear-crop"><img src="${bearFace}" alt=""></span>
-                                [${displayName}]
-                            </span>
+                            <span>[${displayName}]</span>
                             <span>${dateBadgeHtml}</span>
                         </div>
 
