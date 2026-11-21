@@ -130,7 +130,7 @@
             margin-top: 8px;
         }
 
-        /* 頂部可愛橫幅列（收返緊湊寬度 1240px） */
+        /* 頂部可愛橫幅列 */
         .header {
             display: flex;
             justify-content: space-between;
@@ -562,7 +562,7 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
         }
 
-        /* 3欄手賬卡片視圖（收返緊湊欄寬與間距） */
+        /* 3欄手賬卡片視圖（乾淨還原原本緊湊佈局） */
         .grid-view {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -597,23 +597,6 @@
         .account-column.h { background-color: var(--bg-h); outline: 2px solid var(--border-h); }
         .account-column.z { background-color: var(--bg-z); outline: 2px solid var(--border-z); }
         .account-column.p { background-color: var(--bg-p); outline: 2px solid var(--border-p); }
-
-        /* 公仔直接站在欄位「框外角」 */
-        .outer-corner-stand {
-            position: absolute;
-            bottom: -22px;
-            right: -28px;
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
-            pointer-events: none;
-            z-index: 8;
-            filter: drop-shadow(0 3px 6px rgba(92, 61, 46, 0.22));
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .account-column:hover .outer-corner-stand {
-            transform: translateY(-4px) rotate(-4deg) scale(1.06);
-        }
 
         /* 遊戲角色名片貼紙 */
         .profile-card {
@@ -1105,7 +1088,6 @@
             color: var(--cocoa);
         }
 
-        /* 無捲軸自然展開區，左側留足空間給往左大大突出的熊頭徽章貼紙 */
         .timeline-list-body {
             padding-left: 24px;
             overflow: visible;
@@ -1206,7 +1188,6 @@
             background: #F3E4CE;
         }
 
-        /* 後面頁：職位預約管理卡片 — 熊頭往上小小、往左大大突出遮角 */
         .job-manage-card {
             position: relative;
             border-radius: 16px;
@@ -1329,11 +1310,13 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 手機版精簡頂部與右上角小鬧鐘固定 */
+        /* 手機版精簡頂部與單欄自適應 */
         @media (max-width: 950px) {
             body { padding: 20px 14px 56px 14px; }
-            .grid-view, .timeline-grid { grid-template-columns: 1fr; }
-            .outer-corner-stand { right: -16px; bottom: -16px; width: 70px; height: 70px; }
+            .grid-view, .timeline-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
 
             .header {
                 flex-wrap: nowrap;
@@ -1433,7 +1416,7 @@
                         <span>📋 待辦清單 & 提醒紀錄</span>
                         <div class="notif-header-actions">
                             <button class="btn-notif-mini" onclick="markAllNotifsRead()">全部完成</button>
-                            <button class="btn-notif-mini" onclick="clearAllNotifs()">清空</button>
+                            <button class="btn-notif-mini" onclick="clearAllNotifs()">清空已處理</button>
                         </div>
                     </div>
                     <div class="notif-dropdown-list" id="notifDropdownList"></div>
@@ -1489,9 +1472,9 @@
 
         // 順序：Howard（白熊）、Zoey（主號，懶熊）、Patrick（森熊/茶小熊）
         const accounts = [
-            { id: 'h', name: 'h', isMain: false, faceFile: 'chara_face_2-1.png', standFile: 'chara_stand_2-1.png' },
-            { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png', standFile: 'chara_stand_1-1.png' },
-            { id: 'p', name: 'p', isMain: false, faceFile: 'chara_face_4-1.png', standFile: 'chara_stand_4-1.png' }
+            { id: 'h', name: 'h', isMain: false, faceFile: 'chara_face_2-1.png' },
+            { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png' },
+            { id: 'p', name: 'p', isMain: false, faceFile: 'chara_face_4-1.png' }
         ];
 
         function getBearFaceFile(accId) {
@@ -1565,6 +1548,45 @@
                 techJobTime: '', techJobDate: null, techJobConfirmed: false, techJobManual: false
             }
         };
+
+        // --- 確保 jobDate 與 jobTime 雙向一致（修復重算後變 -- 及確認按鈕消失） ---
+        function normalizeAllJobsConsistency() {
+            accounts.forEach(acc => {
+                ['soldier', 'tech'].forEach(type => {
+                    const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+                    const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+                    const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+                    const manualKey = type === 'soldier' ? 'soldierJobManual' : 'techJobManual';
+
+                    const jDate = store[acc.id][dateKey];
+                    const jTime = store[acc.id][timeKey];
+
+                    if (jDate && !isNaN(jDate.getTime())) {
+                        // 有 Date 就一定補齊對應嘅 HH:MM 文字
+                        store[acc.id][timeKey] = formatTimeHM(jDate);
+                    } else if (jTime) {
+                        // 只有文字無 Date，補回 Date 物件
+                        const [h, m] = jTime.split(':').map(Number);
+                        if (!isNaN(h) && !isNaN(m)) {
+                            const d = getAccurateNow();
+                            d.setHours(h, m, 0, 0);
+                            if (d < getAccurateNow()) d.setDate(d.getDate() + 1);
+                            store[acc.id][dateKey] = d;
+                        } else {
+                            store[acc.id][timeKey] = '';
+                            store[acc.id][dateKey] = null;
+                            store[acc.id][confKey] = false;
+                            store[acc.id][manualKey] = false;
+                        }
+                    } else {
+                        store[acc.id][timeKey] = '';
+                        store[acc.id][dateKey] = null;
+                        store[acc.id][confKey] = false;
+                        store[acc.id][manualKey] = false;
+                    }
+                });
+            });
+        }
 
         // --- 真實載入連動控制 ---
         let splashStartTime = 0;
@@ -1876,10 +1898,10 @@
             if (todo) todo.unread = false;
             saveNotifHistory();
 
-            // 開始新一輪後自動停響，無需再人手點鈴鐺
             stopRingingEffects();
 
-            recalculateJobs(accId, category);
+            // 開始新一輪士兵或科技時，主動解鎖並推薦下一個職位時段
+            recalculateJobs(accId, category, true);
             renderGrid();
             updateTimeline(true);
             saveState();
@@ -1947,11 +1969,14 @@
             stopRingingEffects();
         }
 
+        // 清空按鈕：只清空標記為「已處理（!n.unread）」的項目，保留未處理待辦事項
         function clearAllNotifs() {
-            notifHistory = [];
+            notifHistory = notifHistory.filter(n => n.unread);
             saveNotifHistory();
             renderBellUI();
-            stopRingingEffects();
+            if (notifHistory.every(n => !n.unread)) {
+                stopRingingEffects();
+            }
         }
 
         function stopRingingEffects() {
@@ -2009,7 +2034,6 @@
                     });
                     notif.onclick = function() {
                         try { window.focus(); } catch (e) {}
-                        // 點擊右下角彈窗即代表已知，直接停響並打開待辦清單
                         stopRingingEffects();
                         const dropdown = document.getElementById('notifDropdown');
                         if (dropdown) {
@@ -2231,6 +2255,7 @@
             updateNotifBadgeUI();
             loadNotifHistory();
             loadLocalBackup();
+            normalizeAllJobsConsistency();
             pruneUnstartedDraftsOnly();
             loadLocalProfiles();
             updateSunlightBtnUI();
@@ -2253,6 +2278,7 @@
                     const incomingUpdatedAt = Number(cloudData.updatedAt) || 0;
                     if (!isInitialLoadDone || incomingUpdatedAt >= latestStateUpdatedAt) {
                         applySerializedState(cloudData);
+                        normalizeAllJobsConsistency();
                         pruneUnstartedDraftsOnly();
                         saveLocalBackup();
                         updateSunlightBtnUI();
@@ -2271,6 +2297,7 @@
         }
 
         function serializeState(timestampMs = Date.now()) {
+            normalizeAllJobsConsistency();
             const serializedStore = {};
             accounts.forEach(acc => {
                 const accData = store[acc.id];
@@ -2325,6 +2352,7 @@
             if (typeof parsed.showSunlightEvent === 'boolean') showSunlightEvent = parsed.showSunlightEvent;
             if (parsed.triggered) triggeredEventKeys = new Set(Object.values(parsed.triggered));
             if (parsed.updatedAt) latestStateUpdatedAt = Math.max(latestStateUpdatedAt, Number(parsed.updatedAt) || 0);
+            normalizeAllJobsConsistency();
         }
 
         function saveState() {
@@ -2480,7 +2508,7 @@
                 const now = getAccurateNow();
                 const totalSeconds = (d * 86400) + (h * 3600) + (m * 60);
                 item.endTime = new Date(now.getTime() + totalSeconds * 1000);
-                recalculateJobs(accId, type);
+                recalculateJobs(accId, type, true);
             }
 
             renderGrid();
@@ -2531,7 +2559,7 @@
             const dueBorderClass = getDueBorderClass(jobDate);
 
             if (diffMs <= 0 && diffMs >= -10 * 60 * 1000) {
-                const remainCoolMin = Math.ceil((10 * 60 * 1000 + diffMs) / 60000);
+                const remainCoolMin = Math.max(1, Math.ceil((10 * 60 * 1000 + diffMs) / 60000));
                 return {
                     hasJob: true,
                     dueBorderClass,
@@ -2623,7 +2651,7 @@
                         <div class="job-status-card ${sMeta.dueBorderClass}" id="home_job_s_${acc.id}">
                             <div class="job-status-top">
                                 <span>⚔️ 士兵：${sMeta.dateHtml}</span>
-                                ${sMeta.statusHtml}
+                                <span id="home_status_s_${acc.id}">${sMeta.statusHtml}</span>
                             </div>
                             <div class="job-status-bottom">
                                 <span>距離職位時間</span>
@@ -2634,7 +2662,7 @@
                         <div class="job-status-card ${tMeta.dueBorderClass}" id="home_job_t_${acc.id}">
                             <div class="job-status-top">
                                 <span>🔬 科技：${tMeta.dateHtml}</span>
-                                ${tMeta.statusHtml}
+                                <span id="home_status_t_${acc.id}">${tMeta.statusHtml}</span>
                             </div>
                             <div class="job-status-bottom">
                                 <span>距離職位時間</span>
@@ -2642,9 +2670,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- 直接站在欄位「框外角」的立牌小熊 -->
-                    <img class="outer-corner-stand" src="./${acc.standFile}" alt="">
                 </div>
             `}).join('');
         }
@@ -2807,7 +2832,8 @@
                 const totalSeconds = (item.d * 86400) + (item.h * 3600) + (item.m * 60);
                 item.endTime = new Date(now.getTime() + totalSeconds * 1000);
 
-                recalculateJobs(accId, type);
+                // 開新一輪士兵訓練或科技研究時，自動解鎖並推薦下一個職位時段
+                recalculateJobs(accId, type, true);
                 renderGrid();
                 saveState();
             }
@@ -2891,10 +2917,22 @@
                     );
                 }
 
+                // 每秒同步更新首頁職位看板的「10分冷卻剩 X分」狀態膠囊 + 距離時間，唔駛靠 F5
+                const sMeta = getJobStatusMeta(acc.id, 'soldier');
+                const sStatusEl = document.getElementById(`home_status_s_${acc.id}`);
+                if (sStatusEl && sStatusEl.innerHTML !== sMeta.statusHtml) {
+                    sStatusEl.innerHTML = sMeta.statusHtml;
+                }
                 const sDistEl = document.getElementById(`home_dist_s_${acc.id}`);
-                if (sDistEl) sDistEl.innerText = getJobStatusMeta(acc.id, 'soldier').distText;
+                if (sDistEl) sDistEl.innerText = sMeta.distText;
+
+                const tMeta = getJobStatusMeta(acc.id, 'tech');
+                const tStatusEl = document.getElementById(`home_status_t_${acc.id}`);
+                if (tStatusEl && tStatusEl.innerHTML !== tMeta.statusHtml) {
+                    tStatusEl.innerHTML = tMeta.statusHtml;
+                }
                 const tDistEl = document.getElementById(`home_dist_t_${acc.id}`);
-                if (tDistEl) tDistEl.innerText = getJobStatusMeta(acc.id, 'tech').distText;
+                if (tDistEl) tDistEl.innerText = tMeta.distText;
             });
 
             checkExpiredJobsQuietly();
@@ -2919,6 +2957,10 @@
                             store[acc.id][dateKey] = null;
                             store[acc.id][confKey] = false;
                             store[acc.id][manualKey] = false;
+
+                            // 冷卻結束清零後，如果仲有進行中嘅訓練／研究，即刻自動推薦下一個職位時段
+                            const cat = dateKey === 'soldierJobDate' ? 'soldiers' : 'tech';
+                            recalculateJobs(acc.id, cat, true);
                             changed = true;
                         }
                     }
@@ -2928,17 +2970,22 @@
             if (changed) {
                 renderGrid();
                 updateTimeline(true);
-                saveLocalBackup();
+                saveState();
             }
         }
 
-        function recalculateJobs(targetAccId = null, targetCategory = null) {
+        function recalculateJobs(targetAccId = null, targetCategory = null, forceUnlock = false) {
             const now = getAccurateNow();
 
             accounts.forEach(acc => {
                 if (targetAccId && acc.id !== targetAccId) return;
 
                 if (!targetCategory || targetCategory === 'soldiers') {
+                    // 若開新一輪，或者舊預約已過期，則自動解鎖並推薦新時段
+                    if (forceUnlock || (store[acc.id].soldierJobDate && store[acc.id].soldierJobDate <= now)) {
+                        store[acc.id].soldierJobConfirmed = false;
+                        store[acc.id].soldierJobManual = false;
+                    }
                     const isSoldierLocked = Boolean(store[acc.id].soldierJobConfirmed || store[acc.id].soldierJobManual);
                     if (!isSoldierLocked) {
                         let futureSoldierEnds = (store[acc.id].soldiers || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
@@ -2947,14 +2994,22 @@
                             const slotObj = calcRecommendedSlot(futureSoldierEnds[0]);
                             store[acc.id].soldierJobTime = slotObj.timeStr;
                             store[acc.id].soldierJobDate = slotObj.dateObj;
+                            store[acc.id].soldierJobConfirmed = false;
+                            store[acc.id].soldierJobManual = false;
                         } else {
                             store[acc.id].soldierJobTime = '';
                             store[acc.id].soldierJobDate = null;
+                            store[acc.id].soldierJobConfirmed = false;
+                            store[acc.id].soldierJobManual = false;
                         }
                     }
                 }
 
                 if (!targetCategory || targetCategory === 'tech') {
+                    if (forceUnlock || (store[acc.id].techJobDate && store[acc.id].techJobDate <= now)) {
+                        store[acc.id].techJobConfirmed = false;
+                        store[acc.id].techJobManual = false;
+                    }
                     const isTechLocked = Boolean(store[acc.id].techJobConfirmed || store[acc.id].techJobManual);
                     if (!isTechLocked) {
                         let futureTechEnds = (store[acc.id].tech || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
@@ -2963,14 +3018,19 @@
                             const slotObj = calcRecommendedSlot(futureTechEnds[0]);
                             store[acc.id].techJobTime = slotObj.timeStr;
                             store[acc.id].techJobDate = slotObj.dateObj;
+                            store[acc.id].techJobConfirmed = false;
+                            store[acc.id].techJobManual = false;
                         } else {
                             store[acc.id].techJobTime = '';
                             store[acc.id].techJobDate = null;
+                            store[acc.id].techJobConfirmed = false;
+                            store[acc.id].techJobManual = false;
                         }
                     }
                 }
             });
 
+            normalizeAllJobsConsistency();
             renderGrid();
             updateTimeline(true);
         }
@@ -3039,6 +3099,7 @@
                 d.setHours(h, m, 0, 0);
                 if (d < getAccurateNow()) d.setDate(d.getDate() + 1);
                 store[accId][dateKey] = d;
+                store[accId][timeKey] = formatTimeHM(d);
                 store[accId][manualKey] = true;
             } else {
                 store[accId][dateKey] = null;
@@ -3056,6 +3117,7 @@
             const nextState = !Boolean(store[accId][confKey]);
             store[accId][confKey] = nextState;
             store[accId][manualKey] = true;
+            normalizeAllJobsConsistency();
             renderGrid();
             updateTimeline(true);
             saveState();
@@ -3098,6 +3160,8 @@
                 updateTimelineDynamicTextsOnly();
                 return;
             }
+
+            normalizeAllJobsConsistency();
 
             const tasksContainer = document.getElementById('timeline_tasks');
             const soldierJobsContainer = document.getElementById('timeline_soldier_jobs');
@@ -3210,9 +3274,10 @@
             container.innerHTML = accounts.map(acc => {
                 const displayName = getDisplayAccountName(acc.id);
                 const bearFace = getBearFaceFile(acc.id);
-                const curTimeStr = store[acc.id][timeKey];
                 const curDate = store[acc.id][dateKey];
+                const curTimeStr = store[acc.id][timeKey] || (curDate ? formatTimeHM(curDate) : '');
                 const isConfirmed = Boolean(store[acc.id][confKey]);
+                const hasValidSlot = Boolean(curTimeStr || curDate);
 
                 let warnings = [];
                 if (curDate) {
@@ -3244,7 +3309,7 @@
                                 ${generateJobOptions(curTimeStr)}
                             </select>
                             <button class="btn-shift" onclick="shiftJobTime('${acc.id}', '${type}')">+30分</button>
-                            ${curTimeStr ? `
+                            ${hasValidSlot ? `
                                 <button class="btn-confirm-job ${isConfirmed ? 'confirmed' : ''}" onclick="toggleJobConfirmed('${acc.id}', '${type}')">
                                     ${isConfirmed ? '✅ 已確認預約' : '⬜ 確認已預約'}
                                 </button>
@@ -3253,7 +3318,7 @@
 
                         <div class="job-manage-meta">
                             <span>距離職位：<strong id="tl_dist_${type}_${acc.id}">${distStr}</strong></span>
-                            <span>${isConfirmed ? '狀態：已鎖定' : (curTimeStr ? '狀態：待確認' : '')}</span>
+                            <span>${isConfirmed ? '狀態：已鎖定' : (hasValidSlot ? '狀態：待確認' : '')}</span>
                         </div>
 
                         ${warnings.length > 0 ? `<div class="job-warning-box">${warnings.join('<br>')}</div>` : ''}
