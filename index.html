@@ -1586,6 +1586,15 @@
             });
         }
 
+        // 判斷某個職位目前係咪正在「10 分鐘冷卻期」內
+        function isJobInCooldown(accId, type, now = getAccurateNow()) {
+            const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+            const jobDate = store[accId] ? store[accId][dateKey] : null;
+            if (!jobDate) return false;
+            const diffMs = now.getTime() - jobDate.getTime();
+            return diffMs >= 0 && diffMs <= 10 * 60 * 1000;
+        }
+
         // --- 真實載入連動控制 ---
         let splashStartTime = 0;
         let isFirebaseFirstLoaded = false;
@@ -2830,6 +2839,7 @@
                 const totalSeconds = (item.d * 86400) + (item.h * 3600) + (item.m * 60);
                 item.endTime = new Date(now.getTime() + totalSeconds * 1000);
 
+                // 開新一輪士兵訓練或科技研究時，若職位不在 10 分鐘冷卻期，才自動解鎖並推薦下一個職位時段
                 recalculateJobs(accId, type, true);
                 renderGrid();
                 saveState();
@@ -2978,49 +2988,55 @@
                 if (targetAccId && acc.id !== targetAccId) return;
 
                 if (!targetCategory || targetCategory === 'soldiers') {
-                    if (forceUnlock || (store[acc.id].soldierJobDate && store[acc.id].soldierJobDate <= now)) {
-                        store[acc.id].soldierJobConfirmed = false;
-                        store[acc.id].soldierJobManual = false;
-                    }
-                    const isSoldierLocked = Boolean(store[acc.id].soldierJobConfirmed || store[acc.id].soldierJobManual);
-                    if (!isSoldierLocked) {
-                        let futureSoldierEnds = (store[acc.id].soldiers || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
-                        if (futureSoldierEnds.length > 0) {
-                            futureSoldierEnds.sort((a, b) => a - b);
-                            const slotObj = calcRecommendedSlot(futureSoldierEnds[0]);
-                            store[acc.id].soldierJobTime = slotObj.timeStr;
-                            store[acc.id].soldierJobDate = slotObj.dateObj;
+                    // 若目前正在 10 分鐘冷卻期內，絕對唔覆蓋，等冷卻完自動清零後再計算
+                    if (!isJobInCooldown(acc.id, 'soldier', now)) {
+                        if (forceUnlock || (store[acc.id].soldierJobDate && store[acc.id].soldierJobDate <= now)) {
                             store[acc.id].soldierJobConfirmed = false;
                             store[acc.id].soldierJobManual = false;
-                        } else {
-                            store[acc.id].soldierJobTime = '';
-                            store[acc.id].soldierJobDate = null;
-                            store[acc.id].soldierJobConfirmed = false;
-                            store[acc.id].soldierJobManual = false;
+                        }
+                        const isSoldierLocked = Boolean(store[acc.id].soldierJobConfirmed || store[acc.id].soldierJobManual);
+                        if (!isSoldierLocked) {
+                            let futureSoldierEnds = (store[acc.id].soldiers || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
+                            if (futureSoldierEnds.length > 0) {
+                                futureSoldierEnds.sort((a, b) => a - b);
+                                const slotObj = calcRecommendedSlot(futureSoldierEnds[0]);
+                                store[acc.id].soldierJobTime = slotObj.timeStr;
+                                store[acc.id].soldierJobDate = slotObj.dateObj;
+                                store[acc.id].soldierJobConfirmed = false;
+                                store[acc.id].soldierJobManual = false;
+                            } else {
+                                store[acc.id].soldierJobTime = '';
+                                store[acc.id].soldierJobDate = null;
+                                store[acc.id].soldierJobConfirmed = false;
+                                store[acc.id].soldierJobManual = false;
+                            }
                         }
                     }
                 }
 
                 if (!targetCategory || targetCategory === 'tech') {
-                    if (forceUnlock || (store[acc.id].techJobDate && store[acc.id].techJobDate <= now)) {
-                        store[acc.id].techJobConfirmed = false;
-                        store[acc.id].techJobManual = false;
-                    }
-                    const isTechLocked = Boolean(store[acc.id].techJobConfirmed || store[acc.id].techJobManual);
-                    if (!isTechLocked) {
-                        let futureTechEnds = (store[acc.id].tech || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
-                        if (futureTechEnds.length > 0) {
-                            futureTechEnds.sort((a, b) => a - b);
-                            const slotObj = calcRecommendedSlot(futureTechEnds[0]);
-                            store[acc.id].techJobTime = slotObj.timeStr;
-                            store[acc.id].techJobDate = slotObj.dateObj;
+                    // 若目前正在 10 分鐘冷卻期內，絕對唔覆蓋，等冷卻完自動清零後再計算
+                    if (!isJobInCooldown(acc.id, 'tech', now)) {
+                        if (forceUnlock || (store[acc.id].techJobDate && store[acc.id].techJobDate <= now)) {
                             store[acc.id].techJobConfirmed = false;
                             store[acc.id].techJobManual = false;
-                        } else {
-                            store[acc.id].techJobTime = '';
-                            store[acc.id].techJobDate = null;
-                            store[acc.id].techJobConfirmed = false;
-                            store[acc.id].techJobManual = false;
+                        }
+                        const isTechLocked = Boolean(store[acc.id].techJobConfirmed || store[acc.id].techJobManual);
+                        if (!isTechLocked) {
+                            let futureTechEnds = (store[acc.id].tech || []).filter(i => i.endTime && i.endTime > now).map(i => i.endTime);
+                            if (futureTechEnds.length > 0) {
+                                futureTechEnds.sort((a, b) => a - b);
+                                const slotObj = calcRecommendedSlot(futureTechEnds[0]);
+                                store[acc.id].techJobTime = slotObj.timeStr;
+                                store[acc.id].techJobDate = slotObj.dateObj;
+                                store[acc.id].techJobConfirmed = false;
+                                store[acc.id].techJobManual = false;
+                            } else {
+                                store[acc.id].techJobTime = '';
+                                store[acc.id].techJobDate = null;
+                                store[acc.id].techJobConfirmed = false;
+                                store[acc.id].techJobManual = false;
+                            }
                         }
                     }
                 }
@@ -3273,6 +3289,7 @@
                 const curDate = store[acc.id][dateKey];
                 const curTimeStr = store[acc.id][timeKey] || (curDate ? formatTimeHM(curDate) : '');
                 const isConfirmed = Boolean(store[acc.id][confKey]);
+                const inCooldown = isJobInCooldown(acc.id, type, now);
                 const hasValidSlot = Boolean(curTimeStr || curDate);
 
                 let warnings = [];
@@ -3291,6 +3308,15 @@
 
                 const distStr = curDate ? formatDurationShort(curDate.getTime() - now.getTime()) : '尚未設定時間';
                 const dateBadgeHtml = curDate ? formatDateTimeHlHtml(curDate) : '--';
+                let statusDesc = '';
+                if (inCooldown) {
+                    const remainCoolMin = Math.max(1, Math.ceil((10 * 60 * 1000 - (now.getTime() - curDate.getTime())) / 60000));
+                    statusDesc = `狀態：⚠️ 冷卻剩 ${remainCoolMin} 分`;
+                } else if (isConfirmed) {
+                    statusDesc = '狀態：已鎖定';
+                } else if (hasValidSlot) {
+                    statusDesc = '狀態：待確認';
+                }
 
                 return `
                     <div class="job-manage-card ${acc.id}">
@@ -3314,7 +3340,7 @@
 
                         <div class="job-manage-meta">
                             <span>距離職位：<strong id="tl_dist_${type}_${acc.id}">${distStr}</strong></span>
-                            <span>${isConfirmed ? '狀態：已鎖定' : (hasValidSlot ? '狀態：待確認' : '')}</span>
+                            <span>${statusDesc}</span>
                         </div>
 
                         ${warnings.length > 0 ? `<div class="job-warning-box">${warnings.join('<br>')}</div>` : ''}
