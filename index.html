@@ -51,6 +51,7 @@
             box-sizing: border-box;
         }
 
+        /* 全頁彩色手繪蠟筆圓點背景 (bg_dot_2.jpg) */
         body {
             font-family: var(--font-body);
             background-color: var(--cream-bg);
@@ -71,6 +72,7 @@
             color: var(--cocoa);
         }
 
+        /* 頁面最上方雙色黃波浪花邊 (bg_frill.png) */
         .header-frill {
             position: fixed;
             top: 0;
@@ -85,6 +87,7 @@
             z-index: 10;
         }
 
+        /* 日本官網同款 SHAKI!! 熱鬆餅開場動畫遮罩 */
         .loading-splash {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -129,6 +132,7 @@
             margin-top: 8px;
         }
 
+        /* 頂部可愛橫幅列 */
         .header {
             display: flex;
             justify-content: space-between;
@@ -1275,7 +1279,6 @@
             font-weight: 700;
         }
 
-        /* 資源採集 + OCR 三欄介面 */
         .resources-view {
             display: none;
             max-width: 1240px;
@@ -1689,7 +1692,7 @@
     <div class="resources-view" id="resourcesView">
         <div class="res-top-banner">
             <div>
-                <strong>直接貼上截圖（Ctrl+V）</strong>：點一下帳戶目標掣即鎖定貼上對象，截圖後直接按 <strong>Ctrl+V</strong> 自動辨識 4 項 In Stock 庫存。
+                <strong>直接貼上截圖（Ctrl+V）</strong>：點一下帳戶目標掣即鎖定貼上對象，截圖後直接按 <strong>Ctrl+V</strong> 即認紅框 In Stock 4 項數值。
             </div>
             <div>
                 比例：<strong>糧 20 : 木 20 : 石 4 : 鐵 1</strong>（實心綠＝最缺 ｜ 實心紅＝最唔缺）
@@ -1699,7 +1702,6 @@
     </div>
 
     <input type="file" id="resFileInput" accept="image/*" style="display:none" onchange="handleResFileChange(event)">
-
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDjQS9NNkUwZ8bTeNb75WFp3at2jjKzWac",
@@ -1887,7 +1889,8 @@
         function formatScaledMillions(scaledVal) {
             if (!scaledVal && scaledVal !== 0) return '--';
             const m = scaledVal / 1e6;
-            if (m >= 1000) return `${(m / 1000).toFixed(2)}B 基準`; return `${m.toFixed(2)}M 基準`;
+            if (m >= 1000) return `${(m / 1000).toFixed(2)}B 基準`;
+            return `${m.toFixed(2)}M 基準`;
         }
 
         function setPasteTarget(accId) {
@@ -1920,7 +1923,7 @@
                 const statusMsg = ocrStatusText[acc.id] || '';
 
                 const bestHtml = analysis.hasAny && analysis.bestItem
-                    ? `<span class="res-best-badge">最缺：${analysis.bestItem.emoji}${analysis.bestItem.label}</span>`
+                    ? `<span class="res-best-badge">最缺：${analysis.bestItem.emoji} ${analysis.bestItem.label}</span>`
                     : `<span class="status-pill none">未輸入數量</span>`;
 
                 const gapText = (analysis.hasAny && analysis.gapM !== null)
@@ -1931,7 +1934,7 @@
                     <div class="res-row-card ${item.tierClass}">
                         <div class="res-row-top">
                             <div class="res-name-group">
-                                <span>${item.emoji}${item.label}</span>
+                                <span>${item.emoji} ${item.label}</span>
                                 <span class="res-ratio-tag">÷${item.ratio}</span>
                             </div>
                             <div class="res-input-group">
@@ -1966,7 +1969,7 @@
                                     📁 選檔
                                 </button>
                             </div>
-                            <div class="res-paste-hint">截圖後直接按 Ctrl+V 貼上（按資源名稱對齊 In Stock）</div>
+                            <div class="res-paste-hint">截圖後直接按 Ctrl+V 貼上（精準鎖定紅框 4 項 In Stock）</div>
                             ${statusMsg ? `<div class="res-ocr-status">${statusMsg}</div>` : ''}
                         </div>
 
@@ -2025,7 +2028,7 @@
             if (tesseractWorker) return tesseractWorker;
             tesseractWorker = await Tesseract.createWorker('eng');
             await tesseractWorker.setParameters({
-                tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.'
+                tessedit_char_whitelist: '0123456789.BMKbmK'
             });
             return tesseractWorker;
         }
@@ -2037,23 +2040,22 @@
                 img.onload = () => {
                     URL.revokeObjectURL(url);
 
-                    // 同時覆蓋左邊英文資源名 (Bread/Wood/Stone/Iron) 同右邊 In Stock 數字欄，並向上預留充足空間避免切走 Bread
                     const isTwoPanel = (img.width / img.height) > 0.9;
                     let sx, sy, sw, sh;
 
                     if (isTwoPanel) {
-                        sx = Math.round(img.width * 0.05);
-                        sy = Math.round(img.height * 0.22);
-                        sw = Math.round(img.width * 0.48);
-                        sh = Math.round(img.height * 0.66);
+                        sx = Math.round(img.width * 0.32);
+                        sy = Math.round(img.height * 0.31);
+                        sw = Math.round(img.width * 0.20);
+                        sh = Math.round(img.height * 0.32);
                     } else {
-                        sx = Math.round(img.width * 0.12);
-                        sy = Math.round(img.height * 0.22);
-                        sw = Math.round(img.width * 0.86);
-                        sh = Math.round(img.height * 0.66);
+                        sx = Math.round(img.width * 0.64);
+                        sy = Math.round(img.height * 0.31);
+                        sw = Math.round(img.width * 0.34);
+                        sh = Math.round(img.height * 0.32);
                     }
 
-                    const scale = 2.5;
+                    const scale = 3;
                     const canvas = document.createElement('canvas');
                     canvas.width = Math.round(sw * scale);
                     canvas.height = Math.round(sh * scale);
@@ -2066,11 +2068,11 @@
                     const d = imgData.data;
                     for (let i = 0; i < d.length; i += 4) {
                         const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-                        const val = gray < 150 ? 0 : 255;
+                        const val = gray < 145 ? 0 : 255;
                         d[i] = d[i + 1] = d[i + 2] = val;
                     }
                     ctx.putImageData(imgData, 0, 0);
-                    resolve({ canvas, width: canvas.width, height: canvas.height });
+                    resolve(canvas);
                 };
                 img.onerror = (e) => {
                     URL.revokeObjectURL(url);
@@ -2084,7 +2086,74 @@
             let clean = String(numStr || '').trim();
             const upperUnit = String(unit || 'M').toUpperCase();
             if (upperUnit === 'B' && !clean.includes('.') && clean.length >= 3) {
-                clean = `${clean[0]}.${clean.slice(1, 3)}`; } return { num: clean, unit: upperUnit }; }  function extractLabeledInStockValues(data, canvasWidth, canvasHeight) { const rawWords = Array.isArray(data && data.words) ? data.words : []; const tokenRegex = /^(\d+(?:\.\d+)?)\s*([BMK])$/i; const rowTolerance = Math.max(28, Math.round(canvasHeight * 0.055));  const labelY = { bread: null, wood: null, stone: null, iron: null }; const numTokens = [];  for (const w of rawWords) { if (!w \vert{}\vert{} !w.bbox) continue; const rawText = String(w.text \vert{}\vert{} '').replace(/,/g, '').trim(); const lowerText = rawText.toLowerCase(); const cy = (w.bbox.y0 + w.bbox.y1) / 2; const cx = (w.bbox.x0 + w.bbox.x1) / 2;  // 只在左側搵資源英文名稱，避免誤中標題 if (cx < canvasWidth * 0.48) { if (lowerText.includes('bread') \vert{}\vert{} lowerText === 'read') labelY.bread = cy; else if (lowerText.includes('wood')) labelY.wood = cy; else if (lowerText.includes('stone') \vert{}\vert{} lowerText === 'tone') labelY.stone = cy; else if (lowerText.includes('iron') \vert{}\vert{} lowerText === 'ron') labelY.iron = cy; }  // 只在右側 In Stock 區域（> 62\% 寬度）收集數值，直接避開中間 Items 欄 const m = tokenRegex.exec(rawText); if (m && cx > canvasWidth * 0.62) { numTokens.push({ ...fixMissingDecimalToken(m[1], m[2]), cx, cy }); } }  const resultMap = { bread: null, wood: null, stone: null, iron: null }; const keys = ['bread', 'wood', 'stone', 'iron'];  // 優先用英文標籤嘅 Y 座標配對同一行最右邊嘅 In Stock 數值 keys.forEach(k => { if (labelY[k] !== null) { const rowMatches = numTokens.filter(t => Math.abs(t.cy - labelY[k]) <= rowTolerance); if (rowMatches.length > 0) { rowMatches.sort((a, b) => b.cx - a.cx); resultMap[k] = rowMatches[0]; } } });  // 如果有個別英文標籤冇認到，利用已對齊嘅行距推算補齊 if (numTokens.length >= 4 && keys.some(k => !resultMap[k])) { const sortedByY = [...numTokens].sort((a, b) => a.cy - b.cy); const rows = []; for (const tok of sortedByY) { const existing = rows.find(r => Math.abs(r.avgY - tok.cy) <= rowTolerance); if (existing) { existing.items.push(tok); existing.avgY = existing.items.reduce((s, it) => s + it.cy, 0) / existing.items.length; } else { rows.push({ avgY: tok.cy, items: [tok] }); } } if (rows.length >= 4) { keys.forEach((k, idx) => { if (!resultMap[k] && rows[idx]) { const rowItems = rows[idx].items.sort((a, b) => b.cx - a.cx); resultMap[k] = rowItems[0]; } }); } }  return resultMap; }  async function runOcrOnImageFile(file, accId) { ocrStatusText[accId] = 'OCR 辨識 In Stock 中...'; renderResourcesGrid();  try { const { canvas, width, height } = await preprocessImageToCanvas(file); const worker = await getOcrWorker(); const { data } = await worker.recognize(canvas); const mapped = extractLabeledInStockValues(data \vert{}\vert{} {}, width, height);  const resKeys = ['bread', 'wood', 'stone', 'iron']; let filledCount = 0; resKeys.forEach(k => { const tok = mapped[k]; if (tok) { resourcesStore[accId][k] = { val: tok.num, unit: tok.unit }; filledCount++; } });  ocrStatusText[accId] = filledCount > 0 ? `已精準填入 ${filledCount} 項 In Stock`
+                clean = `${clean[0]}.${clean.slice(1, 3)}`;
+            }
+            return { num: clean, unit: upperUnit };
+        }
+
+        function extractRedBoxStockValues(data) {
+            const tokenRegex = /^(\d+(?:\.\d+)?)\s*([BMK])$/i;
+            const rawWords = Array.isArray(data && data.words) ? data.words : [];
+
+            const numTokens = [];
+            for (const w of rawWords) {
+                const clean = String(w.text || '').replace(/,/g, '').trim();
+                const m = tokenRegex.exec(clean);
+                if (m && w.bbox) {
+                    const cy = (w.bbox.y0 + w.bbox.y1) / 2;
+                    numTokens.push({
+                        ...fixMissingDecimalToken(m[1], m[2]),
+                        cy
+                    });
+                }
+            }
+
+            if (numTokens.length > 0) {
+                numTokens.sort((a, b) => a.cy - b.cy);
+                const rows = [];
+                for (const tok of numTokens) {
+                    const targetRow = rows.find(r => Math.abs(r.avgY - tok.cy) <= 35);
+                    if (targetRow) {
+                        targetRow.items.push(tok);
+                        targetRow.avgY = targetRow.items.reduce((s, it) => s + it.cy, 0) / targetRow.items.length;
+                    } else {
+                        rows.push({ avgY: tok.cy, items: [tok] });
+                    }
+                }
+                return rows.slice(0, 4).map(r => r.items[r.items.length - 1]);
+            }
+
+            const pairedRegex = /(\d+(?:\.\d+)?)\s*([BMK])/gi;
+            const results = [];
+            let match;
+            while ((match = pairedRegex.exec((data && data.text) || '')) !== null && results.length < 4) {
+                results.push(fixMissingDecimalToken(match[1], match[2]));
+            }
+            return results;
+        }
+
+        async function runOcrOnImageFile(file, accId) {
+            ocrStatusText[accId] = 'OCR 辨識紅框 In Stock 中...';
+            renderResourcesGrid();
+
+            try {
+                const canvas = await preprocessImageToCanvas(file);
+                const worker = await getOcrWorker();
+                const { data } = await worker.recognize(canvas);
+                const chosen = extractRedBoxStockValues(data || {});
+
+                const resKeys = ['bread', 'wood', 'stone', 'iron'];
+                let filledCount = 0;
+                chosen.forEach((tok, idx) => {
+                    const k = resKeys[idx];
+                    if (k && tok) {
+                        resourcesStore[accId][k] = { val: tok.num, unit: tok.unit };
+                        filledCount++;
+                    }
+                });
+
+                ocrStatusText[accId] = filledCount > 0
+                    ? `已填入紅框 ${filledCount} 項 In Stock`
                     : '未認出清晰數值，請手動輸入';
                 renderResourcesGrid();
                 saveState();
@@ -2256,7 +2325,11 @@
             const diffSec = Math.max(0, Math.floor((getAccurateNow().getTime() - timestampMs) / 1000));
             if (diffSec < 60) return "剛剛";
             const diffMin = Math.floor(diffSec / 60);
-            if (diffMin < 60) return `${diffMin} 分鐘前`; const diffHr = Math.floor(diffMin / 60); if (diffHr < 24) return `${diffHr} 小時 ${diffMin \% 60} 分前`; const diffDay = Math.floor(diffHr / 24); return `${diffDay} 天前`;
+            if (diffMin < 60) return `${diffMin} 分鐘前`;
+            const diffHr = Math.floor(diffMin / 60);
+            if (diffHr < 24) return `${diffHr} 小時 ${diffMin % 60} 分前`;
+            const diffDay = Math.floor(diffHr / 24);
+            return `${diffDay} 天前`;
         }
 
         function escapeAttr(str) {
@@ -2325,18 +2398,18 @@
                             if (item.category === 'master') {
                                 presetBtns = `
                                     <div class="todo-presets">
-                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master',${item.itemId || 'null'}, 0, 0, 10)">10分</button>
-                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master',${item.itemId || 'null'}, 0, 2, 0)">2時</button>
-                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master',${item.itemId || 'null'}, 0, 10, 0)">10時</button>
-                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master',${item.itemId || 'null'}, 0, 23, 0)">23時</button>
-                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master',${item.itemId || 'null'}, 3, 0, 0)">3天</button>
-                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master',${item.itemId || 'null'}, 5, 0, 0)">5天</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 0, 10)">10分</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 2, 0)">2時</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 10, 0)">10時</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 23, 0)">23時</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 3, 0, 0)">3天</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 5, 0, 0)">5天</button>
                                     </div>
                                 `;
                             } else if (item.category === 'sunlight') {
                                 presetBtns = `
                                     <div class="todo-presets">
-                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'sunlight',${item.itemId || 'null'}, 0, 8, 0)">▶ 8小時整</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'sunlight', ${item.itemId || 'null'}, 0, 8, 0)">▶ 8小時整</button>
                                     </div>
                                 `;
                             }
@@ -2347,16 +2420,16 @@
                                         <span style="font-weight:700;">新一輪:</span>
                                         <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_d_${idx}" value="${defD}" maxlength="2"
                                             onfocus="this.select()"
-                                            onkeydown="handleTodoArrowNav(event, null, 'todo_h_${idx}',${idx}, '${safeId}', '${accId}', '${item.category}',${item.itemId || 'null'})"
+                                            onkeydown="handleTodoArrowNav(event, null, 'todo_h_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
                                             onkeyup="autoJumpTodoInput(event, this, 'todo_h_${idx}')">天
                                         <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_h_${idx}" value="${formatPad(defH)}" maxlength="2"
                                             onfocus="this.select()"
-                                            onkeydown="handleTodoArrowNav(event, 'todo_d_${idx}', 'todo_m_${idx}',${idx}, '${safeId}', '${accId}', '${item.category}',${item.itemId || 'null'})"
+                                            onkeydown="handleTodoArrowNav(event, 'todo_d_${idx}', 'todo_m_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
                                             onkeyup="autoJumpTodoInput(event, this, 'todo_m_${idx}')">時
                                         <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_m_${idx}" value="${formatPad(defM)}" maxlength="2"
                                             onfocus="this.select()"
-                                            onkeydown="handleTodoArrowNav(event, 'todo_h_${idx}', null,${idx}, '${safeId}', '${accId}', '${item.category}',${item.itemId || 'null'})">分
-                                        <button class="btn-todo-start" onclick="submitTodoCustomRound(${idx}, '${safeId}', '${accId}', '${item.category}',${item.itemId || 'null'})">▶ 開始新一輪</button>
+                                            onkeydown="handleTodoArrowNav(event, 'todo_h_${idx}', null, ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">分
+                                        <button class="btn-todo-start" onclick="submitTodoCustomRound(${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">▶ 開始新一輪</button>
                                     </div>
                                     ${presetBtns}
                                 </div>
@@ -2372,4 +2445,8 @@
                                         <select class="todo-time-select" id="todo_job_sel_${idx}" onchange="confirmJobFromTodo('${safeId}', '${accId}', '${jType}', this.value)">
                                             ${generateJobOptions(selectedTime, '選擇時段')}
                                         </select>
-                                        <button class="btn-todo-confirm" onclick="submitTodoJobConfirm(${idx},
+                                        <button class="btn-todo-confirm" onclick="submitTodoJobConfirm(${idx}, '${safeId}', '${accId}', '${jType}')">✅ 確認已預約</button>
+                                    </div>
+                                </div>
+                            `;
+                        }
