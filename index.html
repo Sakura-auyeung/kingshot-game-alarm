@@ -1283,7 +1283,7 @@
             font-weight: 700;
         }
 
-        /* --- 🌾 資源採集 + OCR 三欄介面樣式 --- */
+        /* --- 🌾 資源採集 + OCR 三欄介面（實色高對比，唔考眼力） --- */
         .resources-view {
             display: none;
             max-width: 1240px;
@@ -1293,9 +1293,9 @@
         }
 
         .res-top-banner {
-            background: rgba(255, 255, 255, 0.96);
-            border: 2.5px solid #F2DFC4;
-            border-radius: 20px;
+            background: #FFFFFF;
+            border: 2px solid #E5D3BC;
+            border-radius: 18px;
             padding: 11px 16px;
             margin-bottom: 18px;
             display: flex;
@@ -1303,8 +1303,9 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
-            box-shadow: 0 4px 12px rgba(92, 61, 46, 0.06);
+            box-shadow: 0 3px 10px rgba(92, 61, 46, 0.06);
             font-size: 13px;
+            color: #3E271C;
         }
 
         .res-grid {
@@ -1314,52 +1315,86 @@
             align-items: start;
         }
 
-        .res-paste-zone {
-            background: rgba(255, 255, 255, 0.92);
-            border: 2px dashed #CBB6A0;
-            border-radius: 16px;
-            padding: 10px 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.15s;
-            position: relative;
-            z-index: 2;
-        }
-        .res-paste-zone:hover,
-        .res-paste-zone.active-target {
-            background: #FFFDF7;
-            border-color: #38A866;
-            box-shadow: 0 0 0 2px rgba(56, 168, 102, 0.18);
-        }
-
-        .res-paste-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--cocoa);
-        }
-        .res-paste-sub {
-            font-size: 11px;
-            color: var(--cocoa-light);
-            margin-top: 2px;
-        }
-        .res-ocr-status {
-            font-size: 11.5px;
-            font-weight: 700;
-            color: #26733A;
-            margin-top: 4px;
-            min-height: 16px;
-        }
-
-        .res-recommend-box {
-            background: rgba(255, 255, 255, 0.97);
-            border-radius: 16px;
-            padding: 10px 12px;
-            border: 2px solid rgba(92, 61, 46, 0.08);
+        .res-paste-box {
+            background: #FFFFFF;
+            border: 2px solid #D6C3AE;
+            border-radius: 15px;
+            padding: 9px 11px;
             display: flex;
             flex-direction: column;
             gap: 5px;
             position: relative;
             z-index: 2;
+        }
+        .res-paste-box.active-target {
+            background: #FFF9E6;
+            border-color: #2E7D32;
+            box-shadow: 0 0 0 2px #2E7D32;
+        }
+
+        .res-paste-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .res-target-btn {
+            flex: 1;
+            text-align: left;
+            background: #F4EFE8;
+            border: 1.5px solid #CBB6A0;
+            border-radius: 10px;
+            padding: 5px 9px;
+            font-size: 12.5px;
+            font-weight: 800;
+            color: #3E271C;
+            cursor: pointer;
+        }
+        .res-paste-box.active-target .res-target-btn {
+            background: #2E7D32;
+            border-color: #1B5E20;
+            color: #FFFFFF;
+        }
+
+        .res-pick-file-btn {
+            background: #EFE7DC;
+            border: 1.5px solid #CBB6A0;
+            border-radius: 10px;
+            padding: 5px 8px;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #3E271C;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .res-pick-file-btn:hover {
+            background: #E2D5C5;
+        }
+
+        .res-paste-hint {
+            font-size: 11px;
+            color: #5C3D2E;
+        }
+
+        .res-ocr-status {
+            font-size: 12px;
+            font-weight: 800;
+            color: #1B5E20;
+            min-height: 16px;
+        }
+
+        .res-recommend-box {
+            background: #FFFFFF;
+            border-radius: 15px;
+            padding: 10px 12px;
+            border: 2px solid #D6C3AE;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            z-index: 2;
+            color: #2B1A12;
         }
 
         .res-best-line {
@@ -1367,22 +1402,22 @@
             justify-content: space-between;
             align-items: center;
             font-size: 14px;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .res-best-badge {
-            background: #DCFCE7;
-            color: #166534;
-            border: 1px solid #86EFAC;
-            padding: 2px 9px;
+            background: #1B7A3E;
+            color: #FFFFFF;
+            border: 1px solid #145C2E;
+            padding: 3px 10px;
             border-radius: 999px;
             font-size: 12px;
             font-weight: 800;
         }
 
         .res-gap-line {
-            font-size: 12px;
-            color: var(--cocoa-light);
+            font-size: 12.5px;
+            color: #3E271C;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -1390,40 +1425,44 @@
             gap: 4px;
         }
 
+        /* 實色資源卡片：清楚實心色塊 + 高對比文字，一眼辨別 */
         .res-row-card {
-            background: rgba(255, 255, 255, 0.97);
-            border-radius: 15px;
+            background: #FFFFFF;
+            border-radius: 14px;
             padding: 9px 11px;
-            border: 2px solid rgba(92, 61, 46, 0.09);
-            border-left-width: 7px;
+            border: 2px solid #CBB6A0;
+            border-left-width: 8px;
             display: flex;
             flex-direction: column;
             gap: 6px;
             position: relative;
             z-index: 2;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
+            color: #1F120C;
         }
 
-        /* 最缺（比例最低）＝ 綠色；最充足（比例最高）＝ 紅色 */
+        /* 最缺（比例最低）＝ 實心綠 */
         .res-row-card.tier-green {
-            background-color: #E7F9EE;
-            border-color: #86EFAC;
-            border-left-color: #16A34A;
+            background-color: #B9F0C8;
+            border-color: #2E7D32;
+            border-left-color: #1B5E20;
         }
+        /* 次缺 ＝ 實心黃綠 */
         .res-row-card.tier-mid-green {
-            background-color: #F3FDE8;
-            border-color: #BEF264;
-            border-left-color: #65A30D;
+            background-color: #E2F4A6;
+            border-color: #689F38;
+            border-left-color: #558B2F;
         }
+        /* 次充足 ＝ 實心橙 */
         .res-row-card.tier-mid-red {
-            background-color: #FFF3E6;
-            border-color: #FDBA74;
-            border-left-color: #EA580C;
+            background-color: #FFD1A3;
+            border-color: #EF6C00;
+            border-left-color: #E65100;
         }
+        /* 最充足（比例最高）＝ 實心紅 */
         .res-row-card.tier-red {
-            background-color: #FEECEC;
-            border-color: #FCA5A5;
-            border-left-color: #DC2626;
+            background-color: #FFB8B8;
+            border-color: #C62828;
+            border-left-color: #B71C1C;
         }
 
         .res-row-top {
@@ -1437,17 +1476,19 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 14px;
+            color: #1F120C;
         }
 
         .res-ratio-tag {
             font-size: 11px;
-            font-weight: 700;
-            padding: 1px 6px;
+            font-weight: 800;
+            padding: 1px 7px;
             border-radius: 999px;
-            background: rgba(92, 61, 46, 0.1);
-            color: var(--cocoa);
+            background: #FFFFFF;
+            border: 1px solid #8C6A58;
+            color: #3E271C;
         }
 
         .res-input-group {
@@ -1459,35 +1500,38 @@
         .res-num-input {
             width: 76px;
             height: 27px;
-            border: 1.5px solid #D8C4AE;
+            border: 1.5px solid #6E4E3E;
             border-radius: 8px;
-            background: #FFF;
+            background: #FFFFFF;
+            color: #1F120C;
             text-align: right;
             padding: 0 7px;
             font-size: 13px;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .res-unit-select {
             padding: 3px 6px;
             border-radius: 8px;
-            border: 1.5px solid #D8C4AE;
-            background: #FFFDF9;
+            border: 1.5px solid #6E4E3E;
+            background: #FFFFFF;
+            color: #1F120C;
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .res-row-bottom {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 11.5px;
-            color: var(--cocoa-light);
+            font-size: 12px;
+            font-weight: 700;
+            color: #2B1A12;
         }
 
         .res-scaled-val {
             font-weight: 800;
-            color: var(--cocoa);
+            color: #1F120C;
         }
 
         @keyframes gentleFloat {
@@ -1654,16 +1698,16 @@
     <div class="resources-view" id="resourcesView">
         <div class="res-top-banner">
             <div>
-                <strong>📋 直接貼上截圖（Ctrl+V）</strong>：先點一下某個帳戶嘅貼上區（預設為中間帳戶），用截圖軟件截完直接貼上，自動識別庫存數值；亦支援揀圖或手改。
+                <strong>直接貼上截圖（Ctrl+V）</strong>：點一下帳戶目標掣即鎖定貼上對象，截圖後直接按 <strong>Ctrl+V</strong> 即認右邊庫存數值。
             </div>
             <div>
-                比例標準：<strong>糧 20 : 木 20 : 石 4 : 鐵 1</strong>（🟢 最低／最缺 ｜ 🔴 最高／最唔缺）
+                比例：<strong>糧 20 : 木 20 : 石 4 : 鐵 1</strong>（實心綠＝最缺 ｜ 實心紅＝最唔缺）
             </div>
         </div>
         <div class="res-grid" id="resourcesGrid"></div>
     </div>
 
-    <!-- 隱藏檔案選擇器（作後備） -->
+    <!-- 隱藏檔案選擇器（只喺撳「📁 選檔」時先開） -->
     <input type="file" id="resFileInput" accept="image/*" style="display:none" onchange="handleResFileChange(event)">
 
     <script>
@@ -1788,7 +1832,7 @@
         function unitMultiplier(unit) {
             if (unit === 'B') return 1e9;
             if (unit === 'K') return 1e3;
-            return 1e6; // 預設 M
+            return 1e6;
         }
 
         function getAccountResourceAnalysis(accId) {
@@ -1798,7 +1842,6 @@
                 const rawNum = parseFloat(String(entry.val).replace(/,/g, ''));
                 const hasVal = !isNaN(rawNum) && entry.val !== '' && entry.val !== null;
                 const totalAmount = hasVal ? rawNum * unitMultiplier(entry.unit || 'M') : 0;
-                // 除返對應比例後嘅基準值
                 const scaledVal = hasVal ? totalAmount / def.ratio : 0;
                 return {
                     ...def,
@@ -1847,6 +1890,24 @@
             return `${m.toFixed(2)}M 基準`;
         }
 
+        function setPasteTarget(accId) {
+            activePasteAccId = accId;
+            pendingUploadAccId = accId;
+            renderResourcesGrid();
+        }
+
+        function openFilePickerForAcc(event, accId) {
+            if (event) event.stopPropagation();
+            activePasteAccId = accId;
+            pendingUploadAccId = accId;
+            renderResourcesGrid();
+            const fileInput = document.getElementById('resFileInput');
+            if (fileInput) {
+                fileInput.value = '';
+                fileInput.click();
+            }
+        }
+
         function renderResourcesGrid() {
             const grid = document.getElementById('resourcesGrid');
             if (!grid) return;
@@ -1859,11 +1920,11 @@
                 const statusMsg = ocrStatusText[acc.id] || '';
 
                 const bestHtml = analysis.hasAny && analysis.bestItem
-                    ? `<span class="res-best-badge">🔥 最缺：${analysis.bestItem.emoji} ${analysis.bestItem.label}</span>`
+                    ? `<span class="res-best-badge">最缺：${analysis.bestItem.emoji} ${analysis.bestItem.label}</span>`
                     : `<span class="status-pill none">未輸入數量</span>`;
 
                 const gapText = (analysis.hasAny && analysis.gapM !== null)
-                    ? `紅綠差距：<strong>${analysis.gapM.toFixed(1)}M</strong>（比例基準）`
+                    ? `紅綠差距：<strong>${analysis.gapM.toFixed(1)}M</strong>（除比例後）`
                     : `紅綠差距：--`;
 
                 const rowsHtml = analysis.items.map(item => `
@@ -1886,7 +1947,7 @@
                             </div>
                         </div>
                         <div class="res-row-bottom">
-                            <span>${item.hasVal ? `總量：${item.valStr}${item.unit}` : '未填寫'}</span>
+                            <span>${item.hasVal ? `庫存：${item.valStr}${item.unit}` : '未填寫'}</span>
                             <span class="res-scaled-val">${item.hasVal ? formatScaledMillions(item.scaledVal) : '--'}</span>
                         </div>
                     </div>
@@ -1896,18 +1957,22 @@
                     <div class="account-column ${acc.id}">
                         ${renderProfileHeader(acc)}
 
-                        <div class="res-paste-zone ${isActiveTarget ? 'active-target' : ''}"
-                            onclick="selectPasteTargetAndPickFile('${acc.id}')">
-                            <div class="res-paste-title">
-                                ${isActiveTarget ? '🎯 目前貼上目標：' : '📋 點擊選為貼上目標：'}[${displayName}]
+                        <div class="res-paste-box ${isActiveTarget ? 'active-target' : ''}">
+                            <div class="res-paste-top">
+                                <button type="button" class="res-target-btn" onclick="setPasteTarget('${acc.id}')">
+                                    ${isActiveTarget ? '✅ 貼上目標：' : '📌 設為貼上目標：'}[${displayName}]
+                                </button>
+                                <button type="button" class="res-pick-file-btn" onclick="openFilePickerForAcc(event, '${acc.id}')">
+                                    📁 選檔
+                                </button>
                             </div>
-                            <div class="res-paste-sub">直接按 Ctrl+V 貼上截圖，或點擊此處揀相片 OCR</div>
-                            <div class="res-ocr-status">${statusMsg}</div>
+                            <div class="res-paste-hint">截圖後直接按 Ctrl+V 貼上（自動取右邊庫存）</div>
+                            ${statusMsg ? `<div class="res-ocr-status">${statusMsg}</div>` : ''}
                         </div>
 
                         <div class="res-recommend-box">
                             <div class="res-best-line">
-                                <span>採集建議</span>
+                                <span>採集優先</span>
                                 ${bestHtml}
                             </div>
                             <div class="res-gap-line">
@@ -1929,17 +1994,6 @@
             saveState();
         }
 
-        function selectPasteTargetAndPickFile(accId) {
-            activePasteAccId = accId;
-            pendingUploadAccId = accId;
-            renderResourcesGrid();
-            const fileInput = document.getElementById('resFileInput');
-            if (fileInput) {
-                fileInput.value = '';
-                fileInput.click();
-            }
-        }
-
         function handleResFileChange(event) {
             const file = event.target.files && event.target.files[0];
             if (file) {
@@ -1947,7 +2001,6 @@
             }
         }
 
-        // 監聽全頁 Ctrl+V 貼上截圖
         document.addEventListener('paste', (event) => {
             const resView = document.getElementById('resourcesView');
             if (!resView || resView.style.display !== 'block') return;
@@ -1974,7 +2027,6 @@
             return tesseractWorker;
         }
 
-        // 將圖片預處理成高對比灰階，提升數字與 K/M/B 辨識率
         function preprocessImageToCanvas(file) {
             return new Promise((resolve, reject) => {
                 const url = URL.createObjectURL(file);
@@ -2006,40 +2058,59 @@
             });
         }
 
-        function parseValueUnitTokens(rawText) {
-            // 擷取所有類似 1.43B / 296.56M / 80.07M / 450.2K 嘅數值+單位
-            const matches = [];
+        // 按行解析：每行若有兩個數值（左 Items、右 In Stock），永遠取最右邊嗰個
+        function extractRightColumnValuesFromText(rawText) {
+            const lines = String(rawText || '').split(/\r?\n/);
+            const rowRightTokens = [];
             const regex = /(\d+(?:\.\d+)?)\s*([BMK])/gi;
-            let m;
-            while ((m = regex.exec(rawText)) !== null) {
-                matches.push({
-                    num: m[1],
-                    unit: m[2].toUpperCase()
-                });
+
+            for (const line of lines) {
+                const lineMatches = [];
+                let m;
+                regex.lastIndex = 0;
+                while ((m = regex.exec(line)) !== null) {
+                    lineMatches.push({
+                        num: m[1],
+                        unit: m[2].toUpperCase()
+                    });
+                }
+                if (lineMatches.length >= 2) {
+                    // 左邊係 Items，右邊係 In Stock -> 取最後一個
+                    rowRightTokens.push(lineMatches[lineMatches.length - 1]);
+                } else if (lineMatches.length === 1) {
+                    // 某些行（例如 Gold）得右邊一個數值，亦係右邊庫存
+                    rowRightTokens.push(lineMatches[0]);
+                }
             }
-            return matches;
+
+            if (rowRightTokens.length >= 4) {
+                return rowRightTokens.slice(0, 4);
+            }
+
+            // 後備：若成段冇換行，按偶數索引取每對嘅右邊（index 1, 3, 5, 7）
+            const allTokens = [];
+            regex.lastIndex = 0;
+            let m;
+            while ((m = regex.exec(rawText || '')) !== null) {
+                allTokens.push({ num: m[1], unit: m[2].toUpperCase() });
+            }
+            const pairedRight = [];
+            for (let i = 1; i < allTokens.length; i += 2) {
+                pairedRight.push(allTokens[i]);
+            }
+            if (pairedRight.length >= 4) return pairedRight.slice(0, 4);
+            return allTokens.slice(0, 4);
         }
 
         async function runOcrOnImageFile(file, accId) {
-            ocrStatusText[accId] = '⏳ OCR 辨識中...';
+            ocrStatusText[accId] = 'OCR 辨識右邊庫存中...';
             renderResourcesGrid();
 
             try {
                 const canvas = await preprocessImageToCanvas(file);
                 const worker = await getOcrWorker();
                 const { data } = await worker.recognize(canvas);
-                const tokens = parseValueUnitTokens(data.text || '');
-
-                // Overview: Resources 每行通常有 Items 同 In Stock 兩個數字（4 行共 8 個數字）
-                // 若偵測到成對數字，優先取每行第 2 個（In Stock）；否則按順序取前 4 個
-                let chosen = [];
-                if (tokens.length >= 8) {
-                    chosen = [tokens[1], tokens[3], tokens[5], tokens[7]];
-                } else if (tokens.length >= 4) {
-                    chosen = tokens.slice(0, 4);
-                } else {
-                    chosen = tokens;
-                }
+                const chosen = extractRightColumnValuesFromText(data.text || '');
 
                 const resKeys = ['bread', 'wood', 'stone', 'iron'];
                 let filledCount = 0;
@@ -2052,13 +2123,13 @@
                 });
 
                 ocrStatusText[accId] = filledCount > 0
-                    ? `✅ 已填入 ${filledCount} 項數值，可手動微調`
-                    : '⚠️ 未認出清晰數值，請手動輸入';
+                    ? `已填入右邊 ${filledCount} 項數值`
+                    : '未認出清晰數值，請手動輸入';
                 renderResourcesGrid();
                 saveState();
             } catch (err) {
                 console.error('OCR Error:', err);
-                ocrStatusText[accId] = '❌ 辨識失敗，請改為手動輸入';
+                ocrStatusText[accId] = '辨識失敗，請手動輸入';
                 renderResourcesGrid();
             }
         }
@@ -3685,7 +3756,7 @@
                 store[accId][manualKey] = true;
             } else {
                 store[accId][dateKey] = null;
-                store[acc.id][manualKey] = false;
+                store[accId][manualKey] = false;
             }
 
             renderGrid();
