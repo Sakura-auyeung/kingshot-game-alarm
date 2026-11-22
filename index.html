@@ -1425,7 +1425,7 @@
             gap: 4px;
         }
 
-        /* 實色資源卡片：清楚實心色塊 + 高對比文字，一眼辨別 */
+        /* 實色資源卡片 */
         .res-row-card {
             background: #FFFFFF;
             border-radius: 14px;
@@ -1439,26 +1439,21 @@
             z-index: 2;
             color: #1F120C;
         }
-
-        /* 最缺（比例最低）＝ 實心綠 */
         .res-row-card.tier-green {
             background-color: #B9F0C8;
             border-color: #2E7D32;
             border-left-color: #1B5E20;
         }
-        /* 次缺 ＝ 實心黃綠 */
         .res-row-card.tier-mid-green {
             background-color: #E2F4A6;
             border-color: #689F38;
             border-left-color: #558B2F;
         }
-        /* 次充足 ＝ 實心橙 */
         .res-row-card.tier-mid-red {
             background-color: #FFD1A3;
             border-color: #EF6C00;
             border-left-color: #E65100;
         }
-        /* 最充足（比例最高）＝ 實心紅 */
         .res-row-card.tier-red {
             background-color: #FFB8B8;
             border-color: #C62828;
@@ -1553,7 +1548,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 手機版精簡頂部與單欄自適應 */
         @media (max-width: 950px) {
             body { padding: 20px 14px 56px 14px; }
             .grid-view, .timeline-grid, .res-grid {
@@ -1622,10 +1616,8 @@
 </head>
 <body>
 
-    <!-- 頁面最上方雙色黃波浪花邊 -->
     <div class="header-frill"></div>
 
-    <!-- 日本官網同款熱鬆餅 SHAKI!! 開場載入動畫 -->
     <div class="loading-splash" id="loadingSplash">
         <div class="loading-stage">
             <img class="loading-frame frame-1" src="./img_op_1.png" alt="">
@@ -1651,7 +1643,6 @@
                 🌾 資源採集
             </button>
 
-            <!-- 右上角小鈴鐺 To-Do List 待辦清單 -->
             <div class="bell-wrapper" id="bellWrapper">
                 <button class="btn-bell" id="bellBtn" title="待辦清單與提醒紀錄" onclick="toggleBellDropdown(event)">
                     🔔
@@ -1671,10 +1662,8 @@
         </div>
     </div>
 
-    <!-- 第一頁：3欄計時視圖 -->
     <div class="grid-view" id="gridView"></div>
 
-    <!-- 第二頁：打直獨立拆分 3 欄時間線 -->
     <div class="timeline-view" id="timelineView">
         <div class="timeline-grid">
             <div class="timeline-column">
@@ -1694,7 +1683,6 @@
         </div>
     </div>
 
-    <!-- 第三頁：🌾 資源採集與 OCR 辨識（3欄打直） -->
     <div class="resources-view" id="resourcesView">
         <div class="res-top-banner">
             <div>
@@ -1707,11 +1695,9 @@
         <div class="res-grid" id="resourcesGrid"></div>
     </div>
 
-    <!-- 隱藏檔案選擇器（只喺撳「📁 選檔」時先開） -->
     <input type="file" id="resFileInput" accept="image/*" style="display:none" onchange="handleResFileChange(event)">
 
     <script>
-        // --- 1. Firebase 專案設定 ---
         const firebaseConfig = {
             apiKey: "AIzaSyDjQS9NNkUwZ8bTeNb75WFp3at2jjKzWac",
             authDomain: "kingshot-game-alarm.firebaseapp.com",
@@ -1828,7 +1814,6 @@
             }
         };
 
-        // --- 資源換算與比例顏色計算 ---
         function unitMultiplier(unit) {
             if (unit === 'B') return 1e9;
             if (unit === 'K') return 1e3;
@@ -2027,25 +2012,46 @@
             return tesseractWorker;
         }
 
+        // 自動辨識單圖或雙圖比例，裁切 In Stock 右欄前 4 行（Bread / Wood / Stone / Iron）
         function preprocessImageToCanvas(file) {
             return new Promise((resolve, reject) => {
                 const url = URL.createObjectURL(file);
                 const img = new Image();
                 img.onload = () => {
                     URL.revokeObjectURL(url);
-                    const scale = img.width < 900 ? 2 : 1.25;
+
+                    const isTwoPanel = (img.width / img.height) > 0.9;
+                    let sx, sy, sw, sh;
+
+                    if (isTwoPanel) {
+                        // 左半邊係遊戲畫面，In Stock 欄約喺 x 32% ~ 52%，y 31% ~ 63%
+                        sx = Math.round(img.width * 0.32);
+                        sy = Math.round(img.height * 0.31);
+                        sw = Math.round(img.width * 0.20);
+                        sh = Math.round(img.height * 0.32);
+                    } else {
+                        // 單張直向截圖：In Stock 欄約喺 x 64% ~ 98%，y 31% ~ 63%
+                        sx = Math.round(img.width * 0.64);
+                        sy = Math.round(img.height * 0.31);
+                        sw = Math.round(img.width * 0.34);
+                        sh = Math.round(img.height * 0.32);
+                    }
+
+                    const scale = 3;
                     const canvas = document.createElement('canvas');
-                    canvas.width = Math.round(img.width * scale);
-                    canvas.height = Math.round(img.height * scale);
+                    canvas.width = Math.round(sw * scale);
+                    canvas.height = Math.round(sh * scale);
                     const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
                     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const d = imgData.data;
                     for (let i = 0; i < d.length; i += 4) {
                         const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-                        const boosted = gray > 155 ? 255 : Math.max(0, (gray - 60) * 1.4);
-                        d[i] = d[i + 1] = d[i + 2] = boosted;
+                        const val = gray < 145 ? 0 : 255;
+                        d[i] = d[i + 1] = d[i + 2] = val;
                     }
                     ctx.putImageData(imgData, 0, 0);
                     resolve(canvas);
@@ -2058,7 +2064,15 @@
             });
         }
 
-        // 利用 OCR 詞彙座標（bbox）精準抓出紅框內 4 個資源列（Bread / Wood / Stone / Iron）最右邊 In Stock 數值
+        function fixMissingDecimalToken(numStr, unit) {
+            let clean = String(numStr || '').trim();
+            const upperUnit = String(unit || 'M').toUpperCase();
+            if (upperUnit === 'B' && !clean.includes('.') && clean.length >= 3) {
+                clean = `${clean[0]}.${clean.slice(1, 3)}`;
+            }
+            return { num: clean, unit: upperUnit };
+        }
+
         function extractRedBoxStockValues(data) {
             const tokenRegex = /^(\d+(?:\.\d+)?)\s*([BMK])$/i;
             const rawWords = Array.isArray(data && data.words) ? data.words : [];
@@ -2069,26 +2083,18 @@
                 const m = tokenRegex.exec(clean);
                 if (m && w.bbox) {
                     const cy = (w.bbox.y0 + w.bbox.y1) / 2;
-                    const cx = (w.bbox.x0 + w.bbox.x1) / 2;
                     numTokens.push({
-                        num: m[1],
-                        unit: m[2].toUpperCase(),
-                        x0: w.bbox.x0,
-                        x1: w.bbox.x1,
-                        y0: w.bbox.y0,
-                        y1: w.bbox.y1,
-                        cx,
+                        ...fixMissingDecimalToken(m[1], m[2]),
                         cy
                     });
                 }
             }
 
-            if (numTokens.length >= 4) {
-                // 按垂直位置 y 分群（同一列數值 y 相差在 28px 內）
+            if (numTokens.length > 0) {
                 numTokens.sort((a, b) => a.cy - b.cy);
                 const rows = [];
                 for (const tok of numTokens) {
-                    const targetRow = rows.find(r => Math.abs(r.avgY - tok.cy) <= 28);
+                    const targetRow = rows.find(r => Math.abs(r.avgY - tok.cy) <= 35);
                     if (targetRow) {
                         targetRow.items.push(tok);
                         targetRow.avgY = targetRow.items.reduce((s, it) => s + it.cy, 0) / targetRow.items.length;
@@ -2096,30 +2102,16 @@
                         rows.push({ avgY: tok.cy, items: [tok] });
                     }
                 }
-
-                // 紅框只有 Bread / Wood / Stone / Iron 4 行，排除 Gold 與 Governor Stamina
-                const resourceRows = rows.slice(0, 4).map(r => {
-                    r.items.sort((a, b) => a.cx - b.cx);
-                    return r.items[r.items.length - 1]; // 取該行最右邊（In Stock）
-                });
-
-                if (resourceRows.length === 4) {
-                    return resourceRows.map(t => ({ num: t.num, unit: t.unit }));
-                }
+                return rows.slice(0, 4).map(r => r.items[r.items.length - 1]);
             }
 
-            // 純文字後備：只取前 4 個完整帶單位數值對嘅右邊
             const pairedRegex = /(\d+(?:\.\d+)?)\s*([BMK])/gi;
-            const all = [];
+            const results = [];
             let match;
-            while ((match = pairedRegex.exec((data && data.text) || '')) !== null) {
-                all.push({ num: match[1], unit: match[2].toUpperCase() });
+            while ((match = pairedRegex.exec((data && data.text) || '')) !== null && results.length < 4) {
+                results.push(fixMissingDecimalToken(match[1], match[2]));
             }
-            const rightOnly = [];
-            for (let i = 1; i < all.length && rightOnly.length < 4; i += 2) {
-                rightOnly.push(all[i]);
-            }
-            return rightOnly.length === 4 ? rightOnly : all.slice(0, 4);
+            return results;
         }
 
         async function runOcrOnImageFile(file, accId) {
@@ -2183,7 +2175,6 @@
             }
         }
 
-        // --- 確保 jobDate 與 jobTime 雙向一致 ---
         function normalizeAllJobsConsistency() {
             accounts.forEach(acc => {
                 ['soldier', 'tech'].forEach(type => {
@@ -3750,7 +3741,7 @@
             store[accId][dateKey] = newDate;
             store[accId][timeKey] = formatTimeHM(newDate);
             store[accId][confKey] = false;
-            store[accId][manualKey] = true;
+            store[acc.id][manualKey] = true;
 
             renderGrid();
             updateTimeline(true);
