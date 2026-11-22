@@ -7,6 +7,8 @@
     <!-- 引入 Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <!-- 引入 Tesseract.js 純前端 OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         /* 載入貓啃什錦黑 & jf粉圓體 */
         @font-face {
@@ -215,7 +217,7 @@
         .header-btns {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
             flex-wrap: wrap;
             position: relative;
         }
@@ -223,11 +225,11 @@
         /* 糖果膠囊按鈕 */
         .pill-btn {
             border: 2px solid #FFF;
-            padding: 7px 13px;
+            padding: 7px 12px;
             border-radius: 999px;
             cursor: pointer;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12.5px;
             color: #FFF;
             display: inline-flex;
             align-items: center;
@@ -254,6 +256,7 @@
         .btn-event-toggle { background: #B8A99A; }
         .btn-event-toggle.active { background: linear-gradient(135deg, #FF85A1, #EB5A87); }
         .btn-toggle { background: linear-gradient(135deg, #5AA9FF, #3B88E8); }
+        .btn-res { background: linear-gradient(135deg, #43C674, #2BA358); }
 
         /* 右上角小鈴鐺 To-Do List 待辦清單按鈕與面板 */
         .bell-wrapper {
@@ -360,7 +363,6 @@
             padding: 9px;
         }
 
-        /* 待辦清單單筆卡片：未處理套用對應角色色；已處理轉清爽冰藍＋天藍配色 */
         .todo-item {
             padding: 10px 12px;
             border-radius: 14px;
@@ -372,18 +374,9 @@
             gap: 7px;
             transition: all 0.15s;
         }
-        .todo-item.pending.acc-h {
-            background: var(--bg-h);
-            border-color: var(--border-h);
-        }
-        .todo-item.pending.acc-z {
-            background: var(--bg-z);
-            border-color: var(--border-z);
-        }
-        .todo-item.pending.acc-p {
-            background: var(--bg-p);
-            border-color: var(--border-p);
-        }
+        .todo-item.pending.acc-h { background: var(--bg-h); border-color: var(--border-h); }
+        .todo-item.pending.acc-z { background: var(--bg-z); border-color: var(--border-z); }
+        .todo-item.pending.acc-p { background: var(--bg-p); border-color: var(--border-p); }
         .todo-item.done {
             background: #EAF8FF;
             border-color: #BAE6FD;
@@ -471,7 +464,6 @@
             color: #0284C7;
         }
 
-        /* 待辦清單內的快捷操作列 */
         .todo-renew-box {
             background: rgba(255, 255, 255, 0.88);
             border: 1px dashed #D8C4AE;
@@ -557,7 +549,6 @@
         }
         .btn-todo-preset:hover { background: #F2DFC8; }
 
-        /* 螢光筆 size 迷你日期膠囊 */
         .day-hl {
             display: inline-block;
             padding: 1px 5px;
@@ -616,7 +607,6 @@
         .account-column.z { background-color: var(--bg-z); outline: 2px solid var(--border-z); }
         .account-column.p { background-color: var(--bg-p); outline: 2px solid var(--border-p); }
 
-        /* 遊戲角色名片貼紙 */
         .profile-card {
             background: rgba(255, 255, 255, 0.97);
             border-radius: 17px;
@@ -781,7 +771,6 @@
         }
         .btn-add:hover { transform: scale(1.15); }
 
-        /* 四張計時卡片左側統一預留 28px 欄寬 */
         .timer-item-row {
             display: flex;
             align-items: center;
@@ -833,28 +822,20 @@
             position: relative;
             transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .timer-card:hover {
-            transform: translateY(-1px);
-        }
+        .timer-card:hover { transform: translateY(-1px); }
 
         .h .timer-card { background: var(--card-h); }
         .z .timer-card { background: var(--card-z); }
         .p .timer-card { background: var(--card-p); }
 
-        .timer-card.master-card {
-            border-left: 6px solid #FFF3A1;
-        }
+        .timer-card.master-card { border-left: 6px solid #FFF3A1; }
         .timer-card.sunlight-card {
             background: linear-gradient(135deg, #FFA24C 0%, #FF6F61 100%) !important;
             border-left: 6px solid #FFF6D6;
         }
 
-        .due-today {
-            border: 3.5px solid #B8292F !important;
-        }
-        .due-tomorrow {
-            border: 3.5px solid #1D4E89 !important;
-        }
+        .due-today { border: 3.5px solid #B8292F !important; }
+        .due-tomorrow { border: 3.5px solid #1D4E89 !important; }
 
         .timer-main-row {
             display: flex;
@@ -960,11 +941,8 @@
             cursor: pointer;
             transition: background 0.15s;
         }
-        .btn-preset:hover {
-            background: rgba(255, 255, 255, 0.38);
-        }
+        .btn-preset:hover { background: rgba(255, 255, 255, 0.38); }
 
-        /* 首頁職位預約「狀態顯示看板」 */
         .job-section {
             background: rgba(255, 255, 255, 0.96);
             border-radius: 17px;
@@ -1004,9 +982,7 @@
             cursor: pointer;
             transition: background 0.15s;
         }
-        .btn-goto-timeline:hover {
-            background: #F3E4CE;
-        }
+        .btn-goto-timeline:hover { background: #F3E4CE; }
 
         .job-status-card {
             background: #FFFDF9;
@@ -1068,7 +1044,7 @@
             color: #5C3D2E;
         }
 
-        /* 打直獨立拆分欄位視圖（後面頁，同為 1240px 寬度） */
+        /* 時間線視圖 */
         .timeline-view {
             display: none;
             max-width: 1240px;
@@ -1202,9 +1178,7 @@
             cursor: pointer;
             transition: background 0.15s;
         }
-        .btn-more-tasks:hover {
-            background: #F3E4CE;
-        }
+        .btn-more-tasks:hover { background: #F3E4CE; }
 
         .job-manage-card {
             position: relative;
@@ -1309,6 +1283,213 @@
             font-weight: 700;
         }
 
+        /* --- 🌾 資源採集 + OCR 三欄介面樣式 --- */
+        .resources-view {
+            display: none;
+            max-width: 1240px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 4;
+        }
+
+        .res-top-banner {
+            background: rgba(255, 255, 255, 0.96);
+            border: 2.5px solid #F2DFC4;
+            border-radius: 20px;
+            padding: 11px 16px;
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(92, 61, 46, 0.06);
+            font-size: 13px;
+        }
+
+        .res-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 22px;
+            align-items: start;
+        }
+
+        .res-paste-zone {
+            background: rgba(255, 255, 255, 0.92);
+            border: 2px dashed #CBB6A0;
+            border-radius: 16px;
+            padding: 10px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            position: relative;
+            z-index: 2;
+        }
+        .res-paste-zone:hover,
+        .res-paste-zone.active-target {
+            background: #FFFDF7;
+            border-color: #38A866;
+            box-shadow: 0 0 0 2px rgba(56, 168, 102, 0.18);
+        }
+
+        .res-paste-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--cocoa);
+        }
+        .res-paste-sub {
+            font-size: 11px;
+            color: var(--cocoa-light);
+            margin-top: 2px;
+        }
+        .res-ocr-status {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #26733A;
+            margin-top: 4px;
+            min-height: 16px;
+        }
+
+        .res-recommend-box {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 16px;
+            padding: 10px 12px;
+            border: 2px solid rgba(92, 61, 46, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .res-best-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .res-best-badge {
+            background: #DCFCE7;
+            color: #166534;
+            border: 1px solid #86EFAC;
+            padding: 2px 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .res-gap-line {
+            font-size: 12px;
+            color: var(--cocoa-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .res-row-card {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 15px;
+            padding: 9px 11px;
+            border: 2px solid rgba(92, 61, 46, 0.09);
+            border-left-width: 7px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            z-index: 2;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        /* 最缺（比例最低）＝ 綠色；最充足（比例最高）＝ 紅色 */
+        .res-row-card.tier-green {
+            background-color: #E7F9EE;
+            border-color: #86EFAC;
+            border-left-color: #16A34A;
+        }
+        .res-row-card.tier-mid-green {
+            background-color: #F3FDE8;
+            border-color: #BEF264;
+            border-left-color: #65A30D;
+        }
+        .res-row-card.tier-mid-red {
+            background-color: #FFF3E6;
+            border-color: #FDBA74;
+            border-left-color: #EA580C;
+        }
+        .res-row-card.tier-red {
+            background-color: #FEECEC;
+            border-color: #FCA5A5;
+            border-left-color: #DC2626;
+        }
+
+        .res-row-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .res-name-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .res-ratio-tag {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 999px;
+            background: rgba(92, 61, 46, 0.1);
+            color: var(--cocoa);
+        }
+
+        .res-input-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .res-num-input {
+            width: 76px;
+            height: 27px;
+            border: 1.5px solid #D8C4AE;
+            border-radius: 8px;
+            background: #FFF;
+            text-align: right;
+            padding: 0 7px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .res-unit-select {
+            padding: 3px 6px;
+            border-radius: 8px;
+            border: 1.5px solid #D8C4AE;
+            background: #FFFDF9;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .res-row-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11.5px;
+            color: var(--cocoa-light);
+        }
+
+        .res-scaled-val {
+            font-weight: 800;
+            color: var(--cocoa);
+        }
+
         @keyframes gentleFloat {
             0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-4px); }
@@ -1331,7 +1512,7 @@
         /* 手機版精簡頂部與單欄自適應 */
         @media (max-width: 950px) {
             body { padding: 20px 14px 56px 14px; }
-            .grid-view, .timeline-grid {
+            .grid-view, .timeline-grid, .res-grid {
                 grid-template-columns: 1fr;
                 gap: 16px;
             }
@@ -1422,6 +1603,9 @@
             <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">
                 <img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換時間線
             </button>
+            <button class="pill-btn btn-res" onclick="toggleResourcesView()" id="resToggleBtn">
+                🌾 資源採集
+            </button>
 
             <!-- 右上角小鈴鐺 To-Do List 待辦清單 -->
             <div class="bell-wrapper" id="bellWrapper">
@@ -1443,10 +1627,10 @@
         </div>
     </div>
 
-    <!-- 前面頁：3欄視圖 -->
+    <!-- 第一頁：3欄計時視圖 -->
     <div class="grid-view" id="gridView"></div>
 
-    <!-- 後面頁：打直獨立拆分 3 欄 -->
+    <!-- 第二頁：打直獨立拆分 3 欄時間線 -->
     <div class="timeline-view" id="timelineView">
         <div class="timeline-grid">
             <div class="timeline-column">
@@ -1465,6 +1649,22 @@
             </div>
         </div>
     </div>
+
+    <!-- 第三頁：🌾 資源採集與 OCR 辨識（3欄打直） -->
+    <div class="resources-view" id="resourcesView">
+        <div class="res-top-banner">
+            <div>
+                <strong>📋 直接貼上截圖（Ctrl+V）</strong>：先點一下某個帳戶嘅貼上區（預設為中間帳戶），用截圖軟件截完直接貼上，自動識別庫存數值；亦支援揀圖或手改。
+            </div>
+            <div>
+                比例標準：<strong>糧 20 : 木 20 : 石 4 : 鐵 1</strong>（🟢 最低／最缺 ｜ 🔴 最高／最唔缺）
+            </div>
+        </div>
+        <div class="res-grid" id="resourcesGrid"></div>
+    </div>
+
+    <!-- 隱藏檔案選擇器（作後備） -->
+    <input type="file" id="resFileInput" accept="image/*" style="display:none" onchange="handleResFileChange(event)">
 
     <script>
         // --- 1. Firebase 專案設定 ---
@@ -1488,12 +1688,29 @@
         const NOTIF_HISTORY_KEY = "multi_account_notif_history_v2";
         const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
 
-        // 順序：Howard（白熊）、Zoey（主號，懶熊）、Patrick（森熊/茶小熊）
         const accounts = [
             { id: 'h', name: 'h', isMain: false, faceFile: 'chara_face_2-1.png' },
             { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png' },
             { id: 'p', name: 'p', isMain: false, faceFile: 'chara_face_4-1.png' }
         ];
+
+        const RESOURCE_DEFS = [
+            { key: 'bread',  label: '糧食', emoji: '🍞', ratio: 20 },
+            { key: 'wood',   label: '木材', emoji: '🪵', ratio: 20 },
+            { key: 'stone',  label: '石材', emoji: '🪨', ratio: 4  },
+            { key: 'iron',   label: '鐵',   emoji: '⛓️', ratio: 1  }
+        ];
+
+        let resourcesStore = {
+            h: { bread: { val: '', unit: 'M' }, wood: { val: '', unit: 'M' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } },
+            z: { bread: { val: '', unit: 'B' }, wood: { val: '', unit: 'B' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } },
+            p: { bread: { val: '', unit: 'B' }, wood: { val: '', unit: 'B' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } }
+        };
+
+        let activePasteAccId = 'z';
+        let pendingUploadAccId = 'z';
+        let ocrStatusText = { h: '', z: '', p: '' };
+        let tesseractWorker = null;
 
         function getBearFaceFile(accId) {
             const acc = accounts.find(a => a.id === accId);
@@ -1567,6 +1784,314 @@
             }
         };
 
+        // --- 資源換算與比例顏色計算 ---
+        function unitMultiplier(unit) {
+            if (unit === 'B') return 1e9;
+            if (unit === 'K') return 1e3;
+            return 1e6; // 預設 M
+        }
+
+        function getAccountResourceAnalysis(accId) {
+            const accRes = resourcesStore[accId] || {};
+            const items = RESOURCE_DEFS.map(def => {
+                const entry = accRes[def.key] || { val: '', unit: 'M' };
+                const rawNum = parseFloat(String(entry.val).replace(/,/g, ''));
+                const hasVal = !isNaN(rawNum) && entry.val !== '' && entry.val !== null;
+                const totalAmount = hasVal ? rawNum * unitMultiplier(entry.unit || 'M') : 0;
+                // 除返對應比例後嘅基準值
+                const scaledVal = hasVal ? totalAmount / def.ratio : 0;
+                return {
+                    ...def,
+                    valStr: entry.val ?? '',
+                    unit: entry.unit || 'M',
+                    hasVal,
+                    totalAmount,
+                    scaledVal
+                };
+            });
+
+            const validItems = items.filter(i => i.hasVal);
+            let minScaled = null;
+            let maxScaled = null;
+            let bestItem = null;
+            let gapM = null;
+
+            if (validItems.length > 0) {
+                minScaled = Math.min(...validItems.map(i => i.scaledVal));
+                maxScaled = Math.max(...validItems.map(i => i.scaledVal));
+                bestItem = validItems.reduce((prev, cur) => (cur.scaledVal < prev.scaledVal ? cur : prev), validItems[0]);
+                gapM = (maxScaled - minScaled) / 1e6;
+            }
+
+            const coloredItems = items.map(item => {
+                let tierClass = '';
+                if (item.hasVal && validItems.length > 1 && maxScaled > minScaled) {
+                    const ratioPos = (item.scaledVal - minScaled) / (maxScaled - minScaled);
+                    if (ratioPos <= 0.25) tierClass = 'tier-green';
+                    else if (ratioPos <= 0.55) tierClass = 'tier-mid-green';
+                    else if (ratioPos <= 0.85) tierClass = 'tier-mid-red';
+                    else tierClass = 'tier-red';
+                } else if (item.hasVal && validItems.length === 1) {
+                    tierClass = 'tier-green';
+                }
+                return { ...item, tierClass };
+            });
+
+            return { items: coloredItems, bestItem, gapM, hasAny: validItems.length > 0 };
+        }
+
+        function formatScaledMillions(scaledVal) {
+            if (!scaledVal && scaledVal !== 0) return '--';
+            const m = scaledVal / 1e6;
+            if (m >= 1000) return `${(m / 1000).toFixed(2)}B 基準`;
+            return `${m.toFixed(2)}M 基準`;
+        }
+
+        function renderResourcesGrid() {
+            const grid = document.getElementById('resourcesGrid');
+            if (!grid) return;
+
+            grid.innerHTML = accounts.map(acc => {
+                const p = profiles[acc.id] || {};
+                const displayName = p.name || acc.id;
+                const analysis = getAccountResourceAnalysis(acc.id);
+                const isActiveTarget = (activePasteAccId === acc.id);
+                const statusMsg = ocrStatusText[acc.id] || '';
+
+                const bestHtml = analysis.hasAny && analysis.bestItem
+                    ? `<span class="res-best-badge">🔥 最缺：${analysis.bestItem.emoji} ${analysis.bestItem.label}</span>`
+                    : `<span class="status-pill none">未輸入數量</span>`;
+
+                const gapText = (analysis.hasAny && analysis.gapM !== null)
+                    ? `紅綠差距：<strong>${analysis.gapM.toFixed(1)}M</strong>（比例基準）`
+                    : `紅綠差距：--`;
+
+                const rowsHtml = analysis.items.map(item => `
+                    <div class="res-row-card ${item.tierClass}">
+                        <div class="res-row-top">
+                            <div class="res-name-group">
+                                <span>${item.emoji} ${item.label}</span>
+                                <span class="res-ratio-tag">÷${item.ratio}</span>
+                            </div>
+                            <div class="res-input-group">
+                                <input type="text" inputmode="decimal" class="res-num-input"
+                                    value="${item.valStr}" placeholder="0.00"
+                                    oninput="updateResourceField('${acc.id}', '${item.key}', 'val', this.value)">
+                                <select class="res-unit-select"
+                                    onchange="updateResourceField('${acc.id}', '${item.key}', 'unit', this.value)">
+                                    <option value="K" ${item.unit === 'K' ? 'selected' : ''}>K</option>
+                                    <option value="M" ${item.unit === 'M' ? 'selected' : ''}>M</option>
+                                    <option value="B" ${item.unit === 'B' ? 'selected' : ''}>B</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="res-row-bottom">
+                            <span>${item.hasVal ? `總量：${item.valStr}${item.unit}` : '未填寫'}</span>
+                            <span class="res-scaled-val">${item.hasVal ? formatScaledMillions(item.scaledVal) : '--'}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                return `
+                    <div class="account-column ${acc.id}">
+                        ${renderProfileHeader(acc)}
+
+                        <div class="res-paste-zone ${isActiveTarget ? 'active-target' : ''}"
+                            onclick="selectPasteTargetAndPickFile('${acc.id}')">
+                            <div class="res-paste-title">
+                                ${isActiveTarget ? '🎯 目前貼上目標：' : '📋 點擊選為貼上目標：'}[${displayName}]
+                            </div>
+                            <div class="res-paste-sub">直接按 Ctrl+V 貼上截圖，或點擊此處揀相片 OCR</div>
+                            <div class="res-ocr-status">${statusMsg}</div>
+                        </div>
+
+                        <div class="res-recommend-box">
+                            <div class="res-best-line">
+                                <span>採集建議</span>
+                                ${bestHtml}
+                            </div>
+                            <div class="res-gap-line">
+                                <span>${gapText}</span>
+                            </div>
+                        </div>
+
+                        ${rowsHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateResourceField(accId, resKey, field, value) {
+            if (!resourcesStore[accId]) resourcesStore[accId] = {};
+            if (!resourcesStore[accId][resKey]) resourcesStore[accId][resKey] = { val: '', unit: 'M' };
+            resourcesStore[accId][resKey][field] = value;
+            renderResourcesGrid();
+            saveState();
+        }
+
+        function selectPasteTargetAndPickFile(accId) {
+            activePasteAccId = accId;
+            pendingUploadAccId = accId;
+            renderResourcesGrid();
+            const fileInput = document.getElementById('resFileInput');
+            if (fileInput) {
+                fileInput.value = '';
+                fileInput.click();
+            }
+        }
+
+        function handleResFileChange(event) {
+            const file = event.target.files && event.target.files[0];
+            if (file) {
+                runOcrOnImageFile(file, pendingUploadAccId);
+            }
+        }
+
+        // 監聽全頁 Ctrl+V 貼上截圖
+        document.addEventListener('paste', (event) => {
+            const resView = document.getElementById('resourcesView');
+            if (!resView || resView.style.display !== 'block') return;
+            const items = event.clipboardData && event.clipboardData.items;
+            if (!items) return;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type && items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    if (blob) {
+                        event.preventDefault();
+                        runOcrOnImageFile(blob, activePasteAccId);
+                        break;
+                    }
+                }
+            }
+        });
+
+        async function getOcrWorker() {
+            if (tesseractWorker) return tesseractWorker;
+            tesseractWorker = await Tesseract.createWorker('eng');
+            await tesseractWorker.setParameters({
+                tessedit_char_whitelist: '0123456789.BMKbmK '
+            });
+            return tesseractWorker;
+        }
+
+        // 將圖片預處理成高對比灰階，提升數字與 K/M/B 辨識率
+        function preprocessImageToCanvas(file) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    const scale = img.width < 900 ? 2 : 1.25;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(img.width * scale);
+                    canvas.height = Math.round(img.height * scale);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const d = imgData.data;
+                    for (let i = 0; i < d.length; i += 4) {
+                        const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+                        const boosted = gray > 155 ? 255 : Math.max(0, (gray - 60) * 1.4);
+                        d[i] = d[i + 1] = d[i + 2] = boosted;
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                    resolve(canvas);
+                };
+                img.onerror = (e) => {
+                    URL.revokeObjectURL(url);
+                    reject(e);
+                };
+                img.src = url;
+            });
+        }
+
+        function parseValueUnitTokens(rawText) {
+            // 擷取所有類似 1.43B / 296.56M / 80.07M / 450.2K 嘅數值+單位
+            const matches = [];
+            const regex = /(\d+(?:\.\d+)?)\s*([BMK])/gi;
+            let m;
+            while ((m = regex.exec(rawText)) !== null) {
+                matches.push({
+                    num: m[1],
+                    unit: m[2].toUpperCase()
+                });
+            }
+            return matches;
+        }
+
+        async function runOcrOnImageFile(file, accId) {
+            ocrStatusText[accId] = '⏳ OCR 辨識中...';
+            renderResourcesGrid();
+
+            try {
+                const canvas = await preprocessImageToCanvas(file);
+                const worker = await getOcrWorker();
+                const { data } = await worker.recognize(canvas);
+                const tokens = parseValueUnitTokens(data.text || '');
+
+                // Overview: Resources 每行通常有 Items 同 In Stock 兩個數字（4 行共 8 個數字）
+                // 若偵測到成對數字，優先取每行第 2 個（In Stock）；否則按順序取前 4 個
+                let chosen = [];
+                if (tokens.length >= 8) {
+                    chosen = [tokens[1], tokens[3], tokens[5], tokens[7]];
+                } else if (tokens.length >= 4) {
+                    chosen = tokens.slice(0, 4);
+                } else {
+                    chosen = tokens;
+                }
+
+                const resKeys = ['bread', 'wood', 'stone', 'iron'];
+                let filledCount = 0;
+                chosen.forEach((tok, idx) => {
+                    const k = resKeys[idx];
+                    if (k && tok) {
+                        resourcesStore[accId][k] = { val: tok.num, unit: tok.unit };
+                        filledCount++;
+                    }
+                });
+
+                ocrStatusText[accId] = filledCount > 0
+                    ? `✅ 已填入 ${filledCount} 項數值，可手動微調`
+                    : '⚠️ 未認出清晰數值，請手動輸入';
+                renderResourcesGrid();
+                saveState();
+            } catch (err) {
+                console.error('OCR Error:', err);
+                ocrStatusText[accId] = '❌ 辨識失敗，請改為手動輸入';
+                renderResourcesGrid();
+            }
+        }
+
+        function hideAllMainViews() {
+            const grid = document.getElementById('gridView');
+            const timeline = document.getElementById('timelineView');
+            const resView = document.getElementById('resourcesView');
+            if (grid) grid.style.display = 'none';
+            if (timeline) timeline.style.display = 'none';
+            if (resView) resView.style.display = 'none';
+        }
+
+        function toggleResourcesView() {
+            const resView = document.getElementById('resourcesView');
+            const grid = document.getElementById('gridView');
+            const toggleBtn = document.getElementById('toggleBtn');
+            const resBtn = document.getElementById('resToggleBtn');
+
+            if (resView && resView.style.display === 'block') {
+                hideAllMainViews();
+                grid.style.display = 'grid';
+                if (toggleBtn) toggleBtn.innerHTML = '<img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換時間線';
+                if (resBtn) resBtn.innerText = '🌾 資源採集';
+            } else {
+                hideAllMainViews();
+                if (resView) resView.style.display = 'block';
+                if (toggleBtn) toggleBtn.innerHTML = '<img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換時間線';
+                if (resBtn) resBtn.innerText = '⏱️ 返回計時';
+                renderResourcesGrid();
+            }
+        }
+
         // --- 確保 jobDate 與 jobTime 雙向一致 ---
         function normalizeAllJobsConsistency() {
             accounts.forEach(acc => {
@@ -1604,7 +2129,6 @@
             });
         }
 
-        // 判斷某個職位目前係咪正在「10 分鐘冷卻期」內
         function isJobInCooldown(accId, type, now = getAccurateNow()) {
             const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
             const jobDate = store[accId] ? store[accId][dateKey] : null;
@@ -1613,7 +2137,6 @@
             return diffMs >= 0 && diffMs <= 10 * 60 * 1000;
         }
 
-        // --- 真實載入連動控制 ---
         let splashStartTime = 0;
         let isFirebaseFirstLoaded = false;
         let isSplashHidden = false;
@@ -1654,7 +2177,6 @@
             }
         }
 
-        // --- 安全時間基準 ---
         let serverTimeOffsetMs = 0;
         function getAccurateNow() {
             return new Date(Date.now() + serverTimeOffsetMs);
@@ -1671,7 +2193,6 @@
             });
         }
 
-        // --- 右上角小鈴鐺 To-Do List 待辦清單 ---
         let notifHistory = [];
         let triggeredEventKeys = new Set();
         let nextId = 300;
@@ -1711,7 +2232,6 @@
             return String(str).replace(/'/g, "\\'").replace(/"/g, "&quot;");
         }
 
-        // 所有職位一律使用神殿圖示 🏛️
         function getCategoryEmoji(category, message = '') {
             if (category === 'job_soldier' || category === 'job_tech' || category === 'cooldown_soldier' || category === 'cooldown_tech' || message.includes('職位')) return '🏛️';
             if (category === 'soldiers') return '⚔️';
@@ -1811,7 +2331,6 @@
                                 </div>
                             `;
                         } else if (item.unread && accId && (item.category === 'cooldown_soldier' || item.category === 'cooldown_tech')) {
-                            // 10分鐘冷卻結束後嘅通知：可直接改選／確認下一輪預約時間，一確認即刻當確認申請（✅ 已確認預約）
                             const jType = item.category === 'cooldown_soldier' ? 'soldier' : 'tech';
                             const timeKey = jType === 'soldier' ? 'soldierJobTime' : 'techJobTime';
                             const selectedTime = item.recommendedTime || (store[accId] ? store[accId][timeKey] : '') || '';
@@ -1827,7 +2346,6 @@
                                 </div>
                             `;
                         }
-                        // 注：職位到點通知（job_soldier / job_tech）唔加任何按鈕，右邊剔選即完成
 
                         const cardStateClass = item.unread ? `pending acc-${accId}` : 'done';
 
@@ -1934,7 +2452,6 @@
             renderBellUI();
         }
 
-        // 在待辦內直接確認下一輪職位時間 -> 直接設為「✅ 已確認預約」
         function submitTodoJobConfirm(idx, notifId, accId, jType) {
             const sel = document.getElementById(`todo_job_sel_${idx}`);
             const val = sel ? sel.value : '';
@@ -2087,7 +2604,6 @@
             }
         }
 
-        // --- 日期判斷與格式化 ---
         function getDayDiffFromToday(dateObj) {
             if (!dateObj) return null;
             const now = getAccurateNow();
@@ -2111,14 +2627,6 @@
             return `${dateObj.getMonth() + 1}/${dateObj.getDate()} `;
         }
 
-        function getDayPlainText(dateObj) {
-            const diffDays = getDayDiffFromToday(dateObj);
-            if (diffDays === null) return '';
-            if (diffDays === 0) return '今天 ';
-            if (diffDays === 1) return '明天 ';
-            return `${dateObj.getMonth() + 1}/${dateObj.getDate()} `;
-        }
-
         function getDateGroupKey(dateObj) {
             if (!dateObj) return '';
             return `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}-${dateObj.getDate()}`;
@@ -2129,10 +2637,6 @@
         function formatDateTimeHlHtml(date) {
             if (!date) return '--:--';
             return `${getDayHlHtml(date)}${formatTimeHM(date)}`;
-        }
-        function formatDateTimePlain(date) {
-            if (!date) return '--:--';
-            return `${getDayPlainText(date)}${formatTimeHM(date)}`;
         }
 
         function formatDurationShort(ms) {
@@ -2194,6 +2698,7 @@
                 saveProfiles();
                 renderGrid();
                 updateTimeline(true);
+                renderResourcesGrid();
             }
         }
 
@@ -2214,6 +2719,7 @@
             saveProfiles();
             renderGrid();
             updateTimeline(true);
+            renderResourcesGrid();
             refreshAllProfiles();
         }
 
@@ -2250,6 +2756,7 @@
                     localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
                     renderGrid();
                     updateTimeline(true);
+                    renderResourcesGrid();
                 }
             });
         }
@@ -2300,6 +2807,7 @@
             loadLocalProfiles();
             updateSunlightBtnUI();
             renderGrid();
+            renderResourcesGrid();
             setupFirebaseRealtimeListener();
             setupProfileListener();
             startBackgroundWorker();
@@ -2324,6 +2832,7 @@
                         updateSunlightBtnUI();
                         renderGrid();
                         updateTimeline(true);
+                        renderResourcesGrid();
                     }
                 }
                 isInitialLoadDone = true;
@@ -2359,6 +2868,7 @@
 
             return {
                 store: serializedStore,
+                resourcesStore: resourcesStore,
                 nextId: nextId,
                 showSunlightEvent: showSunlightEvent,
                 triggered: Array.from(triggeredEventKeys),
@@ -2387,6 +2897,17 @@
                 store[acc.id].techJobConfirmed = Boolean(incoming.techJobConfirmed);
                 store[acc.id].techJobManual = Boolean(incoming.techJobManual || incoming.techJobLocked || incoming.techJobConfirmed);
             });
+
+            if (parsed.resourcesStore) {
+                accounts.forEach(acc => {
+                    if (parsed.resourcesStore[acc.id]) {
+                        resourcesStore[acc.id] = {
+                            ...resourcesStore[acc.id],
+                            ...parsed.resourcesStore[acc.id]
+                        };
+                    }
+                });
+            }
 
             if (parsed.nextId) nextId = parsed.nextId;
             if (typeof parsed.showSunlightEvent === 'boolean') showSunlightEvent = parsed.showSunlightEvent;
@@ -2937,7 +3458,6 @@
                     });
                 });
 
-                // 只有「已確認預約」的職位到點才會彈通知／響鈴
                 if (store[acc.id].soldierJobConfirmed && store[acc.id].soldierJobDate && now >= store[acc.id].soldierJobDate) {
                     const jobKey = `job_s_${acc.id}_${store[acc.id].soldierJobDate.getTime()}`;
                     triggerAlarmAlert(
@@ -2958,7 +3478,6 @@
                     );
                 }
 
-                // 每秒同步更新首頁職位看板的狀態膠囊 + 距離時間
                 const sMeta = getJobStatusMeta(acc.id, 'soldier');
                 const sStatusEl = document.getElementById(`home_status_s_${acc.id}`);
                 if (sStatusEl && sStatusEl.innerHTML !== sMeta.statusHtml) {
@@ -3006,7 +3525,6 @@
                         const cat = isSoldier ? 'soldiers' : 'tech';
                         recalculateJobs(acc.id, cat, true);
 
-                        // 如果剛剛係已確認申請並完成 10 分鐘冷卻，彈出通知提醒預約下一輪＋預期時段
                         if (wasConfirmed) {
                             const displayName = getDisplayAccountName(acc.id);
                             const nextSlotTime = store[acc.id][timeKey];
@@ -3167,7 +3685,7 @@
                 store[accId][manualKey] = true;
             } else {
                 store[accId][dateKey] = null;
-                store[accId][manualKey] = false;
+                store[acc.id][manualKey] = false;
             }
 
             renderGrid();
@@ -3402,12 +3920,13 @@
         }
 
         function openTimelineView() {
-            const grid = document.getElementById('gridView');
             const timeline = document.getElementById('timelineView');
             const btn = document.getElementById('toggleBtn');
-            grid.style.display = 'none';
+            const resBtn = document.getElementById('resToggleBtn');
+            hideAllMainViews();
             timeline.style.display = 'block';
             btn.innerHTML = '<img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換 3 欄視圖';
+            if (resBtn) resBtn.innerText = '🌾 資源採集';
             updateTimeline(true);
         }
 
@@ -3415,11 +3934,13 @@
             const grid = document.getElementById('gridView');
             const timeline = document.getElementById('timelineView');
             const btn = document.getElementById('toggleBtn');
+            const resBtn = document.getElementById('resToggleBtn');
 
-            if (grid.style.display === 'none') {
+            if (timeline.style.display === 'block') {
+                hideAllMainViews();
                 grid.style.display = 'grid';
-                timeline.style.display = 'none';
                 btn.innerHTML = '<img class="btn-icon-svg" src="./btn_change.svg" alt=""> 切換時間線';
+                if (resBtn) resBtn.innerText = '🌾 資源採集';
             } else {
                 openTimelineView();
             }
