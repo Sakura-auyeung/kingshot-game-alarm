@@ -97,7 +97,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
         }
         .loading-splash.hidden {
             opacity: 0;
@@ -1283,7 +1283,7 @@
             font-weight: 700;
         }
 
-        /* --- 🌾 資源採集 + OCR 三欄介面（實色高對比，唔考眼力） --- */
+        /* 資源採集 + OCR 三欄介面 */
         .resources-view {
             display: none;
             max-width: 1240px;
@@ -1425,7 +1425,6 @@
             gap: 4px;
         }
 
-        /* 實色資源卡片 */
         .res-row-card {
             background: #FFFFFF;
             border-radius: 14px;
@@ -1626,6 +1625,18 @@
         <div class="loading-text">LOADING...</div>
     </div>
 
+    <script>
+        setTimeout(function () {
+            var sp = document.getElementById('loadingSplash');
+            if (sp) {
+                sp.classList.add('shaki');
+                setTimeout(function () {
+                    sp.classList.add('hidden');
+                }, 250);
+            }
+        }, 950);
+    </script>
+
     <div class="header">
         <div class="title-group">
             <img class="header-mascot-img" src="./chara_face_1-1.png" alt="鬆弛熊">
@@ -1708,10 +1719,23 @@
             appId: "1:935740408911:web:ca2acd5a82822be227d63a"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const dbRef = db.ref("alarm_state_v1");
-        const profileDbRef = db.ref("account_profiles_v1");
+        let db = null;
+        let dbRef = null;
+        let profileDbRef = null;
+        let hasFirebase = false;
+
+        try {
+            if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+                dbRef = db.ref("alarm_state_v1");
+                profileDbRef = db.ref("account_profiles_v1");
+                hasFirebase = true;
+            }
+        } catch (e) {
+            console.error("Firebase init failed:", e);
+            hasFirebase = false;
+        }
 
         const STORAGE_KEY = "multi_account_alarm_local_backup";
         const PROFILE_STORAGE_KEY = "multi_account_profiles_backup";
@@ -2004,6 +2028,9 @@
         });
 
         async function getOcrWorker() {
+            if (typeof Tesseract === 'undefined') {
+                throw new Error("Tesseract OCR 尚未載入");
+            }
             if (tesseractWorker) return tesseractWorker;
             tesseractWorker = await Tesseract.createWorker('eng');
             await tesseractWorker.setParameters({
@@ -2230,18 +2257,18 @@
                 if (!isSplashHidden) {
                     splash.classList.add('shaki');
                 }
-            }, 350);
+            }, 300);
 
             setTimeout(() => {
                 hideSplashScreen();
-            }, 1500);
+            }, 1100);
         }
 
         function notifyDataReadyForSplash() {
             if (isFirebaseFirstLoaded) return;
             isFirebaseFirstLoaded = true;
             const elapsed = Date.now() - splashStartTime;
-            const remain = Math.max(0, 400 - elapsed);
+            const remain = Math.max(0, 350 - elapsed);
             setTimeout(hideSplashScreen, remain);
         }
 
@@ -2261,6 +2288,7 @@
         }
 
         function setupAutoTimeSync() {
+            if (!hasFirebase || !db) return;
             try {
                 db.ref(".info/serverTimeOffset").on("value", (snap) => {
                     const offset = snap.val();
@@ -2811,7 +2839,9 @@
             try {
                 localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
             } catch (e) {}
-            profileDbRef.set(profiles).catch(err => console.error("Profile Sync Error:", err));
+            if (hasFirebase && profileDbRef) {
+                profileDbRef.set(profiles).catch(err => console.error("Profile Sync Error:", err));
+            }
         }
 
         function loadLocalProfiles() {
@@ -2829,6 +2859,7 @@
         }
 
         function setupProfileListener() {
+            if (!hasFirebase || !profileDbRef) return;
             try {
                 profileDbRef.on("value", (snapshot) => {
                     const cloudProfiles = snapshot.val();
@@ -2907,6 +2938,15 @@
 
         function setupFirebaseRealtimeListener() {
             const badge = document.getElementById('syncBadge');
+            if (!hasFirebase || !dbRef) {
+                if (badge) {
+                    badge.innerText = "🟡 本地離線模式";
+                    badge.className = "sync-badge";
+                }
+                isInitialLoadDone = true;
+                notifyDataReadyForSplash();
+                return;
+            }
 
             dbRef.on("value", (snapshot) => {
                 const cloudData = snapshot.val();
@@ -3016,6 +3056,8 @@
             latestStateUpdatedAt = nowStamp;
             const payload = serializeState(nowStamp);
             saveLocalBackup(payload);
+
+            if (!hasFirebase || !dbRef) return;
 
             const badge = document.getElementById('syncBadge');
             if (badge) badge.innerText = "🔄 同步中...";
@@ -4047,7 +4089,11 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', init);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
     </script>
 </body>
 </html>
