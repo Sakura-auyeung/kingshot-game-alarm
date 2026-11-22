@@ -562,7 +562,7 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
         }
 
-        /* 3欄手賬卡片視圖（乾淨還原原本緊湊佈局） */
+        /* 3欄手賬卡片視圖 */
         .grid-view {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -1562,10 +1562,8 @@
                     const jTime = store[acc.id][timeKey];
 
                     if (jDate && !isNaN(jDate.getTime())) {
-                        // 有 Date 就一定補齊對應嘅 HH:MM 文字
                         store[acc.id][timeKey] = formatTimeHM(jDate);
                     } else if (jTime) {
-                        // 只有文字無 Date，補回 Date 物件
                         const [h, m] = jTime.split(':').map(Number);
                         if (!isNaN(h) && !isNaN(m)) {
                             const d = getAccurateNow();
@@ -1687,8 +1685,8 @@
         }
 
         function getCategoryEmoji(category, message = '') {
-            if (category === 'soldiers' || category === 'job_soldier') return '⚔️';
-            if (category === 'tech' || category === 'job_tech') return '🔬';
+            if (category === 'soldiers' || category === 'job_soldier' || category === 'job_soldier_cooldown') return '⚔️';
+            if (category === 'tech' || category === 'job_tech' || category === 'job_tech_cooldown') return '🔬';
             if (category === 'master') return '📖';
             if (category === 'sunlight') return '☀️';
             if (message.includes('科技')) return '🔬';
@@ -1786,16 +1784,26 @@
                                 `;
                             } else if (item.category === 'job_soldier' || item.category === 'job_tech') {
                                 const jType = item.category === 'job_soldier' ? 'soldier' : 'tech';
+                                renewControlHtml = `
+                                    <div class="todo-renew-box">
+                                        <div class="todo-renew-row">
+                                            <span style="font-weight:700;">職位已到點（10分後可再申請）</span>
+                                            <button class="btn-todo-start" onclick="confirmJobFromTodo('${safeId}', '${accId}', '${jType}')">✅ 已領職位</button>
+                                        </div>
+                                    </div>
+                                `;
+                            } else if (item.category === 'job_soldier_cooldown' || item.category === 'job_tech_cooldown') {
+                                const jType = item.category === 'job_soldier_cooldown' ? 'soldier' : 'tech';
                                 const timeKey = jType === 'soldier' ? 'soldierJobTime' : 'techJobTime';
                                 const currentJobTime = store[accId] ? (store[accId][timeKey] || '') : '';
                                 renewControlHtml = `
                                     <div class="todo-renew-box">
                                         <div class="todo-renew-row">
-                                            <span style="font-weight:700;">改選時間:</span>
+                                            <span style="font-weight:700;">重設新職位:</span>
                                             <select class="todo-time-select" onchange="selectJobTimeFromTodo('${safeId}', '${accId}', '${jType}', this.value)">
                                                 ${generateJobOptions(currentJobTime, '選擇新時間')}
                                             </select>
-                                            <button class="btn-todo-start" onclick="confirmJobFromTodo('${safeId}', '${accId}', '${jType}')">✅ 已領職位並完成</button>
+                                            <button class="btn-todo-start" onclick="toggleTodoDone('${safeId}')">✅ 已完成</button>
                                         </div>
                                     </div>
                                 `;
@@ -1900,7 +1908,6 @@
 
             stopRingingEffects();
 
-            // 開始新一輪士兵或科技時，主動解鎖並推薦下一個職位時段
             recalculateJobs(accId, category, true);
             renderGrid();
             updateTimeline(true);
@@ -1919,17 +1926,10 @@
         }
 
         function confirmJobFromTodo(notifId, accId, jType) {
-            const confKey = jType === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
-            const manualKey = jType === 'soldier' ? 'soldierJobManual' : 'techJobManual';
-            store[accId][confKey] = true;
-            store[accId][manualKey] = true;
             const todo = notifHistory.find(n => n.id === notifId);
             if (todo) todo.unread = false;
             saveNotifHistory();
             stopRingingEffects();
-            renderGrid();
-            updateTimeline(true);
-            saveState();
             renderBellUI();
         }
 
@@ -2897,24 +2897,56 @@
                     });
                 });
 
-                if (store[acc.id].soldierJobDate && now >= store[acc.id].soldierJobDate) {
-                    const jobKey = `job_s_${acc.id}_${store[acc.id].soldierJobDate.getTime()}`;
-                    triggerAlarmAlert(
-                        jobKey,
-                        `[${displayName}] ⚔️ 士兵職位預約時間 (${store[acc.id].soldierJobTime}) 到了！`,
-                        store[acc.id].soldierJobDate.getTime(),
-                        { accId: acc.id, category: 'job_soldier', itemId: null }
-                    );
+                // 1. 士兵職位：到點通知 + 10分鐘冷卻完畢再申請通知（僅限已確認預約）
+                if (store[acc.id].soldierJobConfirmed && store[acc.id].soldierJobDate) {
+                    const sJobMs = store[acc.id].soldierJobDate.getTime();
+                    const sCoolEndMs = sJobMs + 10 * 60 * 1000;
+
+                    if (now.getTime() >= sJobMs) {
+                        const jobKey = `job_s_${acc.id}_${sJobMs}`;
+                        triggerAlarmAlert(
+                            jobKey,
+                            `[${displayName}] ⚔️ 士兵職位到了 (${store[acc.id].soldierJobTime})，快去領職位！`,
+                            sJobMs,
+                            { accId: acc.id, category: 'job_soldier', itemId: null }
+                        );
+                    }
+
+                    if (now.getTime() >= sCoolEndMs) {
+                        const coolKey = `job_s_cool_${acc.id}_${sJobMs}`;
+                        triggerAlarmAlert(
+                            coolKey,
+                            `[${displayName}] ⚔️ 士兵職位 10 分鐘冷卻已過，可以再申請職位了！`,
+                            sCoolEndMs,
+                            { accId: acc.id, category: 'job_soldier_cooldown', itemId: null }
+                        );
+                    }
                 }
 
-                if (store[acc.id].techJobDate && now >= store[acc.id].techJobDate) {
-                    const jobKey = `job_t_${acc.id}_${store[acc.id].techJobDate.getTime()}`;
-                    triggerAlarmAlert(
-                        jobKey,
-                        `[${displayName}] 🔬 科技職位預約時間 (${store[acc.id].techJobTime}) 到了！`,
-                        store[acc.id].techJobDate.getTime(),
-                        { accId: acc.id, category: 'job_tech', itemId: null }
-                    );
+                // 2. 科技職位：到點通知 + 10分鐘冷卻完畢再申請通知（僅限已確認預約）
+                if (store[acc.id].techJobConfirmed && store[acc.id].techJobDate) {
+                    const tJobMs = store[acc.id].techJobDate.getTime();
+                    const tCoolEndMs = tJobMs + 10 * 60 * 1000;
+
+                    if (now.getTime() >= tJobMs) {
+                        const jobKey = `job_t_${acc.id}_${tJobMs}`;
+                        triggerAlarmAlert(
+                            jobKey,
+                            `[${displayName}] 🔬 科技職位到了 (${store[acc.id].techJobTime})，快去領職位！`,
+                            tJobMs,
+                            { accId: acc.id, category: 'job_tech', itemId: null }
+                        );
+                    }
+
+                    if (now.getTime() >= tCoolEndMs) {
+                        const coolKey = `job_t_cool_${acc.id}_${tJobMs}`;
+                        triggerAlarmAlert(
+                            coolKey,
+                            `[${displayName}] 🔬 科技職位 10 分鐘冷卻已過，可以再申請職位了！`,
+                            tCoolEndMs,
+                            { accId: acc.id, category: 'job_tech_cooldown', itemId: null }
+                        );
+                    }
                 }
 
                 // 每秒同步更新首頁職位看板的「10分冷卻剩 X分」狀態膠囊 + 距離時間，唔駛靠 F5
@@ -3077,7 +3109,7 @@
             store[accId][dateKey] = newDate;
             store[accId][timeKey] = formatTimeHM(newDate);
             store[accId][confKey] = false;
-            store[accId][manualKey] = true;
+            store[acc.id][manualKey] = true;
 
             renderGrid();
             updateTimeline(true);
