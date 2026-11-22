@@ -397,8 +397,8 @@
         }
 
         .todo-checkbox {
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             border-radius: 7px;
             border: 2px solid #CBB6A0;
             background: #FFF;
@@ -406,10 +406,15 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 800;
             flex-shrink: 0;
             padding: 0;
+            transition: transform 0.12s;
+        }
+        .todo-checkbox:hover {
+            transform: scale(1.08);
+            border-color: #00A8F3;
         }
         .todo-item.done .todo-checkbox {
             background: #00A8F3;
@@ -466,7 +471,7 @@
             color: #0284C7;
         }
 
-        /* 待辦清單內的「新一輪快捷輸入列」 */
+        /* 待辦清單內的快捷操作列 */
         .todo-renew-box {
             background: rgba(255, 255, 255, 0.88);
             border: 1px dashed #D8C4AE;
@@ -475,13 +480,13 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
-            margin-left: 32px;
+            margin-right: 34px;
         }
 
         .todo-renew-row {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
             flex-wrap: wrap;
             font-size: 11.5px;
         }
@@ -499,7 +504,7 @@
         }
 
         .todo-time-select {
-            padding: 2px 8px;
+            padding: 3px 9px;
             border-radius: 999px;
             border: 1.5px solid #DFCBB5;
             background: #FFFDF9;
@@ -520,6 +525,19 @@
             margin-left: auto;
         }
         .btn-todo-start:hover { filter: brightness(1.05); }
+
+        .btn-todo-confirm {
+            background: linear-gradient(135deg, #43C674, #2BA358);
+            color: #FFF;
+            border: none;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 11.5px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: auto;
+        }
+        .btn-todo-confirm:hover { filter: brightness(1.05); }
 
         .todo-presets {
             display: flex;
@@ -1695,7 +1713,7 @@
 
         // 所有職位一律使用神殿圖示 🏛️
         function getCategoryEmoji(category, message = '') {
-            if (category === 'job_soldier' || category === 'job_tech' || message.includes('職位')) return '🏛️';
+            if (category === 'job_soldier' || category === 'job_tech' || category === 'cooldown_soldier' || category === 'cooldown_tech' || message.includes('職位')) return '🏛️';
             if (category === 'soldiers') return '⚔️';
             if (category === 'tech') return '🔬';
             if (category === 'master') return '📖';
@@ -1747,78 +1765,75 @@
                         const cleanMessage = String(item.message).replace(/\s*(⚔️|🔬|📖|☀️|🏛️)\s*/g, ' ').replace(/\s+/g, ' ').trim();
                         let renewControlHtml = '';
 
-                        if (item.unread && accId && item.category) {
-                            if (['soldiers', 'tech', 'master', 'sunlight'].includes(item.category)) {
-                                let defD = 0, defH = 0, defM = 0;
-                                if (item.category === 'master') defM = 10;
-                                if (item.category === 'sunlight') defH = 8;
+                        if (item.unread && accId && ['soldiers', 'tech', 'master', 'sunlight'].includes(item.category)) {
+                            let defD = 0, defH = 0, defM = 0;
+                            if (item.category === 'master') defM = 10;
+                            if (item.category === 'sunlight') defH = 8;
 
-                                let presetBtns = '';
-                                if (item.category === 'master') {
-                                    presetBtns = `
-                                        <div class="todo-presets">
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 0, 10)">10分</button>
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 2, 0)">2時</button>
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 10, 0)">10時</button>
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 23, 0)">23時</button>
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 3, 0, 0)">3天</button>
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 5, 0, 0)">5天</button>
-                                        </div>
-                                    `;
-                                } else if (item.category === 'sunlight') {
-                                    presetBtns = `
-                                        <div class="todo-presets">
-                                            <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'sunlight', ${item.itemId || 'null'}, 0, 8, 0)">▶ 8小時整</button>
-                                        </div>
-                                    `;
-                                }
-
-                                renewControlHtml = `
-                                    <div class="todo-renew-box" id="todo_box_${idx}">
-                                        <div class="todo-renew-row">
-                                            <span style="font-weight:700;">新一輪:</span>
-                                            <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_d_${idx}" value="${defD}" maxlength="2"
-                                                onfocus="this.select()"
-                                                onkeydown="handleTodoArrowNav(event, null, 'todo_h_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
-                                                onkeyup="autoJumpTodoInput(event, this, 'todo_h_${idx}')">天
-                                            <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_h_${idx}" value="${formatPad(defH)}" maxlength="2"
-                                                onfocus="this.select()"
-                                                onkeydown="handleTodoArrowNav(event, 'todo_d_${idx}', 'todo_m_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
-                                                onkeyup="autoJumpTodoInput(event, this, 'todo_m_${idx}')">時
-                                            <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_m_${idx}" value="${formatPad(defM)}" maxlength="2"
-                                                onfocus="this.select()"
-                                                onkeydown="handleTodoArrowNav(event, 'todo_h_${idx}', null, ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">分
-                                            <button class="btn-todo-start" onclick="submitTodoCustomRound(${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">▶ 開始新一輪</button>
-                                        </div>
-                                        ${presetBtns}
+                            let presetBtns = '';
+                            if (item.category === 'master') {
+                                presetBtns = `
+                                    <div class="todo-presets">
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 0, 10)">10分</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 2, 0)">2時</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 10, 0)">10時</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 23, 0)">23時</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 3, 0, 0)">3天</button>
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 5, 0, 0)">5天</button>
                                     </div>
                                 `;
-                            } else if (item.category === 'job_soldier' || item.category === 'job_tech') {
-                                const jType = item.category === 'job_soldier' ? 'soldier' : 'tech';
-                                const timeKey = jType === 'soldier' ? 'soldierJobTime' : 'techJobTime';
-                                const currentJobTime = store[accId] ? (store[accId][timeKey] || '') : '';
-                                renewControlHtml = `
-                                    <div class="todo-renew-box">
-                                        <div class="todo-renew-row">
-                                            <span style="font-weight:700;">改選時間:</span>
-                                            <select class="todo-time-select" onchange="selectJobTimeFromTodo('${safeId}', '${accId}', '${jType}', this.value)">
-                                                ${generateJobOptions(currentJobTime, '選擇新時間')}
-                                            </select>
-                                            <button class="btn-todo-start" onclick="confirmJobFromTodo('${safeId}', '${accId}', '${jType}')">✅ 已領職位並完成</button>
-                                        </div>
+                            } else if (item.category === 'sunlight') {
+                                presetBtns = `
+                                    <div class="todo-presets">
+                                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'sunlight', ${item.itemId || 'null'}, 0, 8, 0)">▶ 8小時整</button>
                                     </div>
                                 `;
                             }
+
+                            renewControlHtml = `
+                                <div class="todo-renew-box" id="todo_box_${idx}">
+                                    <div class="todo-renew-row">
+                                        <span style="font-weight:700;">新一輪:</span>
+                                        <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_d_${idx}" value="${defD}" maxlength="2"
+                                            onfocus="this.select()"
+                                            onkeydown="handleTodoArrowNav(event, null, 'todo_h_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
+                                            onkeyup="autoJumpTodoInput(event, this, 'todo_h_${idx}')">天
+                                        <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_h_${idx}" value="${formatPad(defH)}" maxlength="2"
+                                            onfocus="this.select()"
+                                            onkeydown="handleTodoArrowNav(event, 'todo_d_${idx}', 'todo_m_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
+                                            onkeyup="autoJumpTodoInput(event, this, 'todo_m_${idx}')">時
+                                        <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_m_${idx}" value="${formatPad(defM)}" maxlength="2"
+                                            onfocus="this.select()"
+                                            onkeydown="handleTodoArrowNav(event, 'todo_h_${idx}', null, ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">分
+                                        <button class="btn-todo-start" onclick="submitTodoCustomRound(${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">▶ 開始新一輪</button>
+                                    </div>
+                                    ${presetBtns}
+                                </div>
+                            `;
+                        } else if (item.unread && accId && (item.category === 'cooldown_soldier' || item.category === 'cooldown_tech')) {
+                            // 10分鐘冷卻結束後嘅通知：可直接改選／確認下一輪預約時間，一確認即刻當確認申請（✅ 已確認預約）
+                            const jType = item.category === 'cooldown_soldier' ? 'soldier' : 'tech';
+                            const timeKey = jType === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+                            const selectedTime = item.recommendedTime || (store[accId] ? store[accId][timeKey] : '') || '';
+                            renewControlHtml = `
+                                <div class="todo-renew-box" id="todo_box_${idx}">
+                                    <div class="todo-renew-row">
+                                        <span style="font-weight:700;">預約時段:</span>
+                                        <select class="todo-time-select" id="todo_job_sel_${idx}" onchange="confirmJobFromTodo('${safeId}', '${accId}', '${jType}', this.value)">
+                                            ${generateJobOptions(selectedTime, '選擇時段')}
+                                        </select>
+                                        <button class="btn-todo-confirm" onclick="submitTodoJobConfirm(${idx}, '${safeId}', '${accId}', '${jType}')">✅ 確認已預約</button>
+                                    </div>
+                                </div>
+                            `;
                         }
+                        // 注：職位到點通知（job_soldier / job_tech）唔加任何按鈕，右邊剔選即完成
 
                         const cardStateClass = item.unread ? `pending acc-${accId}` : 'done';
 
                         return `
                             <div class="todo-item ${cardStateClass}">
                                 <div class="todo-top-row">
-                                    <button class="todo-checkbox" title="${item.unread ? '點擊標記為已完成' : '標記為未完成'}" onclick="toggleTodoDone('${safeId}')">
-                                        ${item.unread ? '' : '✓'}
-                                    </button>
                                     <div class="todo-big-emoji">${bigEmoji}</div>
                                     <div class="todo-msg-wrap">
                                         <div class="todo-item-msg">${cleanMessage}</div>
@@ -1827,6 +1842,9 @@
                                             <span>${item.unread ? '待處理' : '已完成'}</span>
                                         </div>
                                     </div>
+                                    <button class="todo-checkbox" title="${item.unread ? '點擊標記為已完成' : '標記為未完成'}" onclick="toggleTodoDone('${safeId}')">
+                                        ${item.unread ? '' : '✓'}
+                                    </button>
                                 </div>
                                 ${renewControlHtml}
                             </div>
@@ -1916,24 +1934,39 @@
             renderBellUI();
         }
 
-        function selectJobTimeFromTodo(notifId, accId, jType, newVal) {
-            if (!newVal) return;
-            manualJobChange(accId, jType, newVal);
-            const todo = notifHistory.find(n => n.id === notifId);
-            if (todo) todo.unread = false;
-            saveNotifHistory();
-            stopRingingEffects();
-            renderBellUI();
+        // 在待辦內直接確認下一輪職位時間 -> 直接設為「✅ 已確認預約」
+        function submitTodoJobConfirm(idx, notifId, accId, jType) {
+            const sel = document.getElementById(`todo_job_sel_${idx}`);
+            const val = sel ? sel.value : '';
+            confirmJobFromTodo(notifId, accId, jType, val);
         }
 
-        function confirmJobFromTodo(notifId, accId, jType) {
+        function confirmJobFromTodo(notifId, accId, jType, selectedTimeStr) {
+            const timeKey = jType === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+            const dateKey = jType === 'soldier' ? 'soldierJobDate' : 'techJobDate';
             const confKey = jType === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
             const manualKey = jType === 'soldier' ? 'soldierJobManual' : 'techJobManual';
+
+            const finalTimeStr = selectedTimeStr || store[accId][timeKey];
+            if (!finalTimeStr) {
+                alert("請先選擇預約時段！");
+                return;
+            }
+
+            const [h, m] = finalTimeStr.split(':').map(Number);
+            let d = getAccurateNow();
+            d.setHours(h, m, 0, 0);
+            if (d < getAccurateNow()) d.setDate(d.getDate() + 1);
+
+            store[accId][dateKey] = d;
+            store[accId][timeKey] = formatTimeHM(d);
             store[accId][confKey] = true;
             store[accId][manualKey] = true;
+
             const todo = notifHistory.find(n => n.id === notifId);
             if (todo) todo.unread = false;
             saveNotifHistory();
+
             stopRingingEffects();
             renderGrid();
             updateTimeline(true);
@@ -2470,6 +2503,7 @@
                 accId: targetAccId,
                 category: meta.category || null,
                 itemId: meta.itemId || null,
+                recommendedTime: meta.recommendedTime || null,
                 message: message,
                 targetTimestamp: actualTargetMs,
                 unread: true
@@ -2839,7 +2873,6 @@
                 const totalSeconds = (item.d * 86400) + (item.h * 3600) + (item.m * 60);
                 item.endTime = new Date(now.getTime() + totalSeconds * 1000);
 
-                // 開新一輪士兵訓練或科技研究時，若職位不在 10 分鐘冷卻期，才自動解鎖並推薦下一個職位時段
                 recalculateJobs(accId, type, true);
                 renderGrid();
                 saveState();
@@ -2904,7 +2937,7 @@
                     });
                 });
 
-                // 只有「已確認預約」的職位到點才會彈通知／響鈴，並統一用 🏛️ 神殿圖示
+                // 只有「已確認預約」的職位到點才會彈通知／響鈴
                 if (store[acc.id].soldierJobConfirmed && store[acc.id].soldierJobDate && now >= store[acc.id].soldierJobDate) {
                     const jobKey = `job_s_${acc.id}_${store[acc.id].soldierJobDate.getTime()}`;
                     triggerAlarmAlert(
@@ -2956,20 +2989,41 @@
 
             accounts.forEach(acc => {
                 ['soldierJobDate', 'techJobDate'].forEach(dateKey => {
-                    if (store[acc.id][dateKey]) {
-                        if (now - store[acc.id][dateKey] > 10 * 60 * 1000) {
-                            const timeKey = dateKey.replace('Date', 'Time');
-                            const confKey = dateKey.replace('Date', 'Confirmed');
-                            const manualKey = dateKey.replace('Date', 'Manual');
-                            store[acc.id][timeKey] = '';
-                            store[acc.id][dateKey] = null;
-                            store[acc.id][confKey] = false;
-                            store[acc.id][manualKey] = false;
+                    const expiredJobDate = store[acc.id][dateKey];
+                    if (expiredJobDate && (now - expiredJobDate > 10 * 60 * 1000)) {
+                        const isSoldier = dateKey === 'soldierJobDate';
+                        const timeKey = isSoldier ? 'soldierJobTime' : 'techJobTime';
+                        const confKey = isSoldier ? 'soldierJobConfirmed' : 'techJobConfirmed';
+                        const manualKey = isSoldier ? 'soldierJobManual' : 'techJobManual';
+                        const wasConfirmed = Boolean(store[acc.id][confKey]);
+                        const coolEndMs = expiredJobDate.getTime() + 10 * 60 * 1000;
 
-                            const cat = dateKey === 'soldierJobDate' ? 'soldiers' : 'tech';
-                            recalculateJobs(acc.id, cat, true);
-                            changed = true;
+                        store[acc.id][timeKey] = '';
+                        store[acc.id][dateKey] = null;
+                        store[acc.id][confKey] = false;
+                        store[acc.id][manualKey] = false;
+
+                        const cat = isSoldier ? 'soldiers' : 'tech';
+                        recalculateJobs(acc.id, cat, true);
+
+                        // 如果剛剛係已確認申請並完成 10 分鐘冷卻，彈出通知提醒預約下一輪＋預期時段
+                        if (wasConfirmed) {
+                            const displayName = getDisplayAccountName(acc.id);
+                            const nextSlotTime = store[acc.id][timeKey];
+                            const jobLabel = isSoldier ? '士兵職位' : '科技職位';
+                            const coolKey = `cool_done_${isSoldier ? 's' : 't'}_${acc.id}_${expiredJobDate.getTime()}`;
+                            const msg = nextSlotTime
+                                ? `[${displayName}] 🏛️ ${jobLabel} 10分冷卻已結束！建議預約下一輪：${nextSlotTime}`
+                                : `[${displayName}] 🏛️ ${jobLabel} 10分冷卻已結束！可預約下一輪`;
+
+                            triggerAlarmAlert(coolKey, msg, coolEndMs, {
+                                accId: acc.id,
+                                category: isSoldier ? 'cooldown_soldier' : 'cooldown_tech',
+                                recommendedTime: nextSlotTime || ''
+                            });
                         }
+
+                        changed = true;
                     }
                 });
             });
@@ -2988,7 +3042,6 @@
                 if (targetAccId && acc.id !== targetAccId) return;
 
                 if (!targetCategory || targetCategory === 'soldiers') {
-                    // 若目前正在 10 分鐘冷卻期內，絕對唔覆蓋，等冷卻完自動清零後再計算
                     if (!isJobInCooldown(acc.id, 'soldier', now)) {
                         if (forceUnlock || (store[acc.id].soldierJobDate && store[acc.id].soldierJobDate <= now)) {
                             store[acc.id].soldierJobConfirmed = false;
@@ -3015,7 +3068,6 @@
                 }
 
                 if (!targetCategory || targetCategory === 'tech') {
-                    // 若目前正在 10 分鐘冷卻期內，絕對唔覆蓋，等冷卻完自動清零後再計算
                     if (!isJobInCooldown(acc.id, 'tech', now)) {
                         if (forceUnlock || (store[acc.id].techJobDate && store[acc.id].techJobDate <= now)) {
                             store[acc.id].techJobConfirmed = false;
