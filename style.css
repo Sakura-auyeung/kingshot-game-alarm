@@ -42,7 +42,7 @@ body {
     background-repeat: repeat;
     background-size: 280px 280px;
     margin: 0;
-    padding: 26px 28px 56px 28px;
+    padding: 22px 28px 32px 28px;
     color: var(--cocoa);
     min-height: 100vh;
     position: relative;
@@ -118,8 +118,8 @@ button, select, input {
     justify-content: space-between;
     align-items: center;
     max-width: 1240px;
-    margin: 0 auto 20px auto;
-    padding: 11px 18px;
+    margin: 0 auto 16px auto;
+    padding: 10px 18px;
     background: rgba(255, 255, 255, 0.95);
     border: 2.5px solid #F2DFC4;
     border-radius: 26px;
@@ -138,8 +138,8 @@ button, select, input {
 }
 
 .header-mascot-img {
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
     object-fit: contain;
     flex-shrink: 0;
     filter: drop-shadow(0 2px 4px rgba(92, 61, 46, 0.16));
@@ -549,6 +549,7 @@ h1 {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
+/* 第 8 點：鬧鐘與資源兩個分頁三欄高度一致，平時不需捲動 */
 .grid-view {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -557,15 +558,17 @@ h1 {
     margin: 0 auto;
     position: relative;
     z-index: 4;
+    align-items: stretch;
 }
 
 .account-column {
     border-radius: 24px;
-    padding: 13px 13px 16px 13px;
+    padding: 13px 13px 15px 13px;
     border: 3.5px solid #FFFFFF;
     box-shadow: 0 6px 16px rgba(92, 61, 46, 0.07);
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     gap: 9px;
     position: relative;
     overflow: visible;
@@ -587,7 +590,7 @@ h1 {
 .profile-card {
     background: rgba(255, 255, 255, 0.97);
     border-radius: 17px;
-    padding: 10px 12px;
+    padding: 9px 12px;
     display: flex;
     align-items: center;
     gap: 11px;
@@ -603,8 +606,8 @@ h1 {
 }
 
 .profile-avatar {
-    width: 54px;
-    height: 54px;
+    width: 52px;
+    height: 52px;
     border-radius: 14px;
     object-fit: cover;
     background: #F5EFE6;
@@ -617,8 +620,8 @@ h1 {
     position: absolute;
     bottom: -6px;
     right: -6px;
-    width: 26px;
-    height: 26px;
+    width: 25px;
+    height: 25px;
     object-fit: contain;
     background: #FFF;
     border-radius: 50%;
@@ -641,7 +644,7 @@ h1 {
 .profile-name {
     font-family: var(--font-title);
     font-weight: normal;
-    font-size: 25px;
+    font-size: 24px;
     color: var(--cocoa);
     line-height: 1.1;
     letter-spacing: 0.5px;
@@ -670,9 +673,9 @@ h1 {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 5px;
+    margin-top: 4px;
     flex-wrap: wrap;
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -721,12 +724,12 @@ h1 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 19px;
+    font-size: 18.5px;
     letter-spacing: 0.8px;
     margin-bottom: 5px;
     color: var(--cocoa);
     padding: 0 2px;
-    min-height: 25px;
+    min-height: 24px;
 }
 
 .btn-add {
@@ -811,8 +814,10 @@ h1 {
     border-left: 6px solid #FFF6D6;
 }
 
+/* 第 6 點：今天／明天外粗框（同時適用於計時卡與職位預約卡） */
 .due-today { border: 3.5px solid #B8292F !important; }
 .due-tomorrow { border: 3.5px solid #1D4E89 !important; }
+.job-conflict-border { border: 3.5px solid #D62828 !important; background: #FFF5F5 !important; }
 
 .timer-main-row {
     display: flex;
@@ -923,7 +928,7 @@ h1 {
 .job-section {
     background: rgba(255, 255, 255, 0.96);
     border-radius: 17px;
-    padding: 10px 12px 11px 12px;
+    padding: 9px 12px 10px 12px;
     display: flex;
     flex-direction: column;
     gap: 7px;
@@ -965,36 +970,65 @@ h1 {
     background: #FFFDF9;
     border: 1.5px solid #EFE4D4;
     border-radius: 11px;
-    padding: 6px 9px;
+    padding: 5px 9px;
+}
+
+/* 第 7 點：左右分欄，右側狀態標籤佔 1.5~2 行高度且不撐高整列 */
+.job-status-row-split {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.job-status-left {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
 }
 
-.job-status-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13.5px;
+.job-status-title-line {
+    font-size: 13px;
     font-weight: 700;
     color: var(--cocoa);
-    gap: 4px;
+    line-height: 1.25;
 }
 
-.job-status-bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11.5px;
+.job-status-sub-line {
+    font-size: 11px;
     color: var(--cocoa-light);
+    line-height: 1.2;
+}
+
+.job-status-right {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
 }
 
 .status-pill {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     font-size: 10.5px;
     font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 999px;
+    line-height: 1.15;
+    min-height: 31px;
+    padding: 2px 9px;
+    border-radius: 10px;
     white-space: nowrap;
+}
+.status-pill.clickable {
+    cursor: pointer;
+    transition: transform 0.12s, filter 0.12s;
+}
+.status-pill.clickable:hover {
+    transform: scale(1.04);
+    filter: brightness(0.97);
 }
 .status-pill.confirmed {
     background: #E8F8EC;
@@ -1011,9 +1045,15 @@ h1 {
     color: #A62626;
     border: 1px solid #F5B7B1;
 }
+.status-pill.conflict {
+    background: #FDECEA;
+    color: #B8292F;
+    border: 1.5px solid #E63946;
+}
 .status-pill.none {
     background: #F3EFEA;
     color: #8C7B6E;
+    border: 1px solid transparent;
 }
 
 .dist-text {
@@ -1258,6 +1298,7 @@ select {
     font-weight: 700;
 }
 
+/* 第 8 點：資源分頁外觀大執，整體高度壓縮至與鬧鐘分頁一致 */
 .resources-view {
     display: none;
     max-width: 1240px;
@@ -1269,16 +1310,16 @@ select {
 .res-top-banner {
     background: #FFFFFF;
     border: 2px solid #E5D3BC;
-    border-radius: 18px;
-    padding: 11px 16px;
-    margin-bottom: 18px;
+    border-radius: 15px;
+    padding: 7px 14px;
+    margin-bottom: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
-    box-shadow: 0 3px 10px rgba(92, 61, 46, 0.06);
-    font-size: 13px;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(92, 61, 46, 0.05);
+    font-size: 12.5px;
     color: #3E271C;
 }
 
@@ -1286,46 +1327,63 @@ select {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 22px;
-    align-items: start;
+    align-items: stretch;
 }
 
-.res-paste-box {
+/* 1 列 2 欄精簡合併區塊（貼上目標/選檔 + 採集優先/差距） */
+.res-merged-row {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 7px;
     background: #FFFFFF;
     border: 2px solid #D6C3AE;
-    border-radius: 15px;
-    padding: 9px 11px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+    border-radius: 14px;
+    padding: 7px 8px;
     position: relative;
     z-index: 2;
 }
-.res-paste-box.active-target {
+.res-merged-row.active-target {
     background: #FFF9E6;
     border-color: #2E7D32;
-    box-shadow: 0 0 0 2px #2E7D32;
+    box-shadow: 0 0 0 1.5px #2E7D32;
+}
+
+.res-merged-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px 6px;
+    border-radius: 10px;
+    background: #FFFDF9;
+    border: 1px solid #E8DAC8;
+    min-width: 0;
 }
 
 .res-paste-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .res-target-btn {
     flex: 1;
+    min-width: 0;
     text-align: left;
     background: #F4EFE8;
     border: 1.5px solid #CBB6A0;
-    border-radius: 10px;
-    padding: 5px 9px;
-    font-size: 12.5px;
+    border-radius: 8px;
+    padding: 4px 6px;
+    font-size: 11.5px;
     font-weight: 800;
     color: #3E271C;
     cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-.res-paste-box.active-target .res-target-btn {
+.res-merged-row.active-target .res-target-btn {
     background: #2E7D32;
     border-color: #1B5E20;
     color: #FFFFFF;
@@ -1334,80 +1392,79 @@ select {
 .res-pick-file-btn {
     background: #EFE7DC;
     border: 1.5px solid #CBB6A0;
-    border-radius: 10px;
-    padding: 5px 8px;
-    font-size: 11.5px;
+    border-radius: 8px;
+    padding: 4px 6px;
+    font-size: 11px;
     font-weight: 700;
     color: #3E271C;
     cursor: pointer;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 .res-pick-file-btn:hover {
     background: #E2D5C5;
 }
 
 .res-paste-hint {
-    font-size: 11px;
+    font-size: 10.5px;
     color: #5C3D2E;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .res-ocr-status {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
     color: #1B5E20;
-    min-height: 16px;
-}
-
-.res-recommend-box {
-    background: #FFFFFF;
-    border-radius: 15px;
-    padding: 10px 12px;
-    border: 2px solid #D6C3AE;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    position: relative;
-    z-index: 2;
-    color: #2B1A12;
 }
 
 .res-best-line {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 800;
+    gap: 4px;
 }
 
 .res-best-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
     background: #1B7A3E;
     color: #FFFFFF;
     border: 1px solid #145C2E;
-    padding: 3px 10px;
+    padding: 2px 7px;
     border-radius: 999px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
+    white-space: nowrap;
+}
+.res-best-badge .res-icon-wrap,
+.res-best-badge .res-item-png {
+    width: 16px;
+    height: 16px;
 }
 
 .res-gap-line {
-    font-size: 12.5px;
+    font-size: 11px;
     color: #3E271C;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
+    white-space: nowrap;
 }
 
 .res-row-card {
     background: #FFFFFF;
-    border-radius: 14px;
-    padding: 9px 11px;
+    border-radius: 13px;
+    padding: 7px 10px;
     border: 2px solid #CBB6A0;
-    border-left-width: 8px;
+    border-left-width: 7px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     position: relative;
     z-index: 2;
     color: #1F120C;
@@ -1445,14 +1502,14 @@ select {
     align-items: center;
     gap: 6px;
     font-weight: 800;
-    font-size: 14px;
+    font-size: 13.5px;
     color: #1F120C;
 }
 
 .res-ratio-tag {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 800;
-    padding: 1px 7px;
+    padding: 1px 6px;
     border-radius: 999px;
     background: #FFFFFF;
     border: 1px solid #8C6A58;
@@ -1466,8 +1523,8 @@ select {
 }
 
 .res-num-input {
-    width: 76px;
-    height: 27px;
+    width: 82px;
+    height: 26px;
     border: 1.5px solid #6E4E3E;
     border-radius: 8px;
     background: #FFFFFF;
@@ -1492,7 +1549,7 @@ select {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 700;
     color: #2B1A12;
 }
@@ -1585,9 +1642,7 @@ select {
         z-index: 10000;
     }
 }
-/* ==========================================
-   新增：頂部計時專屬群組、粉藍兩線選單、資源 PNG 圖示、雙欄位角色彈窗
-   ========================================== */
+
 .timer-only-btns {
     display: inline-flex;
     align-items: center;
@@ -1691,10 +1746,9 @@ select {
     color: #1B5E85;
 }
 
-/* 資源採集 PNG 圖示（放大抵消透明留白） */
 .res-icon-wrap {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1702,16 +1756,15 @@ select {
     flex-shrink: 0;
 }
 .res-item-png {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     object-fit: contain;
-    transform: scale(1.45);
+    transform: scale(1.38);
     transform-origin: center;
     pointer-events: none;
     filter: drop-shadow(0 1px 2px rgba(92, 61, 46, 0.18));
 }
 
-/* 奶油風雙欄位角色編輯彈窗 */
 .profile-modal-backdrop {
     display: none;
     position: fixed;
