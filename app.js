@@ -452,6 +452,16 @@ function sendDesktopNotification(title, body) {
             activeSystemNotifications.push(n);
             n.onclick = () => {
                 window.focus();
+                if (typeof switchMainTab === 'function') {
+                    switchMainTab('grid');
+                }
+                const navDrop = document.getElementById('navDropdown');
+                if (navDrop) navDrop.classList.remove('open');
+                const bellDrop = document.getElementById('notifDropdown');
+                if (bellDrop) {
+                    bellDrop.classList.add('open');
+                    renderBellUI();
+                }
                 n.close();
             };
         } catch (e) {}
@@ -465,7 +475,6 @@ function sendDesktopNotification(title, body) {
     }
 }
 
-/* 第 2 點：按「測試鈴聲」時，恢復像初始版本一樣的右下角桌面彈窗提醒 */
 function testAlarm() {
     ensureAudioContext();
     playSingleChime();
@@ -706,7 +715,7 @@ function renderBellUI() {
     if (!listEl) return;
 
     if (notifHistory.length === 0) {
-        listEl.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:24px 10px; font-size:13px;">待辦清單已全部完成 🎉</div>`;
+        listEl.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:24px 10px; font-size:14px;">待辦清單已全部完成 🎉</div>`;
         return;
     }
 
@@ -940,8 +949,25 @@ function setupFirebaseListeners() {
             syncBadge.className = 'sync-badge connected';
             syncBadge.innerText = '🟢 雲端已同步';
         }
-        renderGrid();
-        if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+
+        const activeEl = document.activeElement;
+        const isTypingResource = activeEl && activeEl.classList && activeEl.classList.contains('res-num-input');
+        const isTypingTimer = activeEl && activeEl.classList && activeEl.classList.contains('time-input');
+
+        if (!isTypingTimer) {
+            renderGrid();
+        }
+        if (typeof renderResourcesGrid === 'function') {
+            if (isTypingResource) {
+                accounts.forEach(acc => {
+                    if (typeof refreshAccountResourceVisualsOnly === 'function') {
+                        refreshAccountResourceVisualsOnly(acc.id, activeEl.id);
+                    }
+                });
+            } else {
+                renderResourcesGrid();
+            }
+        }
         updateTimeline(true);
         notifyDataReadyForSplash();
         isInitialLoadDone = true;
@@ -973,8 +999,6 @@ function setupFirebaseListeners() {
 
 // ==========================================
 // 9. 職位自動排程與狀態邏輯
-//    - 同帳號同一職位：拿到職位後有 10 分鐘冷卻，冷卻內不能重新申請同一職位
-//    - 同帳號不同職位（士兵 vs 科技）：沒有 10 分鐘冷卻，但不能同一時間（重疊時標示提醒）
 // ==========================================
 function generateJobOptions(selectedVal = '', emptyLabel = '無預約') {
     let html = `<option value="" ${!selectedVal ? 'selected' : ''}>${emptyLabel}</option>`;
@@ -1170,9 +1194,6 @@ function updateInputVal(accId, category, id, field, val) {
     saveState();
 }
 
-/* 第 4 & 5 點修復：
-   - 由 0 首次輸入兩位數（例如 18、24）即時同步並自動跳格
-   - 輸入一位數（例如 6）後按 -> 可靠跳到下一格 */
 function handleTimerInput(event, inputEl, accId, category, id, field, nextIdStr) {
     let clean = inputEl.value.replace(/\D/g, '').slice(0, 2);
     if (field === 'h' && Number(clean) > 23) clean = '23';
@@ -1243,7 +1264,6 @@ function startPresetTimer(accId, category, id, d, h, m) {
     startTimer(accId, category, id);
 }
 
-/* 第 1 點：點擊「修改」時保留目前剩餘時間帶回天/時/分方便調整 */
 function resetTimer(accId, category, id) {
     const item = store[accId][category].find(it => it.id === id);
     if (!item) return;
@@ -1402,10 +1422,6 @@ function renderTimerRow(accId, category, item, index, isMulti) {
     `;
 }
 
-/* 第 3、6、7 點整合：
-   - 第 3 點：前方直接可按「⏳ 待確認 / ✔ 已確認」切換確認，不擅自替玩家拍板；顯示同職位 10 分鐘冷卻與同帳號雙職位同時間重疊警示
-   - 第 6 點：今天/明天外粗框（due-today / due-tomorrow）套用到職位卡片
-   - 第 7 點：右側狀態標籤（士兵與科技職位皆適用）佔 1.5~2 行高度且不撐高整列 */
 function renderJobSummaryBox(accId) {
     const s = store[accId];
     const now = getAccurateNow();
@@ -1556,7 +1572,7 @@ function updateTimeline(force = false) {
     const visibleTasks = showAllTimelineDays ? allTasks : allTasks.filter(t => t.endTime < limitDate);
 
     if (visibleTasks.length === 0) {
-        tasksEl.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:24px 8px; font-size:13px;">目前沒有進行中的倒數項目</div>`;
+        tasksEl.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:24px 8px; font-size:14px;">目前沒有進行中的倒數項目</div>`;
     } else {
         let lastDateStr = '';
         tasksEl.innerHTML = visibleTasks.map(t => {
@@ -1574,9 +1590,9 @@ function updateTimeline(force = false) {
                         <span class="tl-acc-name">${t.accName}</span>
                         <span class="tag ${t.tagClass}">${t.label}</span>
                     </div>
-                    <div style="text-align:right; font-size:12px;">
+                    <div style="text-align:right; font-size:13px;">
                         <div>${getDayTagHtml(t.endTime)}${formatFullDateTime(t.endTime)}</div>
-                        <div style="font-size:11px; opacity:0.8;">${formatCountdown(t.endTime - now)}</div>
+                        <div style="font-size:12px; opacity:0.85;">${formatCountdown(t.endTime - now)}</div>
                     </div>
                 </div>
             `;
