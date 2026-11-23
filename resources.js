@@ -185,7 +185,7 @@ function renderResourcesGrid() {
                                 📁 選檔
                             </button>
                         </div>
-                        <div class="res-paste-hint">${statusMsg ? `<span class="res-ocr-status">${statusMsg}</span>` : 'Ctrl+V 貼上 In Stock'}</div>
+                        <div class="res-paste-hint">${statusMsg ? `<span class="res-ocr-status">${statusMsg}</span>` : 'Ctrl+V 貼上資源總量截圖'}</div>
                     </div>
 
                     <div class="res-merged-col prio-col" id="res_prio_${acc.id}">
@@ -300,8 +300,15 @@ document.addEventListener('paste', (event) => {
 });
 
 // ==========================================
-// OCR 辨識區段（保持原狀未改動）
+// 精準 4 格固定座標 OCR 辨識（中英文介面通用，完全避開 Items）
 // ==========================================
+const FIXED_IN_STOCK_BOXES = [
+    { key: 'bread', y0: 0.335, y1: 0.405 },
+    { key: 'wood',  y0: 0.405, y1: 0.475 },
+    { key: 'stone', y0: 0.475, y1: 0.545 },
+    { key: 'iron',  y0: 0.545, y1: 0.615 }
+];
+
 async function getOcrWorker() {
     if (typeof Tesseract === 'undefined') {
         throw new Error("Tesseract OCR 尚未載入");
@@ -309,50 +316,19 @@ async function getOcrWorker() {
     if (tesseractWorker) return tesseractWorker;
     tesseractWorker = await Tesseract.createWorker('eng');
     await tesseractWorker.setParameters({
-        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.'
+        tessedit_char_whitelist: '0123456789.BMK',
+        tessedit_pageseg_mode: '7'
     });
     return tesseractWorker;
 }
 
-function preprocessImageToCanvas(file) {
+function loadImageFromBlob(file) {
     return new Promise((resolve, reject) => {
         const url = URL.createObjectURL(file);
         const img = new Image();
         img.onload = () => {
             URL.revokeObjectURL(url);
-            const isTwoPanel = (img.width / img.height) > 0.9;
-            let sx, sy, sw, sh;
-
-            if (isTwoPanel) {
-                sx = Math.round(img.width * 0.05);
-                sy = Math.round(img.height * 0.22);
-                sw = Math.round(img.width * 0.48);
-                sh = Math.round(img.height * 0.66);
-            } else {
-                sx = Math.round(img.width * 0.12);
-                sy = Math.round(img.height * 0.22);
-                sw = Math.round(img.width * 0.86);
-                sh = Math.round(img.height * 0.66);
-            }
-
-            const scale = 2.5;
-            const canvas = document.createElement('canvas');
-            canvas.width = Math.round(sw * scale);
-            canvas.height = Math.round(sh * scale);
-            const ctx = canvas.getContext('2d');
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const d = imgData.data;
-            for (let i = 0; i < d.length; i += 4) {
-                const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-                const val = gray < 150 ? 0 : 255;
-                d[i] = d[i + 1] = d[i + 2] = val;
-            }
-            ctx.putImageData(imgData, 0, 0);
-            resolve({ canvas, width: canvas.width, height: canvas.height });
+            resolve(img);
         };
         img.onerror = (e) => {
             URL.revokeObjectURL(url);
@@ -362,79 +338,59 @@ function preprocessImageToCanvas(file) {
     });
 }
 
-function fixMissingDecimalToken(numStr, unit) {
-    let clean = String(numStr || '').trim();
-    const upperUnit = String(unit || 'M').toUpperCase();
-    if (upperUnit === 'B' && !clean.includes('.') && clean.length >= 3) {
-        clean = `${clean[0]}.${clean.slice(1, 3)}`;
+function cropFixedInStockCell(img, y0Ratio, y1Ratio) {
+    const isTwoPanel = (img.width / img.height) > 0.9;
+    const panelWidth = isTwoPanel ? img.width * 0.5 : img.width;
+
+    // 嚴格鎖定在右側「In Stock / 資源總量」欄位（65% ~ 90%），完全不會切到中間 Items
+    const sx = Math.round(panelWidth * 0.65);
+    const sw = Math.round(panelWidth * 0.25);
+    const sy = Math.round(img.height * y0Ratio);
+    const sh = Math.round(img.height * (y1Ratio - y0Ratio));
+
+    const scale = 3;
+    const pad = 18;
+    const canvas = document.createElement('canvas');
+    canvas.width = sw * scale + pad * 2;
+    canvas.height = sh * scale + pad * 2;
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, sx, sy, sw, sh, pad, pad, sw * scale, sh * scale);
+
+    // 針對米黃背景 + 深棕色粗體字做高對比二值化，保留小數點
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+        const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        const val = lum < 155 ? 0 : 255;
+        d[i] = d[i + 1] = d[i + 2] = val;
     }
-    return { num: clean, unit: upperUnit };
+    ctx.putImageData(imgData, 0, 0);
+    return canvas;
 }
 
-function extractLabeledInStockValues(data, canvasWidth, canvasHeight) {
-    const rawWords = Array.isArray(data && data.words) ? data.words : [];
-    const tokenRegex = /^(\d+(?:\.\d+)?)\s*([BMK])$/i;
-    const rowTolerance = Math.max(28, Math.round(canvasHeight * 0.055));
+function parseOcrCellText(rawText) {
+    const clean = String(rawText || '').replace(/\s+/g, '').toUpperCase();
+    const match = clean.match(/(\d+(?:\.\d+)?)([BMK])/);
+    if (!match) return null;
 
-    const labelY = { bread: null, wood: null, stone: null, iron: null };
-    const numTokens = [];
+    let numStr = match[1];
+    const unit = match[2];
 
-    for (const w of rawWords) {
-        if (!w || !w.bbox) continue;
-        const rawText = String(w.text || '').replace(/,/g, '').trim();
-        const lowerText = rawText.toLowerCase();
-        const cy = (w.bbox.y0 + w.bbox.y1) / 2;
-        const cx = (w.bbox.x0 + w.bbox.x1) / 2;
-
-        if (cx < canvasWidth * 0.48) {
-            if (lowerText.includes('bread') || lowerText === 'read') labelY.bread = cy;
-            else if (lowerText.includes('wood')) labelY.wood = cy;
-            else if (lowerText.includes('stone') || lowerText === 'tone') labelY.stone = cy;
-            else if (lowerText.includes('iron') || lowerText === 'ron') labelY.iron = cy;
-        }
-
-        const m = tokenRegex.exec(rawText);
-        if (m && cx > canvasWidth * 0.62) {
-            numTokens.push({ ...fixMissingDecimalToken(m[1], m[2]), cx, cy });
-        }
+    // 若偶發漏掉小數點且為 B 單位（例如 158B -> 1.58B）
+    if (unit === 'B' && !numStr.includes('.') && numStr.length >= 3) {
+        numStr = `${numStr[0]}.${numStr.slice(1, 3)}`;
     }
 
-    const resultMap = { bread: null, wood: null, stone: null, iron: null };
-    const keys = ['bread', 'wood', 'stone', 'iron'];
+    const numVal = parseFloat(numStr);
+    if (isNaN(numVal) || numVal <= 0) return null;
 
-    keys.forEach(k => {
-        if (labelY[k] !== null) {
-            const rowMatches = numTokens.filter(t => Math.abs(t.cy - labelY[k]) <= rowTolerance);
-            if (rowMatches.length > 0) {
-                rowMatches.sort((a, b) => b.cx - a.cx);
-                resultMap[k] = rowMatches[0];
-            }
-        }
-    });
-
-    if (numTokens.length >= 4 && keys.some(k => !resultMap[k])) {
-        const sortedByY = [...numTokens].sort((a, b) => a.cy - b.cy);
-        const rows = [];
-        for (const tok of sortedByY) {
-            const existing = rows.find(r => Math.abs(r.avgY - tok.cy) <= rowTolerance);
-            if (existing) {
-                existing.items.push(tok);
-                existing.avgY = existing.items.reduce((s, it) => s + it.cy, 0) / existing.items.length;
-            } else {
-                rows.push({ avgY: tok.cy, items: [tok] });
-            }
-        }
-        if (rows.length >= 4) {
-            keys.forEach((k, idx) => {
-                if (!resultMap[k] && rows[idx]) {
-                    const rowItems = rows[idx].items.sort((a, b) => b.cx - a.cx);
-                    resultMap[k] = rowItems[0];
-                }
-            });
-        }
-    }
-
-    return resultMap;
+    return { num: numStr, unit };
 }
 
 async function runOcrOnImageFile(file, accId) {
@@ -442,24 +398,23 @@ async function runOcrOnImageFile(file, accId) {
     renderResourcesGrid();
 
     try {
-        const { canvas, width, height } = await preprocessImageToCanvas(file);
+        const img = await loadImageFromBlob(file);
         const worker = await getOcrWorker();
-        const { data } = await worker.recognize(canvas);
-        const mapped = extractLabeledInStockValues(data || {}, width, height);
-
-        const resKeys = ['bread', 'wood', 'stone', 'iron'];
         let filledCount = 0;
-        resKeys.forEach(k => {
-            const tok = mapped[k];
-            if (tok) {
-                resourcesStore[accId][k] = { val: tok.num, unit: tok.unit };
+
+        for (const box of FIXED_IN_STOCK_BOXES) {
+            const cellCanvas = cropFixedInStockCell(img, box.y0, box.y1);
+            const { data } = await worker.recognize(cellCanvas);
+            const parsed = parseOcrCellText(data && data.text);
+            if (parsed) {
+                resourcesStore[accId][box.key] = { val: parsed.num, unit: parsed.unit };
                 filledCount++;
             }
-        });
+        }
 
         ocrStatusText[accId] = filledCount > 0
-            ? `已填入 ${filledCount} 項 In Stock`
-            : '未認出數值，請手動輸入';
+            ? `已填入 ${filledCount} 項資源總量`
+            : '未認出數值，請確認截圖格式';
         renderResourcesGrid();
         saveState();
     } catch (err) {
