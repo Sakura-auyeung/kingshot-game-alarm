@@ -1,13 +1,17 @@
 // ==========================================
-// 資源採集比例計算 & 截圖 OCR 辨識模組
+// 資源採集計算 + Tesseract.js OCR 辨識模組
 // ==========================================
 
 const RESOURCE_DEFS = [
-    { key: 'bread', label: '糧食', emoji: '🍞', ratio: 20 },
-    { key: 'wood',  label: '木材', emoji: '🪵', ratio: 20 },
-    { key: 'stone', label: '石材', emoji: '🪨', ratio: 4  },
-    { key: 'iron',  label: '鐵',   emoji: '⛓️', ratio: 1  }
+    { key: 'bread',  label: '糧食', iconFile: './assets/item_icon_bread.png', ratio: 20 },
+    { key: 'wood',   label: '木材', iconFile: './assets/item_icon_wood.png',  ratio: 20 },
+    { key: 'stone',  label: '石材', iconFile: './assets/item_icon_stone.png', ratio: 4  },
+    { key: 'iron',   label: '鐵',   iconFile: './assets/item_icon_icon.png',  ratio: 1  }
 ];
+
+function renderResIconHtml(item) {
+    return `<span class="res-icon-wrap"><img class="res-item-png" src="${item.iconFile}" alt="${item.label}"></span>`;
+}
 
 let resourcesStore = {
     h: { bread: { val: '', unit: 'M' }, wood: { val: '', unit: 'M' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } },
@@ -111,7 +115,7 @@ function renderResourcesGrid() {
         const statusMsg = ocrStatusText[acc.id] || '';
 
         const bestHtml = analysis.hasAny && analysis.bestItem
-            ? `<span class="res-best-badge">最缺：${analysis.bestItem.emoji} ${analysis.bestItem.label}</span>`
+            ? `<span class="res-best-badge" style="display:inline-flex;align-items:center;gap:4px;">最缺：${renderResIconHtml(analysis.bestItem)}${analysis.bestItem.label}</span>`
             : `<span class="status-pill none">未輸入數量</span>`;
 
         const gapText = (analysis.hasAny && analysis.gapM !== null)
@@ -122,7 +126,8 @@ function renderResourcesGrid() {
             <div class="res-row-card ${item.tierClass}">
                 <div class="res-row-top">
                     <div class="res-name-group">
-                        <span>${item.emoji} ${item.label}</span>
+                        ${renderResIconHtml(item)}
+                        <span>${item.label}</span>
                         <span class="res-ratio-tag">÷${item.ratio}</span>
                     </div>
                     <div class="res-input-group">
@@ -157,7 +162,7 @@ function renderResourcesGrid() {
                             📁 選檔
                         </button>
                     </div>
-                    <div class="res-paste-hint">截圖後直接按 Ctrl+V 貼上（精準鎖定紅框 4 項 In Stock）</div>
+                    <div class="res-paste-hint">截圖後直接按 Ctrl+V 貼上（按資源名稱對齊 In Stock）</div>
                     ${statusMsg ? `<div class="res-ocr-status">${statusMsg}</div>` : ''}
                 </div>
 
@@ -182,7 +187,7 @@ function updateResourceField(accId, resKey, field, value) {
     if (!resourcesStore[accId][resKey]) resourcesStore[accId][resKey] = { val: '', unit: 'M' };
     resourcesStore[accId][resKey][field] = value;
     renderResourcesGrid();
-    if (typeof saveState === 'function') saveState();
+    saveState();
 }
 
 function handleResFileChange(event) {
@@ -216,7 +221,7 @@ async function getOcrWorker() {
     if (tesseractWorker) return tesseractWorker;
     tesseractWorker = await Tesseract.createWorker('eng');
     await tesseractWorker.setParameters({
-        tessedit_char_whitelist: '0123456789.BMKbmK'
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.'
     });
     return tesseractWorker;
 }
@@ -227,24 +232,22 @@ function preprocessImageToCanvas(file) {
         const img = new Image();
         img.onload = () => {
             URL.revokeObjectURL(url);
-
             const isTwoPanel = (img.width / img.height) > 0.9;
             let sx, sy, sw, sh;
 
-            // 只包住糧、木、石、鐵頭 4 行，徹底排除第 5 行金幣
             if (isTwoPanel) {
-                sx = Math.round(img.width * 0.32);
-                sy = Math.round(img.height * 0.31);
-                sw = Math.round(img.width * 0.20);
-                sh = Math.round(img.height * 0.255);
+                sx = Math.round(img.width * 0.05);
+                sy = Math.round(img.height * 0.22);
+                sw = Math.round(img.width * 0.48);
+                sh = Math.round(img.height * 0.66);
             } else {
-                sx = Math.round(img.width * 0.64);
-                sy = Math.round(img.height * 0.31);
-                sw = Math.round(img.width * 0.34);
-                sh = Math.round(img.height * 0.255);
+                sx = Math.round(img.width * 0.12);
+                sy = Math.round(img.height * 0.22);
+                sw = Math.round(img.width * 0.86);
+                sh = Math.round(img.height * 0.66);
             }
 
-            const scale = 3;
+            const scale = 2.5;
             const canvas = document.createElement('canvas');
             canvas.width = Math.round(sw * scale);
             canvas.height = Math.round(sh * scale);
@@ -253,17 +256,15 @@ function preprocessImageToCanvas(file) {
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
-            // 調柔對比度增強（保留灰度抗鋸齒，避免 B 黏成 8 或小數點消失）
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const d = imgData.data;
             for (let i = 0; i < d.length; i += 4) {
                 const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-                let contrasted = (gray - 135) * 2.2 + 135;
-                contrasted = Math.max(0, Math.min(255, contrasted));
-                d[i] = d[i + 1] = d[i + 2] = contrasted;
+                const val = gray < 150 ? 0 : 255;
+                d[i] = d[i + 1] = d[i + 2] = val;
             }
             ctx.putImageData(imgData, 0, 0);
-            resolve(canvas);
+            resolve({ canvas, width: canvas.width, height: canvas.height });
         };
         img.onerror = (e) => {
             URL.revokeObjectURL(url);
@@ -274,97 +275,105 @@ function preprocessImageToCanvas(file) {
 }
 
 function fixMissingDecimalToken(numStr, unit) {
-    let clean = String(numStr || '').replace(/,/g, '.').trim();
-    let upperUnit = String(unit || '').toUpperCase();
-
-    // 修正「B」被 OCR 誤認成「8」的情況（例如 1.478 -> 1.47B, 2.398 -> 2.39B）
-    if (!upperUnit) {
-        const m8 = /^(\d+\.\d{2})8$/.exec(clean);
-        if (m8) {
-            clean = m8[1];
-            upperUnit = 'B';
-        } else {
-            upperUnit = 'M';
-        }
-    }
-
+    let clean = String(numStr || '').trim();
+    const upperUnit = String(unit || 'M').toUpperCase();
     if (upperUnit === 'B' && !clean.includes('.') && clean.length >= 3) {
         clean = `${clean[0]}.${clean.slice(1, 3)}`;
     }
     return { num: clean, unit: upperUnit };
 }
 
-function extractRedBoxStockValues(data) {
-    const tokenRegex = /^(\d+(?:\.\d+)?)\s*([BMK])?$|^(\d+\.\d{2}8)$/i;
+function extractLabeledInStockValues(data, canvasWidth, canvasHeight) {
     const rawWords = Array.isArray(data && data.words) ? data.words : [];
+    const tokenRegex = /^(\d+(?:\.\d+)?)\s*([BMK])$/i;
+    const rowTolerance = Math.max(28, Math.round(canvasHeight * 0.055));
 
+    const labelY = { bread: null, wood: null, stone: null, iron: null };
     const numTokens = [];
+
     for (const w of rawWords) {
-        const clean = String(w.text || '').replace(/,/g, '.').trim();
-        const m = tokenRegex.exec(clean);
-        if (m && w.bbox) {
-            const cy = (w.bbox.y0 + w.bbox.y1) / 2;
-            if (m[3]) {
-                numTokens.push({ ...fixMissingDecimalToken(m[3], ''), cy });
-            } else if (m[2]) {
-                numTokens.push({ ...fixMissingDecimalToken(m[1], m[2]), cy });
-            }
+        if (!w || !w.bbox) continue;
+        const rawText = String(w.text || '').replace(/,/g, '').trim();
+        const lowerText = rawText.toLowerCase();
+        const cy = (w.bbox.y0 + w.bbox.y1) / 2;
+        const cx = (w.bbox.x0 + w.bbox.x1) / 2;
+
+        if (cx < canvasWidth * 0.48) {
+            if (lowerText.includes('bread') || lowerText === 'read') labelY.bread = cy;
+            else if (lowerText.includes('wood')) labelY.wood = cy;
+            else if (lowerText.includes('stone') || lowerText === 'tone') labelY.stone = cy;
+            else if (lowerText.includes('iron') || lowerText === 'ron') labelY.iron = cy;
+        }
+
+        const m = tokenRegex.exec(rawText);
+        if (m && cx > canvasWidth * 0.62) {
+            numTokens.push({ ...fixMissingDecimalToken(m[1], m[2]), cx, cy });
         }
     }
 
-    if (numTokens.length > 0) {
-        numTokens.sort((a, b) => a.cy - b.cy);
+    const resultMap = { bread: null, wood: null, stone: null, iron: null };
+    const keys = ['bread', 'wood', 'stone', 'iron'];
+
+    keys.forEach(k => {
+        if (labelY[k] !== null) {
+            const rowMatches = numTokens.filter(t => Math.abs(t.cy - labelY[k]) <= rowTolerance);
+            if (rowMatches.length > 0) {
+                rowMatches.sort((a, b) => b.cx - a.cx);
+                resultMap[k] = rowMatches[0];
+            }
+        }
+    });
+
+    if (numTokens.length >= 4 && keys.some(k => !resultMap[k])) {
+        const sortedByY = [...numTokens].sort((a, b) => a.cy - b.cy);
         const rows = [];
-        for (const tok of numTokens) {
-            const targetRow = rows.find(r => Math.abs(r.avgY - tok.cy) <= 35);
-            if (targetRow) {
-                targetRow.items.push(tok);
-                targetRow.avgY = targetRow.items.reduce((s, it) => s + it.cy, 0) / targetRow.items.length;
+        for (const tok of sortedByY) {
+            const existing = rows.find(r => Math.abs(r.avgY - tok.cy) <= rowTolerance);
+            if (existing) {
+                existing.items.push(tok);
+                existing.avgY = existing.items.reduce((s, it) => s + it.cy, 0) / existing.items.length;
             } else {
                 rows.push({ avgY: tok.cy, items: [tok] });
             }
         }
-        return rows.slice(0, 4).map(r => r.items[r.items.length - 1]);
-    }
-
-    const pairedRegex = /(\d+(?:\.\d+)?)\s*([BMK])|(\d+\.\d{2}8)/gi;
-    const results = [];
-    let match;
-    while ((match = pairedRegex.exec((data && data.text) || '')) !== null && results.length < 4) {
-        if (match[3]) {
-            results.push(fixMissingDecimalToken(match[3], ''));
-        } else {
-            results.push(fixMissingDecimalToken(match[1], match[2]));
+        if (rows.length >= 4) {
+            keys.forEach((k, idx) => {
+                if (!resultMap[k] && rows[idx]) {
+                    const rowItems = rows[idx].items.sort((a, b) => b.cx - a.cx);
+                    resultMap[k] = rowItems[0];
+                }
+            });
         }
     }
-    return results;
+
+    return resultMap;
 }
 
 async function runOcrOnImageFile(file, accId) {
-    ocrStatusText[accId] = 'OCR 辨識紅框 In Stock 中...';
+    ocrStatusText[accId] = 'OCR 辨識 In Stock 中...';
     renderResourcesGrid();
 
     try {
-        const canvas = await preprocessImageToCanvas(file);
+        const { canvas, width, height } = await preprocessImageToCanvas(file);
         const worker = await getOcrWorker();
         const { data } = await worker.recognize(canvas);
-        const chosen = extractRedBoxStockValues(data || {});
+        const mapped = extractLabeledInStockValues(data || {}, width, height);
 
         const resKeys = ['bread', 'wood', 'stone', 'iron'];
         let filledCount = 0;
-        chosen.forEach((tok, idx) => {
-            const k = resKeys[idx];
-            if (k && tok) {
+        resKeys.forEach(k => {
+            const tok = mapped[k];
+            if (tok) {
                 resourcesStore[accId][k] = { val: tok.num, unit: tok.unit };
                 filledCount++;
             }
         });
 
         ocrStatusText[accId] = filledCount > 0
-            ? `已填入紅框 ${filledCount} 項 In Stock`
+            ? `已精準填入 ${filledCount} 項 In Stock`
             : '未認出清晰數值，請手動輸入';
         renderResourcesGrid();
-        if (typeof saveState === 'function') saveState();
+        saveState();
     } catch (err) {
         console.error('OCR Error:', err);
         ocrStatusText[accId] = '辨識失敗，請手動輸入';
