@@ -4,19 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>多帳戶鬧鐘與職位助手</title>
-    <!-- 引入樣式表 -->
-    <link rel="stylesheet" href="./style.css">
+    <link rel="icon" type="image/png" href="./assets/chara_face_1-1.png">
+    <link rel="apple-touch-icon" href="./assets/chara_face_1-1.png">
     <!-- 引入 Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <!-- 引入 Tesseract.js 純前端 OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- 外部樣式表 -->
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
     <div class="header-frill"></div>
 
-    <!-- 開場熱鬆餅動畫遮罩 -->
     <div class="loading-splash" id="loadingSplash">
         <div class="loading-stage">
             <img class="loading-frame frame-1" src="./assets/img_op_1.png" alt="">
@@ -37,24 +38,25 @@
         }, 950);
     </script>
 
-    <!-- 頂部導覽列 -->
     <div class="header">
         <div class="title-group">
             <img class="header-mascot-img" src="./assets/chara_face_1-1.png" alt="鬆弛熊">
-            <h1>多帳戶鬧鐘助手</h1>
+            <h1 id="pageMainTitle">多帳戶鬧鐘助手</h1>
             <span class="sync-badge" id="syncBadge">⏳ 連線雲端中...</span>
             <span class="notif-badge" id="notifBadge" onclick="requestDesktopNotificationPermission()">🔔 點擊開啟右下角桌面彈窗</span>
         </div>
-        <div class="header-btns">
-            <button class="pill-btn btn-event-toggle active" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光：顯示</button>
-            <button class="pill-btn btn-test" onclick="testAlarm()">🔔 測試鈴聲</button>
-            <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">
-                <img class="btn-icon-svg" src="./assets/btn_change.svg" alt=""> 切換時間線
-            </button>
-            <button class="pill-btn btn-res" onclick="toggleResourcesView()" id="resToggleBtn">
-                🌾 資源採集
-            </button>
 
+        <div class="header-btns">
+            <!-- 計時頁面專屬按鈕區 -->
+            <div class="timer-only-btns" id="timerOnlyBtns">
+                <button class="pill-btn btn-event-toggle active" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光：顯示</button>
+                <button class="pill-btn btn-test" onclick="testAlarm()">🔔 測試鈴聲</button>
+                <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">
+                    <img class="btn-icon-svg" src="./assets/btn_change.svg" alt=""> 切換時間線
+                </button>
+            </div>
+
+            <!-- 全局保留：鈴鐺待辦清單 -->
             <div class="bell-wrapper" id="bellWrapper">
                 <button class="btn-bell" id="bellBtn" title="待辦清單與提醒紀錄" onclick="toggleBellDropdown(event)">
                     🔔
@@ -71,13 +73,26 @@
                     <div class="notif-dropdown-list" id="notifDropdownList"></div>
                 </div>
             </div>
+
+            <!-- 全局保留：粉藍圓圈兩橫線功能選單 -->
+            <div class="nav-menu-wrapper" id="navMenuWrapper">
+                <button class="btn-nav-circle" id="navMenuBtn" title="切換功能分頁" onclick="toggleNavDropdown(event)" aria-label="功能選單">
+                    <span class="nav-two-lines"></span>
+                </button>
+                <div class="nav-dropdown" id="navDropdown" onclick="event.stopPropagation()">
+                    <button type="button" class="nav-dropdown-item active" id="navItemAlarm" onclick="selectNavPage('grid')">
+                        ⏰ 鬧鐘
+                    </button>
+                    <button type="button" class="nav-dropdown-item" id="navItemResources" onclick="selectNavPage('resources')">
+                        🌾 資源採集
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- 主視圖：三帳戶計時器 -->
     <div class="grid-view" id="gridView"></div>
 
-    <!-- 時間線與職位預約視圖 -->
     <div class="timeline-view" id="timelineView">
         <div class="timeline-grid">
             <div class="timeline-column">
@@ -97,11 +112,10 @@
         </div>
     </div>
 
-    <!-- 資源採集計算與 OCR 視圖 -->
     <div class="resources-view" id="resourcesView">
         <div class="res-top-banner">
             <div>
-                <strong>直接貼上截圖（Ctrl+V）</strong>：點一下帳戶目標掣即鎖定貼上對象，截圖後直接按 <strong>Ctrl+V</strong> 即認紅框 In Stock 4 項數值。
+                <strong>直接貼上截圖（Ctrl+V）</strong>：點一下帳戶目標掣即鎖定貼上對象，截圖後直接按 <strong>Ctrl+V</strong> 自動辨識 4 項 In Stock 庫存。
             </div>
             <div>
                 比例：<strong>糧 20 : 木 20 : 石 4 : 鐵 1</strong>（實心綠＝最缺 ｜ 實心紅＝最唔缺）
@@ -110,10 +124,29 @@
         <div class="res-grid" id="resourcesGrid"></div>
     </div>
 
+    <!-- 奶油風雙欄位角色編輯彈窗 -->
+    <div class="profile-modal-backdrop" id="profileEditModal" onclick="closeProfileEditModal()">
+        <div class="profile-modal-card" onclick="event.stopPropagation()">
+            <div class="profile-modal-title">✏️ 編輯角色查詢資料</div>
+            <div class="profile-modal-field">
+                <label for="modalProfileName">遊戲角色名稱</label>
+                <input type="text" id="modalProfileName" placeholder="例如：Zoey">
+            </div>
+            <div class="profile-modal-field">
+                <label for="modalProfileAlliance">所屬聯盟標籤</label>
+                <input type="text" id="modalProfileAlliance" placeholder="例如：TER 或 777">
+            </div>
+            <div class="profile-modal-actions">
+                <button type="button" class="btn-modal-cancel" onclick="closeProfileEditModal()">取消</button>
+                <button type="button" class="btn-modal-save" onclick="saveProfileEditModal()">儲存並更新</button>
+            </div>
+        </div>
+    </div>
+
     <input type="file" id="resFileInput" accept="image/*" style="display:none" onchange="handleResFileChange(event)">
 
-    <!-- 引入拆分的邏輯模組 -->
-    <script src="./resources.js"></script>
+    <!-- 主邏輯與資源 OCR 模組 -->
     <script src="./app.js"></script>
+    <script src="./resources.js"></script>
 </body>
 </html>
