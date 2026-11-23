@@ -103,6 +103,18 @@ function openFilePickerForAcc(event, accId) {
     }
 }
 
+/* 允許個位/十位/百位整數，以及小數點與小數點後兩位 */
+function sanitizeResourceNumberInput(raw) {
+    let s = String(raw || '').replace(/[^\d.]/g, '');
+    const dotIndex = s.indexOf('.');
+    if (dotIndex !== -1) {
+        const intPart = s.slice(0, dotIndex);
+        const decPart = s.slice(dotIndex + 1).replace(/\./g, '').slice(0, 2);
+        s = `${intPart}.${decPart}`;
+    }
+    return s;
+}
+
 function renderResourcesGrid() {
     const grid = document.getElementById('resourcesGrid');
     if (!grid) return;
@@ -115,15 +127,15 @@ function renderResourcesGrid() {
         const statusMsg = ocrStatusText[acc.id] || '';
 
         const bestHtml = analysis.hasAny && analysis.bestItem
-            ? `<span class="res-best-badge" style="display:inline-flex;align-items:center;gap:4px;">最缺：${renderResIconHtml(analysis.bestItem)}${analysis.bestItem.label}</span>`
-            : `<span class="status-pill none">未輸入數量</span>`;
+            ? `<span class="res-best-badge">${renderResIconHtml(analysis.bestItem)}${analysis.bestItem.label}</span>`
+            : `<span class="status-pill none">未填數量</span>`;
 
         const gapText = (analysis.hasAny && analysis.gapM !== null)
-            ? `紅綠差距：<strong>${analysis.gapM.toFixed(1)}M</strong>（除比例後）`
-            : `紅綠差距：--`;
+            ? `差距：<strong>${analysis.gapM.toFixed(1)}M</strong>`
+            : `差距：--`;
 
         const rowsHtml = analysis.items.map(item => `
-            <div class="res-row-card ${item.tierClass}">
+            <div class="res-row-card ${item.tierClass}" id="res_card_${acc.id}_${item.key}">
                 <div class="res-row-top">
                     <div class="res-name-group">
                         ${renderResIconHtml(item)}
@@ -132,10 +144,11 @@ function renderResourcesGrid() {
                     </div>
                     <div class="res-input-group">
                         <input type="text" inputmode="decimal" class="res-num-input"
+                            id="res_in_${acc.id}_${item.key}"
                             value="${item.valStr}" placeholder="0.00"
-                            oninput="updateResourceField('${acc.id}', '${item.key}', 'val', this.value)">
+                            oninput="onResourceNumberTyping('${acc.id}', '${item.key}', this)">
                         <select class="res-unit-select"
-                            onchange="updateResourceField('${acc.id}', '${item.key}', 'unit', this.value)">
+                            onchange="updateResourceUnit('${acc.id}', '${item.key}', this.value)">
                             <option value="K" ${item.unit === 'K' ? 'selected' : ''}>K</option>
                             <option value="M" ${item.unit === 'M' ? 'selected' : ''}>M</option>
                             <option value="B" ${item.unit === 'B' ? 'selected' : ''}>B</option>
@@ -143,8 +156,8 @@ function renderResourcesGrid() {
                     </div>
                 </div>
                 <div class="res-row-bottom">
-                    <span>${item.hasVal ? `庫存：${item.valStr}${item.unit}` : '未填寫'}</span>
-                    <span class="res-scaled-val">${item.hasVal ? formatScaledMillions(item.scaledVal) : '--'}</span>
+                    <span id="res_stock_${acc.id}_${item.key}">${item.hasVal ? `庫存：${item.valStr}${item.unit}` : '未填寫'}</span>
+                    <span class="res-scaled-val" id="res_scaled_${acc.id}_${item.key}">${item.hasVal ? formatScaledMillions(item.scaledVal) : '--'}</span>
                 </div>
             </div>
         `).join('');
@@ -153,26 +166,28 @@ function renderResourcesGrid() {
             <div class="account-column ${acc.id}">
                 ${renderProfileHeader(acc)}
 
-                <div class="res-paste-box ${isActiveTarget ? 'active-target' : ''}">
-                    <div class="res-paste-top">
-                        <button type="button" class="res-target-btn" onclick="setPasteTarget('${acc.id}')">
-                            ${isActiveTarget ? '✅ 貼上目標：' : '📌 設為貼上目標：'}[${displayName}]
-                        </button>
-                        <button type="button" class="res-pick-file-btn" onclick="openFilePickerForAcc(event, '${acc.id}')">
-                            📁 選檔
-                        </button>
+                <!-- 第 8 點：將「設為貼上目標/選檔」與「採集優先/紅線差距」精簡合併為 1 列 2 欄 -->
+                <div class="res-merged-row ${isActiveTarget ? 'active-target' : ''}">
+                    <div class="res-merged-col paste-col">
+                        <div class="res-paste-top">
+                            <button type="button" class="res-target-btn" onclick="setPasteTarget('${acc.id}')">
+                                ${isActiveTarget ? '✅ 目標：' : '📌 目標：'}[${displayName}]
+                            </button>
+                            <button type="button" class="res-pick-file-btn" title="選擇截圖檔" onclick="openFilePickerForAcc(event, '${acc.id}')">
+                                📁 選檔
+                            </button>
+                        </div>
+                        <div class="res-paste-hint">${statusMsg ? `<span class="res-ocr-status">${statusMsg}</span>` : 'Ctrl+V 貼上 In Stock'}</div>
                     </div>
-                    <div class="res-paste-hint">截圖後直接按 Ctrl+V 貼上（按資源名稱對齊 In Stock）</div>
-                    ${statusMsg ? `<div class="res-ocr-status">${statusMsg}</div>` : ''}
-                </div>
 
-                <div class="res-recommend-box">
-                    <div class="res-best-line">
-                        <span>採集優先</span>
-                        ${bestHtml}
-                    </div>
-                    <div class="res-gap-line">
-                        <span>${gapText}</span>
+                    <div class="res-merged-col prio-col" id="res_prio_${acc.id}">
+                        <div class="res-best-line">
+                            <span>採集優先</span>
+                            ${bestHtml}
+                        </div>
+                        <div class="res-gap-line">
+                            <span>${gapText}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -182,11 +197,63 @@ function renderResourcesGrid() {
     }).join('');
 }
 
-function updateResourceField(accId, resKey, field, value) {
+/* 局部更新數值、顏色與優先度，不整張重繪輸入框，避免游標失去焦點（修復第 9 點） */
+function refreshAccountResourceVisualsOnly(accId) {
+    const analysis = getAccountResourceAnalysis(accId);
+
+    const prioBox = document.getElementById(`res_prio_${accId}`);
+    if (prioBox) {
+        const bestHtml = analysis.hasAny && analysis.bestItem
+            ? `<span class="res-best-badge">${renderResIconHtml(analysis.bestItem)}${analysis.bestItem.label}</span>`
+            : `<span class="status-pill none">未填數量</span>`;
+        const gapText = (analysis.hasAny && analysis.gapM !== null)
+            ? `差距：<strong>${analysis.gapM.toFixed(1)}M</strong>`
+            : `差距：--`;
+        prioBox.innerHTML = `
+            <div class="res-best-line">
+                <span>採集優先</span>
+                ${bestHtml}
+            </div>
+            <div class="res-gap-line">
+                <span>${gapText}</span>
+            </div>
+        `;
+    }
+
+    analysis.items.forEach(item => {
+        const card = document.getElementById(`res_card_${accId}_${item.key}`);
+        if (card) {
+            card.className = `res-row-card ${item.tierClass}`;
+        }
+        const stockEl = document.getElementById(`res_stock_${accId}_${item.key}`);
+        if (stockEl) {
+            stockEl.innerText = item.hasVal ? `庫存：${item.valStr}${item.unit}` : '未填寫';
+        }
+        const scaledEl = document.getElementById(`res_scaled_${accId}_${item.key}`);
+        if (scaledEl) {
+            scaledEl.innerText = item.hasVal ? formatScaledMillions(item.scaledVal) : '--';
+        }
+    });
+}
+
+function onResourceNumberTyping(accId, resKey, inputEl) {
+    const cleaned = sanitizeResourceNumberInput(inputEl.value);
+    if (inputEl.value !== cleaned) {
+        inputEl.value = cleaned;
+    }
     if (!resourcesStore[accId]) resourcesStore[accId] = {};
     if (!resourcesStore[accId][resKey]) resourcesStore[accId][resKey] = { val: '', unit: 'M' };
-    resourcesStore[accId][resKey][field] = value;
-    renderResourcesGrid();
+    resourcesStore[accId][resKey].val = cleaned;
+
+    refreshAccountResourceVisualsOnly(accId);
+    saveState();
+}
+
+function updateResourceUnit(accId, resKey, unitVal) {
+    if (!resourcesStore[accId]) resourcesStore[accId] = {};
+    if (!resourcesStore[accId][resKey]) resourcesStore[accId][resKey] = { val: '', unit: 'M' };
+    resourcesStore[accId][resKey].unit = unitVal;
+    refreshAccountResourceVisualsOnly(accId);
     saveState();
 }
 
@@ -350,7 +417,7 @@ function extractLabeledInStockValues(data, canvasWidth, canvasHeight) {
 }
 
 async function runOcrOnImageFile(file, accId) {
-    ocrStatusText[accId] = 'OCR 辨識 In Stock 中...';
+    ocrStatusText[accId] = 'OCR 辨識中...';
     renderResourcesGrid();
 
     try {
@@ -370,8 +437,8 @@ async function runOcrOnImageFile(file, accId) {
         });
 
         ocrStatusText[accId] = filledCount > 0
-            ? `已精準填入 ${filledCount} 項 In Stock`
-            : '未認出清晰數值，請手動輸入';
+            ? `已填入 ${filledCount} 項 In Stock`
+            : '未認出數值，請手動輸入';
         renderResourcesGrid();
         saveState();
     } catch (err) {
