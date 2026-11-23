@@ -2,17 +2,25 @@
 // 1. Firebase 雲端即時資料庫設定
 // ==========================================
 const firebaseConfig = {
-    databaseURL: "https://kingshot-4391a-default-rtdb.asia-southeast1.firebasedatabase.app"
+    apiKey: "AIzaSyDjQS9NNkUwZ8bTeNb75WFp3at2jjKzWac",
+    authDomain: "kingshot-game-alarm.firebaseapp.com",
+    databaseURL: "https://kingshot-game-alarm-default-rtdb.firebaseio.com",
+    projectId: "kingshot-game-alarm",
+    storageBucket: "kingshot-game-alarm.firebasestorage.app",
+    messagingSenderId: "935740408911",
+    appId: "1:935740408911:web:ca2acd5a82822be227d63a"
 };
 
+let db = null;
 let dbRef = null;
 let profileDbRef = null;
 let hasFirebase = false;
 try {
-    if (typeof firebase !== 'undefined' && firebaseConfig.databaseURL.startsWith("https://")) {
+    if (typeof firebase !== 'undefined' && firebase.initializeApp) {
         firebase.initializeApp(firebaseConfig);
-        dbRef = firebase.database().ref("multi_timer_data");
-        profileDbRef = firebase.database().ref("multi_timer_profiles");
+        db = firebase.database();
+        dbRef = db.ref("alarm_state_v1");
+        profileDbRef = db.ref("account_profiles_v1");
         hasFirebase = true;
     }
 } catch (e) {
@@ -128,9 +136,39 @@ function getBearFaceFile(accId) {
 }
 
 let profiles = {
-    h: { queryName: 'Howard', queryAlliance: '777', name: 'Howard', alliance: '777', levelLabel: 'TG3', power: 0, avatar: '' },
-    z: { queryName: 'Zoey', queryAlliance: 'TER', name: 'Zoey', alliance: 'TER', levelLabel: 'TG5', power: 0, avatar: '' },
-    p: { queryName: 'Patrick', queryAlliance: '777', name: 'Patrick', alliance: '777', levelLabel: 'TG3', power: 0, avatar: '' }
+    h: {
+        queryName: 'Howard',
+        queryAlliance: '777',
+        name: 'Howard',
+        alliance: '777',
+        levelLabel: 'TG6',
+        power: 279000000,
+        powerRank: null,
+        avatar: '',
+        lastFetched: null
+    },
+    z: {
+        queryName: 'Zoey',
+        queryAlliance: 'TER',
+        name: 'Zoey',
+        alliance: 'TER',
+        levelLabel: 'TG8',
+        power: 430453250,
+        powerRank: 44,
+        avatar: 'https://got-global-avatar.akamaized.net/avatar/2026/11/07/v9JxWg_1794050377.png',
+        lastFetched: null
+    },
+    p: {
+        queryName: 'Patrick',
+        queryAlliance: '777',
+        name: 'Patrick',
+        alliance: '777',
+        levelLabel: 'TG5-3',
+        power: 264500000,
+        powerRank: null,
+        avatar: '',
+        lastFetched: null
+    }
 };
 
 let store = {
