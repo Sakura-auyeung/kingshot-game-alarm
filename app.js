@@ -837,7 +837,10 @@ function startNewRoundFromTodo(notifId, accId, category, itemId, d, h, m) {
             target.d = d;
             target.h = h;
             target.m = m;
-            target.endTime = new Date(getAccurateNow().getTime() + totalMs);
+            const endDate = new Date(getAccurateNow().getTime() + totalMs);
+            target.endTime = endDate;
+            if (category === 'soldiers') autoSyncJobFromTimer(accId, 'soldier', endDate);
+            if (category === 'tech') autoSyncJobFromTimer(accId, 'tech', endDate);
         }
     }
 
@@ -1219,14 +1222,28 @@ function getRecommendedJobSlotFromDate(endDate) {
     return d;
 }
 
-function autoSyncJobFromTimer(accId, type, endDate) {
+function getLatestActiveCategoryEndDate(accId, category) {
+    const nowMs = getAccurateNow().getTime();
+    const list = (store[accId] && Array.isArray(store[accId][category])) ? store[accId][category] : [];
+    let latestDate = null;
+    list.forEach(it => {
+        if (it.endTime && !isNaN(it.endTime.getTime()) && it.endTime.getTime() > nowMs) {
+            if (!latestDate || it.endTime.getTime() > latestDate.getTime()) {
+                latestDate = it.endTime;
+            }
+        }
+    });
+    return latestDate;
+}
+
+function autoSyncJobFromTimer(accId, type, endDate, forceSync = false) {
     const manualKey = type === 'soldier' ? 'soldierJobManual' : 'techJobManual';
     const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
     const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
     const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
 
-    // 若職位已鎖定確認、或曾手動設定時段、或目前仍在該職位 10 分鐘冷卻期內，絕對不刷新或解除鎖定
-    if (store[accId][confKey] || store[accId][manualKey] || isJobInCooldown(accId, type, getAccurateNow())) {
+    // 若職位已鎖定確認、或目前仍在該職位 10 分鐘冷卻期內，絕對不刷新或解除鎖定
+    if (!forceSync && (store[accId][confKey] || store[accId][manualKey] || isJobInCooldown(accId, type, getAccurateNow()))) {
         return;
     }
 
@@ -1290,6 +1307,8 @@ function shiftJobTime(accId, type, deltaMinutes) {
 function toggleJobConfirm(accId, type) {
     const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
     const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+    const manualKey = type === 'soldier' ? 'soldierJobManual' : 'techJobManual';
+
     if (!store[accId][dateKey]) {
         alert('請先選擇職位預約時間！');
         return;
@@ -1298,7 +1317,22 @@ function toggleJobConfirm(accId, type) {
         alert('同一職位目前仍在 10 分鐘冷卻中，冷卻結束後才能重新申請！');
         return;
     }
-    store[accId][confKey] = !store[accId][confKey];
+
+    const wasConfirmed = !!store[accId][confKey];
+    if (wasConfirmed) {
+        // 解除鎖定：取消手動固定旗標，並立刻對齊目前正在跑的士兵／科技倒數時間
+        store[accId][confKey] = false;
+        store[accId][manualKey] = false;
+        const cat = type === 'soldier' ? 'soldiers' : 'tech';
+        const activeEndDate = getLatestActiveCategoryEndDate(accId, cat);
+        if (activeEndDate) {
+            autoSyncJobFromTimer(accId, type, activeEndDate, true);
+        }
+    } else {
+        // 鎖定確認
+        store[accId][confKey] = true;
+    }
+
     renderGrid();
     updateTimeline(true);
     saveState();
