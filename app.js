@@ -368,22 +368,195 @@ async function saveProfileEditModal() {
 }
 
 // ==========================================
-// 6. 鈴聲提示 & 瀏覽器桌面通知
+// 6. 鈴聲提示 & 全分頁頂端浮動橫幅 & 桌面通知
 // ==========================================
-function ensureAudioContext() {
-    if (!audioCtx) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (AudioContext) audioCtx = new AudioContext();
+function injectGlobalToastStyles() {
+    if (document.getElementById('globalAlarmToastStyle')) return;
+    const style = document.createElement('style');
+    style.id = 'globalAlarmToastStyle';
+    style.textContent = `
+        .global-alarm-toast-container {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99998;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 440px;
+            max-width: calc(100vw - 24px);
+            pointer-events: none;
+        }
+        .global-alarm-toast {
+            pointer-events: auto;
+            background: linear-gradient(135deg, #FF7EA5 0%, #EB5A87 100%);
+            color: #FFFFFF;
+            border: 2.5px solid #FFFFFF;
+            border-radius: 18px;
+            padding: 11px 14px;
+            box-shadow: 0 10px 26px rgba(92, 61, 46, 0.32);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            animation: globalToastSlideDown 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .global-alarm-toast.acc-z {
+            background: linear-gradient(135deg, #F7B733 0%, #E69A15 100%);
+        }
+        .global-alarm-toast.acc-p {
+            background: linear-gradient(135deg, #58C984 0%, #38A866 100%);
+        }
+        .global-alarm-toast-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+        .global-alarm-toast-emoji {
+            font-size: 26px;
+            line-height: 1;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.25);
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .global-alarm-toast-text {
+            font-size: 14.5px;
+            font-weight: 800;
+            line-height: 1.3;
+            text-shadow: 0 1px 2px rgba(92, 61, 46, 0.25);
+        }
+        .global-alarm-toast-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .btn-toast-open {
+            background: #FFFFFF;
+            color: #5C3D2E;
+            border: none;
+            border-radius: 999px;
+            padding: 5px 11px;
+            font-size: 12.5px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(92, 61, 46, 0.16);
+        }
+        .btn-toast-open:hover {
+            transform: scale(1.04);
+        }
+        .btn-toast-close {
+            background: rgba(255, 255, 255, 0.25);
+            color: #FFFFFF;
+            border: 1.5px solid rgba(255, 255, 255, 0.75);
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        @keyframes globalToastSlideDown {
+            from { opacity: 0; transform: translateY(-18px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+function showGlobalAlarmBanner(eventObj) {
+    injectGlobalToastStyles();
+    let container = document.getElementById('globalAlarmToastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'globalAlarmToastContainer';
+        container.className = 'global-alarm-toast-container';
+        document.body.appendChild(container);
     }
-    if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume().catch(() => {});
+
+    const toastId = `toast_${eventObj.id}`;
+    if (document.getElementById(toastId)) return;
+
+    const accId = eventObj.accId || 'z';
+    const emoji = getCategoryEmoji(eventObj.category, eventObj.message);
+    const cleanMsg = String(eventObj.message).replace(/\s*(⚔️|🔬|📖|☀️|🏛️)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `global-alarm-toast acc-${accId}`;
+    toast.innerHTML = `
+        <div class="global-alarm-toast-left">
+            <span class="global-alarm-toast-emoji">${emoji}</span>
+            <div class="global-alarm-toast-text">${cleanMsg}</div>
+        </div>
+        <div class="global-alarm-toast-actions">
+            <button type="button" class="btn-toast-open">查看待辦</button>
+            <button type="button" class="btn-toast-close" title="關閉提示">✕</button>
+        </div>
+    `;
+
+    const openBtn = toast.querySelector('.btn-toast-open');
+    const closeBtn = toast.querySelector('.btn-toast-close');
+
+    if (openBtn) {
+        openBtn.onclick = () => {
+            toast.remove();
+            const navDrop = document.getElementById('navDropdown');
+            if (navDrop) navDrop.classList.remove('open');
+            const bellDrop = document.getElementById('notifDropdown');
+            if (bellDrop) {
+                bellDrop.classList.add('open');
+                renderBellUI();
+            }
+        };
+    }
+    if (closeBtn) {
+        closeBtn.onclick = () => toast.remove();
+    }
+
+    container.prepend(toast);
+    while (container.children.length > 3) {
+        container.lastElementChild.remove();
     }
 }
 
-function playSingleChime() {
+async function ensureAudioContextUnlocked() {
     try {
-        ensureAudioContext();
-        if (!audioCtx) return;
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
+    } catch (e) {}
+}
+
+function setupGlobalAudioUnlock() {
+    const unlockHandler = () => {
+        ensureAudioContextUnlocked();
+    };
+    ['pointerdown', 'keydown', 'touchstart'].forEach(evtName => {
+        document.addEventListener(evtName, unlockHandler, { passive: true });
+    });
+}
+
+async function playSingleChime() {
+    try {
+        await ensureAudioContextUnlocked();
+        if (!audioCtx || audioCtx.state !== 'running') return;
         const notes = [523.25, 659.25, 783.99, 1046.50];
         const now = audioCtx.currentTime;
         notes.forEach((freq, idx) => {
@@ -392,7 +565,7 @@ function playSingleChime() {
             osc.type = 'sine';
             osc.frequency.setValueAtTime(freq, now + idx * 0.12);
             gain.gain.setValueAtTime(0.001, now + idx * 0.12);
-            gain.gain.exponentialRampToValueAtTime(0.18, now + idx * 0.12 + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.22, now + idx * 0.12 + 0.03);
             gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.12 + 0.45);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
@@ -436,26 +609,27 @@ function updateNotifBadgeUI() {
 }
 
 function requestDesktopNotificationPermission() {
+    ensureAudioContextUnlocked();
     if (!('Notification' in window)) return;
     if (Notification.permission === 'default') {
         Notification.requestPermission().then(() => updateNotifBadgeUI());
     }
 }
 
-function sendDesktopNotification(title, body) {
+function sendDesktopNotification(title, body, tagId = '') {
     if (!('Notification' in window)) return;
     if (Notification.permission === 'granted') {
         try {
             const n = new Notification(title, {
                 body: body,
-                icon: './assets/chara_face_1-1.png'
+                icon: './assets/chara_face_1-1.png',
+                tag: tagId || `alarm_${Date.now()}`,
+                renotify: true,
+                requireInteraction: true
             });
             activeSystemNotifications.push(n);
             n.onclick = () => {
                 window.focus();
-                if (typeof switchMainTab === 'function') {
-                    switchMainTab('grid');
-                }
                 const navDrop = document.getElementById('navDropdown');
                 if (navDrop) navDrop.classList.remove('open');
                 const bellDrop = document.getElementById('notifDropdown');
@@ -470,19 +644,18 @@ function sendDesktopNotification(title, body) {
         Notification.requestPermission().then((perm) => {
             updateNotifBadgeUI();
             if (perm === 'granted') {
-                sendDesktopNotification(title, body);
+                sendDesktopNotification(title, body, tagId);
             }
         });
     }
 }
 
 function testAlarm() {
-    ensureAudioContext();
+    ensureAudioContextUnlocked();
     playSingleChime();
     const nowMs = getAccurateNow().getTime();
     const msg = `【測試】 [${getDisplayAccountName('z')}] 士兵訓練 已完成！`;
-    sendDesktopNotification('⏰ 遊戲鬧鐘測試提醒', msg);
-    pushNotificationEvent({
+    const evObj = {
         id: `test_${nowMs}`,
         accId: 'z',
         category: 'soldiers',
@@ -490,7 +663,10 @@ function testAlarm() {
         message: msg,
         timestamp: nowMs,
         unread: true
-    }, false);
+    };
+    sendDesktopNotification('⏰ 遊戲鬧鐘測試提醒', msg, evObj.id);
+    showGlobalAlarmBanner(evObj);
+    pushNotificationEvent(evObj, false);
     const drop = document.getElementById('notifDropdown');
     if (drop) drop.classList.add('open');
 }
@@ -505,6 +681,9 @@ function loadNotifHistory() {
     } catch (e) {
         notifHistory = [];
     }
+    notifHistory.forEach(n => {
+        if (n && n.id) triggeredEventKeys.add(n.id);
+    });
     renderBellUI();
 }
 
@@ -534,12 +713,14 @@ function pushNotificationEvent(eventObj, shouldAlert = true) {
 
     if (shouldAlert) {
         startRinging();
-        sendDesktopNotification('⏰ 遊戲鬧鐘提醒', eventObj.message);
+        showGlobalAlarmBanner(eventObj);
+        sendDesktopNotification('⏰ 遊戲鬧鐘提醒', eventObj.message, eventObj.id);
     }
 }
 
 function toggleBellDropdown(event) {
     if (event) event.stopPropagation();
+    ensureAudioContextUnlocked();
     const navDrop = document.getElementById('navDropdown');
     if (navDrop) navDrop.classList.remove('open');
 
@@ -554,6 +735,8 @@ function toggleTodoDone(notifId) {
     const item = notifHistory.find(n => n.id === notifId);
     if (!item) return;
     item.unread = !item.unread;
+    const toastEl = document.getElementById(`toast_${notifId}`);
+    if (toastEl && !item.unread) toastEl.remove();
     saveNotifHistory();
     renderBellUI();
     if (notifHistory.filter(n => n.unread).length === 0) stopRinging();
@@ -561,6 +744,8 @@ function toggleTodoDone(notifId) {
 
 function markAllNotifsRead() {
     notifHistory.forEach(n => { n.unread = false; });
+    const container = document.getElementById('globalAlarmToastContainer');
+    if (container) container.innerHTML = '';
     saveNotifHistory();
     renderBellUI();
     stopRinging();
@@ -656,6 +841,8 @@ function startNewRoundFromTodo(notifId, accId, category, itemId, d, h, m) {
 
     const notifItem = notifHistory.find(n => n.id === notifId);
     if (notifItem) notifItem.unread = false;
+    const toastEl = document.getElementById(`toast_${notifId}`);
+    if (toastEl) toastEl.remove();
 
     saveNotifHistory();
     renderBellUI();
@@ -681,6 +868,9 @@ function confirmJobFromTodo(notifId, accId, jType, timeStr) {
     setJobTime(accId, jType, timeStr, true);
     const notifItem = notifHistory.find(n => n.id === notifId);
     if (notifItem) notifItem.unread = false;
+    const toastEl = document.getElementById(`toast_${notifId}`);
+    if (toastEl) toastEl.remove();
+
     saveNotifHistory();
     renderBellUI();
     if (notifHistory.filter(n => n.unread).length === 0) stopRinging();
@@ -970,6 +1160,7 @@ function setupFirebaseListeners() {
             }
         }
         updateTimeline(true);
+        tickTimers();
         notifyDataReadyForSplash();
         isInitialLoadDone = true;
     }, (err) => {
@@ -1236,7 +1427,7 @@ function handleTimerArrowNav(event, prevIdStr, nextIdStr, accId, category, id) {
 }
 
 function startTimer(accId, category, id) {
-    ensureAudioContext();
+    ensureAudioContextUnlocked();
     const item = store[accId][category].find(it => it.id === id);
     if (!item) return;
 
@@ -1609,7 +1800,6 @@ function updateTimeline(force = false) {
         `;
     }
 
-    // 若使用者正打開職位下拉選單，跳過重繪下拉選單以免秒關，只更新倒數文字
     const activeEl = document.activeElement;
     const isSelectFocused = activeEl && activeEl.classList && activeEl.classList.contains('job-time-select');
     if (!force && (isJobSelectActive || isSelectFocused)) {
@@ -1693,11 +1883,12 @@ function updateTimeline(force = false) {
 }
 
 // ==========================================
-// 12. 每秒倒數與到期通知檢查
+// 12. 每秒倒數與到期通知檢查（任何分頁、背景醒來皆立即補檢）
 // ==========================================
 function tickTimers() {
     const now = getAccurateNow();
     const nowMs = now.getTime();
+    let anyTimerFinished = false;
 
     accounts.forEach(acc => {
         const s = store[acc.id];
@@ -1712,13 +1903,15 @@ function tickTimers() {
         ['soldiers', 'tech', 'master', 'sunlight'].forEach(cat => {
             (s[cat] || []).forEach(it => {
                 if (!it.endTime) return;
-                const remain = it.endTime.getTime() - nowMs;
+                const endMs = it.endTime.getTime();
+                const remain = endMs - nowMs;
                 const el = document.getElementById(`cd_${acc.id}_${cat}_${it.id}`);
                 if (el && remain > 0) {
                     el.innerText = formatCountdown(remain);
                 } else if (remain <= 0) {
-                    const evKey = `timer_${acc.id}_${cat}_${it.id}_${it.endTime.getTime()}`;
+                    const evKey = `timer_${acc.id}_${cat}_${it.id}_${endMs}`;
                     it.endTime = null;
+                    anyTimerFinished = true;
                     if (!triggeredEventKeys.has(evKey)) {
                         triggeredEventKeys.add(evKey);
                         pushNotificationEvent({
@@ -1731,8 +1924,6 @@ function tickTimers() {
                             unread: true
                         }, true);
                     }
-                    renderGrid();
-                    saveState();
                 }
             });
         });
@@ -1742,9 +1933,11 @@ function tickTimers() {
             { type: 'tech', label: '科技職位', date: s.techJobDate }
         ].forEach(job => {
             if (!job.date || isNaN(job.date.getTime())) return;
-            const diff = job.date.getTime() - nowMs;
-            if (diff <= 0 && diff > -60000) {
-                const jKey = `job_${acc.id}_${job.type}_${job.date.getTime()}`;
+            const jobMs = job.date.getTime();
+            const diff = jobMs - nowMs;
+            // 放寬至 30 分鐘內，避免背景分頁節流或重整頁面漏掉職位提醒
+            if (diff <= 0 && diff > -30 * 60 * 1000) {
+                const jKey = `job_${acc.id}_${job.type}_${jobMs}`;
                 if (!triggeredEventKeys.has(jKey)) {
                     triggeredEventKeys.add(jKey);
                     pushNotificationEvent({
@@ -1760,8 +1953,19 @@ function tickTimers() {
         });
     });
 
+    if (anyTimerFinished) {
+        renderGrid();
+        saveState();
+    }
+
     updateTimeline(false);
 }
+
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        tickTimers();
+    }
+});
 
 // ==========================================
 // 13. 頁面分頁切換（粉藍圓圈兩線選單 + URL Hash 記憶）
@@ -1777,6 +1981,7 @@ function hideAllMainViews() {
 
 function toggleNavDropdown(event) {
     if (event) event.stopPropagation();
+    ensureAudioContextUnlocked();
     const bellDrop = document.getElementById('notifDropdown');
     if (bellDrop) bellDrop.classList.remove('open');
 
@@ -1878,6 +2083,8 @@ document.addEventListener('click', (e) => {
 // 14. 啟動初始化
 // ==========================================
 function init() {
+    injectGlobalToastStyles();
+    setupGlobalAudioUnlock();
     startSplashLoader();
     updateNotifBadgeUI();
     loadNotifHistory();
@@ -1890,6 +2097,7 @@ function init() {
     setupAutoTimeSync();
     fetchAllProfiles();
 
+    tickTimers();
     setInterval(tickTimers, 1000);
     setInterval(renderBellUI, 30000);
 }
