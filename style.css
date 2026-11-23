@@ -1297,7 +1297,9 @@ select {
     font-weight: 700;
 }
 
-/* 資源採集分頁（字級放大 + 一屏高度） */
+/* ==========================================
+   資源採集分頁（左大圖 + 右上輸入 + 右下基準 + 四邊統一細框）
+   ========================================== */
 .resources-view {
     display: none;
     max-width: 1240px;
@@ -1351,7 +1353,7 @@ select {
     flex-direction: column;
     justify-content: center;
     gap: 3px;
-    padding: 4px 6px;
+    padding: 5px 8px;
     border-radius: 10px;
     background: #FFFDF9;
     border: 1px solid #E8DAC8;
@@ -1417,75 +1419,119 @@ select {
     color: #1B5E20;
 }
 
-.res-best-line {
+/* 採集優先左右分欄：左文字、右大圖示 */
+.res-prio-split {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    font-size: 13px;
-    font-weight: 800;
-    gap: 4px;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
 }
 
-.res-best-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    background: #1B7A3E;
-    color: #FFFFFF;
-    border: 1px solid #145C2E;
-    padding: 2px 7px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 800;
-    white-space: nowrap;
+.res-prio-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
 }
-.res-best-badge .res-icon-wrap,
-.res-best-badge .res-item-png {
-    width: 16px;
-    height: 16px;
+
+.res-prio-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #3E271C;
+    line-height: 1.2;
 }
 
 .res-gap-line {
-    font-size: 12px;
+    font-size: 12.5px;
     color: #3E271C;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    line-height: 1.2;
     white-space: nowrap;
 }
 
+.res-prio-right {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.res-prio-big-icon-wrap {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+
+.res-prio-big-png {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    transform: scale(1.22);
+    transform-origin: center;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 3px rgba(92, 61, 46, 0.22));
+}
+
+.res-prio-empty {
+    font-size: 13px;
+    font-weight: 700;
+    color: #8C7B6E;
+    padding: 0 6px;
+}
+
+/* 單張資源卡片：四邊統一 2px 細框（移除加粗左邊框），左大圖 + 右兩行 */
 .res-row-card {
     background: #FFFFFF;
-    border-radius: 13px;
-    padding: 6px 10px;
+    border-radius: 14px;
+    padding: 7px 11px;
     border: 2px solid #CBB6A0;
-    border-left-width: 7px;
     display: flex;
-    flex-direction: column;
-    gap: 3px;
+    align-items: center;
+    gap: 10px;
     position: relative;
     z-index: 2;
     color: #1F120C;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-.res-row-card.tier-green {
-    background-color: #B9F0C8;
-    border-color: #2E7D32;
-    border-left-color: #1B5E20;
+
+.res-card-left-icon {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.res-row-card.tier-mid-green {
-    background-color: #E2F4A6;
-    border-color: #689F38;
-    border-left-color: #558B2F;
+
+.res-card-big-icon-wrap {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
 }
-.res-row-card.tier-mid-red {
-    background-color: #FFD1A3;
-    border-color: #EF6C00;
-    border-left-color: #E65100;
+
+.res-card-big-png {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    transform: scale(1.25);
+    transform-origin: center;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 3px rgba(92, 61, 46, 0.2));
 }
-.res-row-card.tier-red {
-    background-color: #FFB8B8;
-    border-color: #C62828;
-    border-left-color: #B71C1C;
+
+.res-card-right-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .res-row-top {
@@ -1495,23 +1541,12 @@ select {
     gap: 6px;
 }
 
-.res-name-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.res-name-title {
     font-weight: 800;
-    font-size: 15px;
+    font-size: 17px;
     color: #1F120C;
-}
-
-.res-ratio-tag {
-    font-size: 11.5px;
-    font-weight: 800;
-    padding: 1px 6px;
-    border-radius: 999px;
-    background: #FFFFFF;
-    border: 1px solid #8C6A58;
-    color: #3E271C;
+    letter-spacing: 0.5px;
+    line-height: 1.15;
 }
 
 .res-input-group {
@@ -1521,25 +1556,26 @@ select {
 }
 
 .res-num-input {
-    width: 88px;
-    height: 27px;
-    border: 1.5px solid #6E4E3E;
-    border-radius: 8px;
-    background: #FFFFFF;
+    width: 96px;
+    height: 30px;
+    border: 1.5px solid rgba(92, 61, 46, 0.45);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.96);
     color: #1F120C;
     text-align: right;
-    padding: 0 7px;
-    font-size: 14.5px;
+    padding: 0 8px;
+    font-size: 16px;
     font-weight: 800;
 }
 
 .res-unit-select {
-    padding: 3px 6px;
-    border-radius: 8px;
-    border: 1.5px solid #6E4E3E;
-    background: #FFFFFF;
+    height: 30px;
+    padding: 0 7px;
+    border-radius: 9px;
+    border: 1.5px solid rgba(92, 61, 46, 0.45);
+    background: rgba(255, 255, 255, 0.96);
     color: #1F120C;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
 }
 
@@ -1547,12 +1583,23 @@ select {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 700;
-    color: #2B1A12;
+    color: rgba(31, 18, 12, 0.78);
+}
+
+.res-ratio-tag {
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(92, 61, 46, 0.25);
+    color: #3E271C;
 }
 
 .res-scaled-val {
+    font-size: 13px;
     font-weight: 800;
     color: #1F120C;
 }
@@ -1742,25 +1789,6 @@ select {
     background: #E8F6FD;
     border-color: #9ED6F2;
     color: #1B5E85;
-}
-
-.res-icon-wrap {
-    width: 26px;
-    height: 26px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    overflow: visible;
-    flex-shrink: 0;
-}
-.res-item-png {
-    width: 26px;
-    height: 26px;
-    object-fit: contain;
-    transform: scale(1.38);
-    transform-origin: center;
-    pointer-events: none;
-    filter: drop-shadow(0 1px 2px rgba(92, 61, 46, 0.18));
 }
 
 .profile-modal-backdrop {
