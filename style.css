@@ -1298,7 +1298,7 @@ select {
 }
 
 /* ==========================================
-   資源採集分頁（左大圖 + 右上輸入 + 右下基準 + 四邊統一細框）
+   資源採集分頁（待辦天藍目標框 + 極簡目標鈕 + 5階糖果斜向漸層白字卡片）
    ========================================== */
 .resources-view {
     display: none;
@@ -1331,92 +1331,72 @@ select {
     align-items: stretch;
 }
 
+/* 貼上目標 & 採集優先合併卡片（選中時改為待辦天藍色） */
 .res-merged-row {
     display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
+    grid-template-columns: 1fr 1fr;
     gap: 6px;
     background: #FFFFFF;
-    border: 2px solid #D6C3AE;
+    border: 2px solid #E2D2BE;
     border-radius: 14px;
     padding: 6px 7px;
     position: relative;
     z-index: 2;
+    transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 .res-merged-row.active-target {
-    background: #FFF9E6;
-    border-color: #2E7D32;
-    box-shadow: 0 0 0 1.5px #2E7D32;
+    background: #EAF8FF;
+    border-color: #00A8F3;
+    box-shadow: 0 0 0 1.5px #00A8F3;
 }
 
 .res-merged-col {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
     gap: 3px;
     padding: 5px 8px;
     border-radius: 10px;
     background: #FFFDF9;
-    border: 1px solid #E8DAC8;
+    border: 1px solid #EAE0D2;
     min-width: 0;
 }
-
-.res-paste-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 4px;
+.res-merged-row.active-target .res-merged-col {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: #BAE6FD;
 }
 
 .res-target-btn {
-    flex: 1;
-    min-width: 0;
-    text-align: left;
+    width: 100%;
+    text-align: center;
     background: #F4EFE8;
-    border: 1.5px solid #CBB6A0;
-    border-radius: 8px;
-    padding: 3px 6px;
-    font-size: 12.5px;
+    border: 1.5px solid #D5C3B0;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 13.5px;
     font-weight: 800;
-    color: #3E271C;
+    color: var(--cocoa);
     cursor: pointer;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    transition: all 0.15s;
+}
+.res-target-btn:hover {
+    background: #E8F6FD;
+    border-color: #80D8FF;
 }
 .res-merged-row.active-target .res-target-btn {
-    background: #2E7D32;
-    border-color: #1B5E20;
+    background: #00A8F3;
+    border-color: #0284C7;
     color: #FFFFFF;
-}
-
-.res-pick-file-btn {
-    background: #EFE7DC;
-    border: 1.5px solid #CBB6A0;
-    border-radius: 8px;
-    padding: 3px 6px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #3E271C;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-.res-pick-file-btn:hover {
-    background: #E2D5C5;
-}
-
-.res-paste-hint {
-    font-size: 11.5px;
-    color: #5C3D2E;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    box-shadow: 0 2px 5px rgba(0, 168, 243, 0.28);
 }
 
 .res-ocr-status {
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 800;
-    color: #1B5E20;
+    color: #0077B6;
+    text-align: center;
 }
 
 /* 採集優先左右分欄：左文字、右大圖示 */
@@ -1483,19 +1463,23 @@ select {
     padding: 0 6px;
 }
 
-/* 單張資源卡片：四邊統一 2px 細框（移除加粗左邊框），左大圖 + 右兩行 */
+/* 單張資源卡片：完全沿用主頁計時器卡片微光白細框 + 柔和陰影 + 純白文字 */
 .res-row-card {
-    background: #FFFFFF;
+    background: #D8CBB8;
     border-radius: 14px;
     padding: 7px 11px;
-    border: 2px solid #CBB6A0;
+    border: 2px solid rgba(255, 255, 255, 0.72);
+    box-shadow: 0 2px 5px rgba(92, 61, 46, 0.12);
     display: flex;
     align-items: center;
     gap: 10px;
     position: relative;
     z-index: 2;
-    color: #1F120C;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    color: #FFFFFF;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.res-row-card:hover {
+    transform: translateY(-1px);
 }
 
 .res-card-left-icon {
@@ -1523,7 +1507,7 @@ select {
     transform: scale(1.25);
     transform-origin: center;
     pointer-events: none;
-    filter: drop-shadow(0 2px 3px rgba(92, 61, 46, 0.2));
+    filter: drop-shadow(0 2px 3px rgba(92, 61, 46, 0.28));
 }
 
 .res-card-right-body {
@@ -1543,10 +1527,11 @@ select {
 
 .res-name-title {
     font-weight: 800;
-    font-size: 17px;
-    color: #1F120C;
-    letter-spacing: 0.5px;
+    font-size: 17.5px;
+    color: #FFFFFF;
+    letter-spacing: 0.6px;
     line-height: 1.15;
+    text-shadow: 0 1px 2px rgba(92, 61, 46, 0.26);
 }
 
 .res-input-group {
@@ -1558,10 +1543,10 @@ select {
 .res-num-input {
     width: 96px;
     height: 30px;
-    border: 1.5px solid rgba(92, 61, 46, 0.45);
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
     border-radius: 9px;
     background: rgba(255, 255, 255, 0.96);
-    color: #1F120C;
+    color: var(--cocoa);
     text-align: right;
     padding: 0 8px;
     font-size: 16px;
@@ -1572,9 +1557,9 @@ select {
     height: 30px;
     padding: 0 7px;
     border-radius: 9px;
-    border: 1.5px solid rgba(92, 61, 46, 0.45);
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
     background: rgba(255, 255, 255, 0.96);
-    color: #1F120C;
+    color: var(--cocoa);
     font-size: 14px;
     font-weight: 800;
 }
@@ -1585,23 +1570,24 @@ select {
     align-items: center;
     font-size: 12px;
     font-weight: 700;
-    color: rgba(31, 18, 12, 0.78);
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 1px 2px rgba(92, 61, 46, 0.22);
 }
 
 .res-ratio-tag {
     font-size: 11.5px;
     font-weight: 700;
-    padding: 1px 7px;
+    padding: 1px 8px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(92, 61, 46, 0.25);
-    color: #3E271C;
+    background: rgba(92, 61, 46, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    color: #FFFFFF;
 }
 
 .res-scaled-val {
     font-size: 13px;
     font-weight: 800;
-    color: #1F120C;
+    color: #FFFFFF;
 }
 
 @keyframes gentleFloat {
