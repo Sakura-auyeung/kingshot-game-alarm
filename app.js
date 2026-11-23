@@ -1444,16 +1444,16 @@ function renderJobSummaryBox(accId) {
 
             if (inCooldown) {
                 const cdRemainMin = Math.max(1, Math.ceil((10 * 60 * 1000 - (now.getTime() - jDate.getTime())) / 60000));
-                pillHtml = `<span class="status-pill cooldown">⏳ 10分冷卻<br>剩 ${cdRemainMin} 分</span>`;
+                pillHtml = `<span class="status-pill cooldown">⏳ 冷卻剩 ${cdRemainMin} 分</span>`;
                 remainText = `同職位冷卻中（不可重申）`;
             } else if (diffMs > 0) {
                 if (hasConflict) {
-                    pillHtml = `<button type="button" class="status-pill conflict clickable" title="點擊切換確認狀態" onclick="toggleJobConfirm('${accId}','${type}')">⚠️ 撞期<br>${jConf ? '已確認' : '待確認'}</button>`;
+                    pillHtml = `<button type="button" class="status-pill conflict clickable" title="點擊切換確認狀態" onclick="toggleJobConfirm('${accId}','${type}')">⚠️ 撞期·${jConf ? '已確認' : '待確認'}</button>`;
                     remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span> · 同帳號雙職位同時間`;
                 } else {
                     pillHtml = jConf
-                        ? `<button type="button" class="status-pill confirmed clickable" title="點擊取消確認" onclick="toggleJobConfirm('${accId}','${type}')">✔<br>已確認</button>`
-                        : `<button type="button" class="status-pill pending clickable" title="點擊直接確認預約" onclick="toggleJobConfirm('${accId}','${type}')">⏳<br>待確認</button>`;
+                        ? `<button type="button" class="status-pill confirmed clickable" title="點擊取消確認" onclick="toggleJobConfirm('${accId}','${type}')">✔ 已確認</button>`
+                        : `<button type="button" class="status-pill pending clickable" title="點擊直接確認預約" onclick="toggleJobConfirm('${accId}','${type}')">⏳ 待確認</button>`;
                     remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span>`;
                 }
             } else {
