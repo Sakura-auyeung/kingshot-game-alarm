@@ -1,417 +1,2105 @@
 // ==========================================
-// 資源採集計算 + Tesseract.js OCR 辨識模組
+// 1. Firebase 雲端即時資料庫設定
 // ==========================================
-
-const RESOURCE_DEFS = [
-    { key: 'bread',  label: '糧食', iconFile: './assets/item_icon_bread.png', ratio: 20 },
-    { key: 'wood',   label: '木材', iconFile: './assets/item_icon_wood.png',  ratio: 20 },
-    { key: 'stone',  label: '石材', iconFile: './assets/item_icon_stone.png', ratio: 4  },
-    { key: 'iron',   label: '鐵',   iconFile: './assets/item_icon_icon.png',  ratio: 1  }
-];
-
-function renderResCardBigIconHtml(item) {
-    return `<span class="res-card-big-icon-wrap"><img class="res-card-big-png" src="${item.iconFile}" alt="${item.label}"></span>`;
-}
-
-function renderPrioBigIconHtml(item) {
-    return `<span class="res-prio-big-icon-wrap"><img class="res-prio-big-png" src="${item.iconFile}" alt="${item.label}" title="${item.label}"></span>`;
-}
-
-let resourcesStore = {
-    h: { bread: { val: '', unit: 'M' }, wood: { val: '', unit: 'M' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } },
-    z: { bread: { val: '', unit: 'B' }, wood: { val: '', unit: 'B' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } },
-    p: { bread: { val: '', unit: 'B' }, wood: { val: '', unit: 'B' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } }
+const firebaseConfig = {
+    apiKey: "AIzaSyDjQS9NNkUwZ8bTeNb75WFp3at2jjKzWac",
+    authDomain: "kingshot-game-alarm.firebaseapp.com",
+    databaseURL: "https://kingshot-game-alarm-default-rtdb.firebaseio.com",
+    projectId: "kingshot-game-alarm",
+    storageBucket: "kingshot-game-alarm.firebasestorage.app",
+    messagingSenderId: "935740408911",
+    appId: "1:935740408911:web:ca2acd5a82822be227d63a"
 };
 
-let activePasteAccId = 'z';
-let pendingUploadAccId = 'z';
-let ocrStatusText = { h: '', z: '', p: '' };
-let tesseractWorker = null;
-let resSaveDebounceTimer = null;
+let db = null;
+let dbRef = null;
+let profileDbRef = null;
+let hasFirebase = false;
 
-function scheduleResourceSave() {
-    if (resSaveDebounceTimer) clearTimeout(resSaveDebounceTimer);
-    resSaveDebounceTimer = setTimeout(() => {
-        saveState();
-    }, 350);
-}
-
-function unitMultiplier(unit) {
-    if (unit === 'B') return 1e9;
-    if (unit === 'K') return 1e3;
-    return 1e6;
+try {
+    if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        dbRef = db.ref("alarm_state_v1");
+        profileDbRef = db.ref("account_profiles_v1");
+        hasFirebase = true;
+    }
+} catch (e) {
+    console.warn("Firebase 初始化略過，改用本地儲存模式", e);
 }
 
 // ==========================================
-// Excel 5 色階對應糖果斜向漸層（翠綠 -> 黃綠 -> 暖金黃 -> 蜜橘橙 -> 草莓粉紅）
+// 2. 全域常數與狀態變數
 // ==========================================
-const CANDY_5_LEVELS = [
-    'linear-gradient(135deg, #58C984 0%, #38A866 100%)', // 第 1 階：最缺（翠綠）
-    'linear-gradient(135deg, #9BD65A 0%, #7AB838 100%)', // 第 2 階：次缺（黃綠）
-    'linear-gradient(135deg, #F7B733 0%, #E69A15 100%)', // 第 3 階：中間（暖金黃）
-    'linear-gradient(135deg, #FF9966 0%, #F27935 100%)', // 第 4 階：偏多（蜜橘橙）
-    'linear-gradient(135deg, #FF7EA5 0%, #EB5A87 100%)'  // 第 5 階：最多（草莓粉紅）
+const STORAGE_KEY = "multi_account_alarm_local_backup";
+const PROFILE_STORAGE_KEY = "multi_account_profiles_backup";
+const NOTIF_HISTORY_KEY = "multi_account_notif_history_v2";
+const ORIGINAL_TITLE = "多帳戶鬧鐘與職位助手";
+
+const accounts = [
+    { id: 'h', name: 'h', isMain: false, faceFile: 'chara_face_2-1.png' },
+    { id: 'z', name: 'z', isMain: true, faceFile: 'chara_face_1-1.png' },
+    { id: 'p', name: 'p', isMain: false, faceFile: 'chara_face_4-1.png' }
 ];
 
-function getCandy5LevelStyle(pos) {
-    if (pos === null || pos === undefined || isNaN(pos)) return '';
-    const clamped = Math.max(0, Math.min(1, pos));
-    const idx = Math.min(4, Math.floor(clamped * 5));
-    return `background: ${CANDY_5_LEVELS[idx]};`;
+function getBearFaceFile(accId) {
+    const acc = accounts.find(a => a.id === accId);
+    return acc ? `./assets/${acc.faceFile}` : './assets/chara_face_1-1.png';
 }
 
-function getAccountResourceAnalysis(accId) {
-    const accRes = resourcesStore[accId] || {};
-    const items = RESOURCE_DEFS.map(def => {
-        const entry = accRes[def.key] || { val: '', unit: 'M' };
-        const rawNum = parseFloat(String(entry.val).replace(/,/g, ''));
-        const hasVal = !isNaN(rawNum) && entry.val !== '' && entry.val !== null;
-        const totalAmount = hasVal ? rawNum * unitMultiplier(entry.unit || 'M') : 0;
-        const scaledVal = hasVal ? totalAmount / def.ratio : 0;
-        return {
-            ...def,
-            valStr: entry.val ?? '',
-            unit: entry.unit || 'M',
-            hasVal,
-            totalAmount,
-            scaledVal
-        };
-    });
+let profiles = {
+    h: {
+        queryName: 'Howard',
+        queryAlliance: '777',
+        name: 'Howard',
+        alliance: '777',
+        levelLabel: 'TG6',
+        power: 279000000,
+        powerRank: null,
+        avatar: '',
+        lastFetched: null
+    },
+    z: {
+        queryName: 'Zoey',
+        queryAlliance: 'TER',
+        name: 'Zoey',
+        alliance: 'TER',
+        levelLabel: 'TG8',
+        power: 430453250,
+        powerRank: 44,
+        avatar: 'https://got-global-avatar.akamaized.net/avatar/2026/11/07/v9JxWg_1794050377.png',
+        lastFetched: null
+    },
+    p: {
+        queryName: 'Patrick',
+        queryAlliance: '777',
+        name: 'Patrick',
+        alliance: '777',
+        levelLabel: 'TG5-3',
+        power: 264500000,
+        powerRank: null,
+        avatar: '',
+        lastFetched: null
+    }
+};
 
-    const validItems = items.filter(i => i.hasVal);
-    let minScaled = null;
-    let maxScaled = null;
-    let bestItem = null;
-    let gapM = null;
+let showSunlightEvent = true;
+let showAllTimelineDays = false;
+let latestStateUpdatedAt = 0;
+let isJobSelectActive = false;
 
-    if (validItems.length > 0) {
-        minScaled = Math.min(...validItems.map(i => i.scaledVal));
-        maxScaled = Math.max(...validItems.map(i => i.scaledVal));
-        bestItem = validItems.reduce((prev, cur) => (cur.scaledVal < prev.scaledVal ? cur : prev), validItems[0]);
-        gapM = (maxScaled - minScaled) / 1e6;
+let store = {
+    h: {
+        soldiers: [{ id: 1, d: 0, h: 0, m: 0, endTime: null }],
+        tech: [{ id: 2, d: 0, h: 0, m: 0, endTime: null }],
+        master: [{ id: 101, d: 0, h: 0, m: 10, endTime: null }],
+        sunlight: [{ id: 201, d: 0, h: 8, m: 0, endTime: null }],
+        soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false, soldierJobManual: false,
+        techJobTime: '', techJobDate: null, techJobConfirmed: false, techJobManual: false
+    },
+    z: {
+        soldiers: [{ id: 3, d: 0, h: 0, m: 0, endTime: null }],
+        tech: [{ id: 4, d: 0, h: 0, m: 0, endTime: null }],
+        master: [{ id: 102, d: 0, h: 0, m: 10, endTime: null }],
+        sunlight: [{ id: 202, d: 0, h: 8, m: 0, endTime: null }],
+        soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false, soldierJobManual: false,
+        techJobTime: '', techJobDate: null, techJobConfirmed: false, techJobManual: false
+    },
+    p: {
+        soldiers: [{ id: 5, d: 0, h: 0, m: 0, endTime: null }],
+        tech: [{ id: 6, d: 0, h: 0, m: 0, endTime: null }],
+        master: [{ id: 103, d: 0, h: 0, m: 10, endTime: null }],
+        sunlight: [{ id: 203, d: 0, h: 8, m: 0, endTime: null }],
+        soldierJobTime: '', soldierJobDate: null, soldierJobConfirmed: false, soldierJobManual: false,
+        techJobTime: '', techJobDate: null, techJobConfirmed: false, techJobManual: false
+    }
+};
+
+let notifHistory = [];
+let triggeredEventKeys = new Set();
+let nextId = 300;
+let audioCtx = null;
+let ringInterval = null;
+let activeSystemNotifications = [];
+let isInitialLoadDone = false;
+let serverTimeOffsetMs = 0;
+
+let splashStartTime = 0;
+let isFirebaseFirstLoaded = false;
+let isSplashHidden = false;
+
+// ==========================================
+// 3. 載入動畫 & 伺服器時間校準
+// ==========================================
+function startSplashLoader() {
+    const splash = document.getElementById('loadingSplash');
+    if (!splash) return;
+    splashStartTime = Date.now();
+    splash.classList.remove('hidden', 'shaki');
+
+    setTimeout(() => {
+        if (!isSplashHidden) splash.classList.add('shaki');
+    }, 300);
+
+    setTimeout(() => {
+        hideSplashScreen();
+    }, 1100);
+}
+
+function notifyDataReadyForSplash() {
+    if (isFirebaseFirstLoaded) return;
+    isFirebaseFirstLoaded = true;
+    const elapsed = Date.now() - splashStartTime;
+    const remain = Math.max(0, 350 - elapsed);
+    setTimeout(hideSplashScreen, remain);
+}
+
+function hideSplashScreen() {
+    if (isSplashHidden) return;
+    isSplashHidden = true;
+    const splash = document.getElementById('loadingSplash');
+    if (splash) {
+        splash.classList.add('shaki');
+        splash.classList.add('hidden');
+    }
+}
+
+function getAccurateNow() {
+    return new Date(Date.now() + serverTimeOffsetMs);
+}
+
+function setupAutoTimeSync() {
+    if (!hasFirebase || !db) return;
+    try {
+        db.ref(".info/serverTimeOffset").on("value", (snap) => {
+            const offset = snap.val();
+            if (typeof offset === "number" && Math.abs(offset) < 12 * 3600 * 1000) {
+                serverTimeOffsetMs = offset;
+                renderGrid();
+                updateTimeline(true);
+            }
+        });
+    } catch (e) {
+        serverTimeOffsetMs = 0;
+    }
+}
+
+// ==========================================
+// 4. 格式化工具函式
+// ==========================================
+function formatPad(n) {
+    return String(Math.max(0, parseInt(n, 10) || 0)).padStart(2, '0');
+}
+
+function formatTimeHM(date) {
+    if (!date || isNaN(date.getTime())) return '';
+    return `${formatPad(date.getHours())}:${formatPad(date.getMinutes())}`;
+}
+
+function formatFullDateTime(date) {
+    if (!date || isNaN(date.getTime())) return '';
+    const m = formatPad(date.getMonth() + 1);
+    const d = formatPad(date.getDate());
+    const hm = formatTimeHM(date);
+    return `${m}/${d} ${hm}`;
+}
+
+function formatCountdown(ms) {
+    if (ms <= 0) return "00:00:00";
+    const totalSec = Math.floor(ms / 1000);
+    const d = Math.floor(totalSec / 86400);
+    const h = Math.floor((totalSec % 86400) / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (d > 0) return `${d}天 ${formatPad(h)}:${formatPad(m)}:${formatPad(s)}`;
+    return `${formatPad(h)}:${formatPad(m)}:${formatPad(s)}`;
+}
+
+function formatPower(num) {
+    if (!num || isNaN(num)) return '0';
+    const n = Number(num);
+    if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 億';
+    if (n >= 1e4) return (n / 1e4).toFixed(1) + ' 萬';
+    return n.toLocaleString();
+}
+
+function getDayTagHtml(targetDate) {
+    if (!targetDate || isNaN(targetDate.getTime())) return '';
+    const now = getAccurateNow();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startTarget = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    const diffDays = Math.round((startTarget - startToday) / 86400000);
+
+    if (diffDays === 0) return `<span class="day-hl today">今日</span>`;
+    if (diffDays === 1) return `<span class="day-hl tomorrow">明日</span>`;
+    return '';
+}
+
+function getDueBorderClass(targetDate) {
+    if (!targetDate || isNaN(targetDate.getTime())) return '';
+    const now = getAccurateNow();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startTarget = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    const diffDays = Math.round((startTarget - startToday) / 86400000);
+
+    if (diffDays === 0) return 'due-today';
+    if (diffDays === 1) return 'due-tomorrow';
+    return '';
+}
+
+function getDisplayAccountName(accId) {
+    const p = profiles[accId];
+    if (p && p.name) return p.name;
+    return accId.toUpperCase();
+}
+
+function escapeAttr(str) {
+    return String(str).replace(/'/g, "\\'").replace(/"/g, "&quot;");
+}
+
+// ==========================================
+// 5. 外部角色戰力與頭像 API 同步 & 雙欄位編輯彈窗
+// ==========================================
+async function fetchSingleProfile(accId) {
+    const p = profiles[accId];
+    if (!p || !p.queryName) return false;
+
+    const rawUrl = `https://kingdom-1177.vercel.app/api/governor-profile?name=${encodeURIComponent(p.queryName)}&alliance=${encodeURIComponent(p.queryAlliance || '')}`;
+    const candidateUrls = [
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rawUrl)}`
+    ];
+
+    for (const targetUrl of candidateUrls) {
+        try {
+            const res = await fetch(targetUrl, { cache: 'no-store' });
+            if (!res.ok) continue;
+            const text = await res.text();
+            const data = JSON.parse(text);
+            if (data && data.ok && data.governor) {
+                const gov = data.governor;
+                profiles[accId] = {
+                    ...profiles[accId],
+                    name: gov.name || p.queryName,
+                    alliance: gov.alliance || p.queryAlliance,
+                    levelLabel: gov.levelLabel || (gov.tg ? `TG${gov.tg}` : `Lv.${gov.townCenter || ''}`),
+                    power: gov.power || 0,
+                    powerRank: gov.powerRank || null,
+                    avatar: gov.avatar || profiles[accId].avatar,
+                    lastFetched: new Date().toISOString()
+                };
+                return true;
+            }
+        } catch (e) {}
+    }
+    return false;
+}
+
+async function fetchAllProfiles() {
+    let anyUpdated = false;
+    for (const acc of accounts) {
+        const ok = await fetchSingleProfile(acc.id);
+        if (ok) anyUpdated = true;
+    }
+    if (anyUpdated) {
+        saveProfiles();
+        renderGrid();
+        if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+        updateTimeline(true);
+    }
+}
+
+let editingProfileAccId = null;
+
+function editAccountQuery(accId) {
+    const current = profiles[accId];
+    if (!current) return;
+    editingProfileAccId = accId;
+
+    const nameInput = document.getElementById('modalProfileName');
+    const allianceInput = document.getElementById('modalProfileAlliance');
+    const modal = document.getElementById('profileEditModal');
+
+    if (nameInput) nameInput.value = current.queryName || current.name || '';
+    if (allianceInput) allianceInput.value = current.queryAlliance || current.alliance || '';
+    if (modal) modal.classList.add('open');
+    if (nameInput) setTimeout(() => nameInput.focus(), 50);
+}
+
+function closeProfileEditModal() {
+    editingProfileAccId = null;
+    const modal = document.getElementById('profileEditModal');
+    if (modal) modal.classList.remove('open');
+}
+
+async function saveProfileEditModal() {
+    if (!editingProfileAccId) return;
+    const accId = editingProfileAccId;
+    const current = profiles[accId];
+    const nameInput = document.getElementById('modalProfileName');
+    const allianceInput = document.getElementById('modalProfileAlliance');
+
+    const newName = (nameInput ? nameInput.value : '').trim();
+    const newAlliance = (allianceInput ? allianceInput.value : '').trim().toUpperCase();
+
+    if (!newName) {
+        alert('請輸入遊戲角色名稱！');
+        return;
     }
 
-    const coloredItems = items.map(item => {
-        let ratioPos = null;
-        if (item.hasVal && validItems.length > 1 && maxScaled > minScaled) {
-            ratioPos = (item.scaledVal - minScaled) / (maxScaled - minScaled);
-        } else if (item.hasVal) {
-            ratioPos = 0;
+    current.queryName = newName;
+    current.name = newName;
+    current.queryAlliance = newAlliance;
+    current.alliance = newAlliance;
+
+    closeProfileEditModal();
+    saveProfiles();
+    renderGrid();
+    if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+    updateTimeline(true);
+
+    const ok = await fetchSingleProfile(accId);
+    if (ok) {
+        saveProfiles();
+        renderGrid();
+        if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+        updateTimeline(true);
+    }
+}
+
+// ==========================================
+// 6. 鈴聲提示 & 全分頁頂端浮動橫幅 & 桌面通知
+// ==========================================
+function injectGlobalToastStyles() {
+    if (document.getElementById('globalAlarmToastStyle')) return;
+    const style = document.createElement('style');
+    style.id = 'globalAlarmToastStyle';
+    style.textContent = `
+        .global-alarm-toast-container {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99998;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 440px;
+            max-width: calc(100vw - 24px);
+            pointer-events: none;
         }
-        return {
-            ...item,
-            ratioPos,
-            inlineGradientStyle: getCandy5LevelStyle(ratioPos)
-        };
-    });
-
-    return { items: coloredItems, bestItem, gapM, hasAny: validItems.length > 0 };
+        .global-alarm-toast {
+            pointer-events: auto;
+            background: linear-gradient(135deg, #FF7EA5 0%, #EB5A87 100%);
+            color: #FFFFFF;
+            border: 2.5px solid #FFFFFF;
+            border-radius: 18px;
+            padding: 11px 14px;
+            box-shadow: 0 10px 26px rgba(92, 61, 46, 0.32);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            animation: globalToastSlideDown 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .global-alarm-toast.acc-z {
+            background: linear-gradient(135deg, #F7B733 0%, #E69A15 100%);
+        }
+        .global-alarm-toast.acc-p {
+            background: linear-gradient(135deg, #58C984 0%, #38A866 100%);
+        }
+        .global-alarm-toast-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+        .global-alarm-toast-emoji {
+            font-size: 26px;
+            line-height: 1;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.25);
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .global-alarm-toast-text {
+            font-size: 14.5px;
+            font-weight: 800;
+            line-height: 1.3;
+            text-shadow: 0 1px 2px rgba(92, 61, 46, 0.25);
+        }
+        .global-alarm-toast-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .btn-toast-open {
+            background: #FFFFFF;
+            color: #5C3D2E;
+            border: none;
+            border-radius: 999px;
+            padding: 5px 11px;
+            font-size: 12.5px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(92, 61, 46, 0.16);
+        }
+        .btn-toast-open:hover {
+            transform: scale(1.04);
+        }
+        .btn-toast-close {
+            background: rgba(255, 255, 255, 0.25);
+            color: #FFFFFF;
+            border: 1.5px solid rgba(255, 255, 255, 0.75);
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        @keyframes globalToastSlideDown {
+            from { opacity: 0; transform: translateY(-18px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
-function formatScaledMillions(scaledVal) {
-    if (!scaledVal && scaledVal !== 0) return '--';
-    const m = scaledVal / 1e6;
-    if (m >= 1000) return `${(m / 1000).toFixed(2)}B 基準`;
-    return `${m.toFixed(2)}M 基準`;
-}
-
-function setPasteTarget(accId) {
-    activePasteAccId = accId;
-    pendingUploadAccId = accId;
-    renderResourcesGrid();
-}
-
-function sanitizeResourceNumberInput(raw) {
-    let s = String(raw || '').replace(/[^\d.]/g, '');
-    const dotIndex = s.indexOf('.');
-    if (dotIndex !== -1) {
-        const intPart = s.slice(0, dotIndex);
-        const decPart = s.slice(dotIndex + 1).replace(/\./g, '').slice(0, 2);
-        s = `${intPart}.${decPart}`;
+function showGlobalAlarmBanner(eventObj) {
+    injectGlobalToastStyles();
+    let container = document.getElementById('globalAlarmToastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'globalAlarmToastContainer';
+        container.className = 'global-alarm-toast-container';
+        document.body.appendChild(container);
     }
-    return s;
-}
 
-function renderPrioSplitInnerHtml(analysis) {
-    const gapText = (analysis.hasAny && analysis.gapM !== null)
-        ? `差距：<strong>${analysis.gapM.toFixed(1)}M</strong>`
-        : `差距：--`;
-    const bigIconHtml = (analysis.hasAny && analysis.bestItem)
-        ? renderPrioBigIconHtml(analysis.bestItem)
-        : `<span class="res-prio-empty">--</span>`;
+    const toastId = `toast_${eventObj.id}`;
+    if (document.getElementById(toastId)) return;
 
-    return `
-        <div class="res-prio-split">
-            <div class="res-prio-left">
-                <div class="res-prio-title">採集優先</div>
-                <div class="res-gap-line">${gapText}</div>
-            </div>
-            <div class="res-prio-right">
-                ${bigIconHtml}
-            </div>
+    const accId = eventObj.accId || 'z';
+    const emoji = getCategoryEmoji(eventObj.category, eventObj.message);
+    const cleanMsg = String(eventObj.message).replace(/\s*(⚔️|🔬|📖|☀️|🏛️)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `global-alarm-toast acc-${accId}`;
+    toast.innerHTML = `
+        <div class="global-alarm-toast-left">
+            <span class="global-alarm-toast-emoji">${emoji}</span>
+            <div class="global-alarm-toast-text">${cleanMsg}</div>
+        </div>
+        <div class="global-alarm-toast-actions">
+            <button type="button" class="btn-toast-open">查看待辦</button>
+            <button type="button" class="btn-toast-close" title="關閉提示">✕</button>
         </div>
     `;
+
+    const openBtn = toast.querySelector('.btn-toast-open');
+    const closeBtn = toast.querySelector('.btn-toast-close');
+
+    if (openBtn) {
+        openBtn.onclick = () => {
+            toast.remove();
+            const navDrop = document.getElementById('navDropdown');
+            if (navDrop) navDrop.classList.remove('open');
+            const bellDrop = document.getElementById('notifDropdown');
+            if (bellDrop) {
+                bellDrop.classList.add('open');
+                renderBellUI();
+            }
+        };
+    }
+    if (closeBtn) {
+        closeBtn.onclick = () => toast.remove();
+    }
+
+    container.prepend(toast);
+    while (container.children.length > 3) {
+        container.lastElementChild.remove();
+    }
 }
 
-function renderResourcesGrid() {
-    const grid = document.getElementById('resourcesGrid');
-    if (!grid) return;
+async function ensureAudioContextUnlocked() {
+    try {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
+    } catch (e) {}
+}
 
-    grid.innerHTML = accounts.map(acc => {
-        const analysis = getAccountResourceAnalysis(acc.id);
-        const isActiveTarget = (activePasteAccId === acc.id);
-        const statusMsg = ocrStatusText[acc.id] || '';
+function setupGlobalAudioUnlock() {
+    const unlockHandler = () => {
+        ensureAudioContextUnlocked();
+    };
+    ['pointerdown', 'keydown', 'touchstart'].forEach(evtName => {
+        document.addEventListener(evtName, unlockHandler, { passive: true });
+    });
+}
 
-        const rowsHtml = analysis.items.map(item => `
-            <div class="res-row-card ${item.hasVal ? 'has-candy' : ''}" id="res_card_${acc.id}_${item.key}" style="${item.inlineGradientStyle}">
-                <div class="res-card-left-icon">
-                    ${renderResCardBigIconHtml(item)}
-                </div>
-                <div class="res-card-right-body">
-                    <div class="res-row-top">
-                        <span class="res-name-title">${item.label}</span>
-                        <div class="res-input-group">
-                            <input type="text" inputmode="decimal" class="res-num-input"
-                                id="res_in_${acc.id}_${item.key}"
-                                value="${item.valStr}" placeholder="0.00"
-                                oninput="onResourceNumberTyping('${acc.id}', '${item.key}', this)"
-                                onblur="saveState()">
-                            <select class="res-unit-select"
-                                id="res_unit_${acc.id}_${item.key}"
-                                onchange="updateResourceUnit('${acc.id}', '${item.key}', this.value)">
-                                <option value="K" ${item.unit === 'K' ? 'selected' : ''}>K</option>
-                                <option value="M" ${item.unit === 'M' ? 'selected' : ''}>M</option>
-                                <option value="B" ${item.unit === 'B' ? 'selected' : ''}>B</option>
-                            </select>
-                        </div>
+async function playSingleChime() {
+    try {
+        await ensureAudioContextUnlocked();
+        if (!audioCtx || audioCtx.state !== 'running') return;
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        const now = audioCtx.currentTime;
+        notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+            gain.gain.setValueAtTime(0.001, now + idx * 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.22, now + idx * 0.12 + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.12 + 0.45);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 0.5);
+        });
+    } catch (e) {}
+}
+
+function startRinging() {
+    playSingleChime();
+    if (ringInterval) return;
+    ringInterval = setInterval(() => {
+        const unreadCount = notifHistory.filter(n => n.unread).length;
+        if (unreadCount > 0) {
+            playSingleChime();
+        } else {
+            stopRinging();
+        }
+    }, 8000);
+}
+
+function stopRinging() {
+    if (ringInterval) {
+        clearInterval(ringInterval);
+        ringInterval = null;
+    }
+}
+
+function updateNotifBadgeUI() {
+    const badge = document.getElementById('notifBadge');
+    if (!badge || !('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+        badge.classList.add('granted');
+        badge.innerText = '🔔 桌面彈窗已開啟';
+    } else if (Notification.permission === 'denied') {
+        badge.innerText = '🔕 桌面通知已封鎖';
+    } else {
+        badge.innerText = '🔔 點擊開啟右下角桌面彈窗';
+    }
+}
+
+function requestDesktopNotificationPermission() {
+    ensureAudioContextUnlocked();
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+        Notification.requestPermission().then(() => updateNotifBadgeUI());
+    }
+}
+
+function sendDesktopNotification(title, body, tagId = '') {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+        try {
+            const n = new Notification(title, {
+                body: body,
+                icon: './assets/chara_face_1-1.png',
+                tag: tagId || `alarm_${Date.now()}`,
+                renotify: true,
+                requireInteraction: true
+            });
+            activeSystemNotifications.push(n);
+            n.onclick = () => {
+                window.focus();
+                const navDrop = document.getElementById('navDropdown');
+                if (navDrop) navDrop.classList.remove('open');
+                const bellDrop = document.getElementById('notifDropdown');
+                if (bellDrop) {
+                    bellDrop.classList.add('open');
+                    renderBellUI();
+                }
+                n.close();
+            };
+        } catch (e) {}
+    } else if (Notification.permission === 'default') {
+        Notification.requestPermission().then((perm) => {
+            updateNotifBadgeUI();
+            if (perm === 'granted') {
+                sendDesktopNotification(title, body, tagId);
+            }
+        });
+    }
+}
+
+function testAlarm() {
+    ensureAudioContextUnlocked();
+    playSingleChime();
+    const nowMs = getAccurateNow().getTime();
+    const msg = `【測試】 [${getDisplayAccountName('z')}] 士兵訓練 已完成！`;
+    const evObj = {
+        id: `test_${nowMs}`,
+        accId: 'z',
+        category: 'soldiers',
+        itemId: null,
+        message: msg,
+        timestamp: nowMs,
+        unread: true
+    };
+    sendDesktopNotification('⏰ 遊戲鬧鐘測試提醒', msg, evObj.id);
+    showGlobalAlarmBanner(evObj);
+    pushNotificationEvent(evObj, false);
+    const drop = document.getElementById('notifDropdown');
+    if (drop) drop.classList.add('open');
+}
+
+// ==========================================
+// 7. 待辦清單 & 提醒紀錄系統
+// ==========================================
+function loadNotifHistory() {
+    try {
+        const raw = localStorage.getItem(NOTIF_HISTORY_KEY);
+        if (raw) notifHistory = JSON.parse(raw) || [];
+    } catch (e) {
+        notifHistory = [];
+    }
+    notifHistory.forEach(n => {
+        if (n && n.id) triggeredEventKeys.add(n.id);
+    });
+    renderBellUI();
+}
+
+function saveNotifHistory() {
+    try {
+        localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(notifHistory.slice(0, 40)));
+    } catch (e) {}
+}
+
+function pushNotificationEvent(eventObj, shouldAlert = true) {
+    if (!eventObj || !eventObj.id) return;
+    if (notifHistory.some(n => n.id === eventObj.id)) return;
+
+    notifHistory.unshift({
+        id: eventObj.id,
+        accId: eventObj.accId || 'z',
+        category: eventObj.category || 'soldiers',
+        itemId: eventObj.itemId ?? null,
+        recommendedTime: eventObj.recommendedTime || '',
+        message: eventObj.message,
+        timestamp: eventObj.timestamp || getAccurateNow().getTime(),
+        unread: true
+    });
+
+    saveNotifHistory();
+    renderBellUI();
+
+    if (shouldAlert) {
+        startRinging();
+        showGlobalAlarmBanner(eventObj);
+        sendDesktopNotification('⏰ 遊戲鬧鐘提醒', eventObj.message, eventObj.id);
+    }
+}
+
+function toggleBellDropdown(event) {
+    if (event) event.stopPropagation();
+    ensureAudioContextUnlocked();
+    const navDrop = document.getElementById('navDropdown');
+    if (navDrop) navDrop.classList.remove('open');
+
+    const drop = document.getElementById('notifDropdown');
+    if (drop) {
+        drop.classList.toggle('open');
+        if (drop.classList.contains('open')) renderBellUI();
+    }
+}
+
+function toggleTodoDone(notifId) {
+    const item = notifHistory.find(n => n.id === notifId);
+    if (!item) return;
+    item.unread = !item.unread;
+    const toastEl = document.getElementById(`toast_${notifId}`);
+    if (toastEl && !item.unread) toastEl.remove();
+    saveNotifHistory();
+    renderBellUI();
+    if (notifHistory.filter(n => n.unread).length === 0) stopRinging();
+}
+
+function markAllNotifsRead() {
+    notifHistory.forEach(n => { n.unread = false; });
+    const container = document.getElementById('globalAlarmToastContainer');
+    if (container) container.innerHTML = '';
+    saveNotifHistory();
+    renderBellUI();
+    stopRinging();
+}
+
+function clearAllNotifs() {
+    notifHistory = notifHistory.filter(n => n.unread);
+    saveNotifHistory();
+    renderBellUI();
+}
+
+function formatRelativeAgo(timestampMs) {
+    const diffSec = Math.max(0, Math.floor((getAccurateNow().getTime() - timestampMs) / 1000));
+    if (diffSec < 60) return "剛剛";
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} 分鐘前`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr} 小時 ${diffMin % 60} 分前`;
+    const diffDay = Math.floor(diffHr / 24);
+    return `${diffDay} 天前`;
+}
+
+function getCategoryEmoji(category, message = '') {
+    if (category === 'job_soldier' || category === 'job_tech' || category === 'cooldown_soldier' || category === 'cooldown_tech' || message.includes('職位')) return '🏛️';
+    if (category === 'soldiers') return '⚔️';
+    if (category === 'tech') return '🔬';
+    if (category === 'master') return '📖';
+    if (category === 'sunlight') return '☀️';
+    if (message.includes('科技')) return '🔬';
+    if (message.includes('大師')) return '📖';
+    if (message.includes('沐光')) return '☀️';
+    return '⚔️';
+}
+
+function inferAccIdFromMessage(msg) {
+    if (!msg) return 'z';
+    if (msg.includes(getDisplayAccountName('h')) || msg.includes('[h]')) return 'h';
+    if (msg.includes(getDisplayAccountName('p')) || msg.includes('[p]')) return 'p';
+    return 'z';
+}
+
+function getDefaultDurationForCategory(accId, category, itemId) {
+    if (category === 'master') return { d: 0, h: 0, m: 10 };
+    if (category === 'sunlight') return { d: 0, h: 8, m: 0 };
+    return { d: 0, h: 0, m: 0 };
+}
+
+function autoJumpTodoInput(event, inputEl, nextIdStr) {
+    if (!nextIdStr) return;
+    if (event && ['Tab', 'Shift', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Delete', 'Enter'].includes(event.key)) return;
+    const clean = inputEl.value.replace(/\D/g, '');
+    if (clean.length >= 2) {
+        const nextEl = document.getElementById(nextIdStr);
+        if (nextEl) {
+            nextEl.focus();
+            nextEl.select();
+        }
+    }
+}
+
+function handleTodoArrowNav(event, prevIdStr, nextIdStr, idx, notifId, accId, category, itemId) {
+    if (event.key === 'ArrowLeft' && prevIdStr) {
+        event.preventDefault();
+        const prevEl = document.getElementById(prevIdStr);
+        if (prevEl) { prevEl.focus(); prevEl.select(); }
+    } else if (event.key === 'ArrowRight' && nextIdStr) {
+        event.preventDefault();
+        const nextEl = document.getElementById(nextIdStr);
+        if (nextEl) { nextEl.focus(); nextEl.select(); }
+    } else if (event.key === 'Enter') {
+        event.preventDefault();
+        submitTodoCustomRound(idx, notifId, accId, category, itemId);
+    }
+}
+
+function startNewRoundFromTodo(notifId, accId, category, itemId, d, h, m) {
+    const totalMs = ((d * 24 + h) * 60 + m) * 60 * 1000;
+    if (totalMs <= 0) {
+        alert('請先輸入新一輪的倒數時間！');
+        return;
+    }
+
+    if (store[accId] && Array.isArray(store[accId][category])) {
+        let target = itemId ? store[accId][category].find(it => it.id === itemId) : null;
+        if (!target) target = store[accId][category][0];
+        if (target) {
+            target.d = d;
+            target.h = h;
+            target.m = m;
+            target.endTime = new Date(getAccurateNow().getTime() + totalMs);
+        }
+    }
+
+    const notifItem = notifHistory.find(n => n.id === notifId);
+    if (notifItem) notifItem.unread = false;
+    const toastEl = document.getElementById(`toast_${notifId}`);
+    if (toastEl) toastEl.remove();
+
+    saveNotifHistory();
+    renderBellUI();
+    if (notifHistory.filter(n => n.unread).length === 0) stopRinging();
+
+    renderGrid();
+    updateTimeline(true);
+    saveState();
+}
+
+function submitTodoCustomRound(idx, notifId, accId, category, itemId) {
+    const d = parseInt(document.getElementById(`todo_d_${idx}`)?.value, 10) || 0;
+    const h = parseInt(document.getElementById(`todo_h_${idx}`)?.value, 10) || 0;
+    const m = parseInt(document.getElementById(`todo_m_${idx}`)?.value, 10) || 0;
+    startNewRoundFromTodo(notifId, accId, category, itemId, d, h, m);
+}
+
+function confirmJobFromTodo(notifId, accId, jType, timeStr) {
+    if (!timeStr) {
+        alert('請先選擇預約時段！');
+        return;
+    }
+    setJobTime(accId, jType, timeStr, true);
+    const notifItem = notifHistory.find(n => n.id === notifId);
+    if (notifItem) notifItem.unread = false;
+    const toastEl = document.getElementById(`toast_${notifId}`);
+    if (toastEl) toastEl.remove();
+
+    saveNotifHistory();
+    renderBellUI();
+    if (notifHistory.filter(n => n.unread).length === 0) stopRinging();
+}
+
+function submitTodoJobConfirm(idx, notifId, accId, jType) {
+    const sel = document.getElementById(`todo_job_sel_${idx}`);
+    confirmJobFromTodo(notifId, accId, jType, sel ? sel.value : '');
+}
+
+function renderBellUI() {
+    const unreadCount = notifHistory.filter(n => n.unread).length;
+    const badge = document.getElementById('bellCountBadge');
+    const bellBtn = document.getElementById('bellBtn');
+    const listEl = document.getElementById('notifDropdownList');
+
+    document.title = unreadCount > 0 ? `(${unreadCount}) 🔔 ${ORIGINAL_TITLE}` : ORIGINAL_TITLE;
+
+    if (badge) {
+        if (unreadCount > 0) {
+            badge.style.display = 'inline-flex';
+            badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    if (bellBtn) {
+        if (unreadCount > 0) bellBtn.classList.add('ringing');
+        else bellBtn.classList.remove('ringing');
+    }
+
+    if (!listEl) return;
+
+    if (notifHistory.length === 0) {
+        listEl.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:24px 10px; font-size:14px;">待辦清單已全部完成 🎉</div>`;
+        return;
+    }
+
+    listEl.innerHTML = notifHistory.map((item, idx) => {
+        const safeId = escapeAttr(item.id);
+        const accId = item.accId || inferAccIdFromMessage(item.message);
+        const bigEmoji = getCategoryEmoji(item.category, item.message);
+        const cleanMessage = String(item.message).replace(/\s*(⚔️|🔬|📖|☀️|🏛️)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+        let renewControlHtml = '';
+
+        if (item.unread && accId && ['soldiers', 'tech', 'master', 'sunlight'].includes(item.category)) {
+            const defDur = getDefaultDurationForCategory(accId, item.category, item.itemId);
+            const defD = defDur.d;
+            const defH = defDur.h;
+            const defM = defDur.m;
+
+            let presetBtns = '';
+            if (item.category === 'master') {
+                presetBtns = `
+                    <div class="todo-presets">
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 0, 10)">10分</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 2, 0)">2時</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 10, 0)">10時</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 23, 0)">23時</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 3, 0, 0)">3天</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 5, 0, 0)">5天</button>
                     </div>
-                    <div class="res-row-bottom">
-                        <span class="res-ratio-tag">比例 ÷${item.ratio}</span>
-                        <span class="res-scaled-val" id="res_scaled_${acc.id}_${item.key}">${item.hasVal ? formatScaledMillions(item.scaledVal) : '--'}</span>
+                `;
+            } else if (item.category === 'sunlight') {
+                presetBtns = `
+                    <div class="todo-presets">
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'sunlight', ${item.itemId || 'null'}, 0, 8, 0)">▶ 8小時整</button>
+                    </div>
+                `;
+            }
+
+            renewControlHtml = `
+                <div class="todo-renew-box" id="todo_box_${idx}">
+                    <div class="todo-renew-row">
+                        <span style="font-weight:700;">🔄 下一輪：</span>
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_d_${idx}" value="${defD}" maxlength="2"
+                            onfocus="this.select()"
+                            onkeydown="handleTodoArrowNav(event, null, 'todo_h_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
+                            oninput="autoJumpTodoInput(event, this, 'todo_h_${idx}')">天
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_h_${idx}" value="${formatPad(defH)}" maxlength="2"
+                            onfocus="this.select()"
+                            onkeydown="handleTodoArrowNav(event, 'todo_d_${idx}', 'todo_m_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
+                            oninput="autoJumpTodoInput(event, this, 'todo_m_${idx}')">時
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_m_${idx}" value="${formatPad(defM)}" maxlength="2"
+                            onfocus="this.select()"
+                            onkeydown="handleTodoArrowNav(event, 'todo_h_${idx}', null, ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">分
+                        <button class="btn-todo-start" onclick="submitTodoCustomRound(${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">▶ 開始</button>
+                    </div>
+                    ${presetBtns}
+                </div>
+            `;
+        } else if (item.unread && accId && (item.category === 'cooldown_soldier' || item.category === 'cooldown_tech')) {
+            const jType = item.category === 'cooldown_soldier' ? 'soldier' : 'tech';
+            const timeKey = jType === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+            const selectedTime = item.recommendedTime || (store[accId] ? store[accId][timeKey] : '') || '';
+            renewControlHtml = `
+                <div class="todo-renew-box" id="todo_box_${idx}">
+                    <div class="todo-renew-row">
+                        <span style="font-weight:700;">預約時段：</span>
+                        <select class="todo-time-select" id="todo_job_sel_${idx}" onchange="confirmJobFromTodo('${safeId}', '${accId}', '${jType}', this.value)">
+                            ${generateJobOptions(selectedTime, '選擇時段')}
+                        </select>
+                        <button class="btn-todo-confirm" onclick="submitTodoJobConfirm(${idx}, '${safeId}', '${accId}', '${jType}')">✔ 確認</button>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }
 
         return `
-            <div class="account-column ${acc.id}">
-                ${renderProfileHeader(acc)}
-
-                <div class="res-merged-row ${isActiveTarget ? 'active-target' : ''}">
-                    <div class="res-merged-col paste-col">
-                        <button type="button" class="res-target-btn" onclick="setPasteTarget('${acc.id}')">
-                            ${isActiveTarget ? '✔ 貼上目標' : '📌 貼上目標'}
-                        </button>
-                        ${statusMsg ? `<div class="res-ocr-status">${statusMsg}</div>` : ''}
+            <div class="todo-item ${item.unread ? 'pending' : 'done'} acc-${accId}">
+                <div class="todo-top-row">
+                    <span class="todo-big-emoji">${bigEmoji}</span>
+                    <div class="todo-msg-wrap">
+                        <div class="todo-item-msg">${cleanMessage}</div>
+                        <div class="todo-item-meta">
+                            <span>🕒 ${formatRelativeAgo(item.timestamp)}</span>
+                            <span>${item.unread ? '待處理' : '已完成'}</span>
+                        </div>
                     </div>
-
-                    <div class="res-merged-col prio-col" id="res_prio_${acc.id}">
-                        ${renderPrioSplitInnerHtml(analysis)}
-                    </div>
+                    <button type="button" class="todo-checkbox" title="${item.unread ? '標記為已完成' : '恢復待處理'}" onclick="toggleTodoDone('${safeId}')">
+                        ${item.unread ? '' : '✔'}
+                    </button>
                 </div>
-
-                ${rowsHtml}
+                ${renewControlHtml}
             </div>
         `;
     }).join('');
 }
 
-function refreshAccountResourceVisualsOnly(accId, skipInputId = null) {
-    const analysis = getAccountResourceAnalysis(accId);
+// ==========================================
+// 8. Firebase 與本地儲存資料序列化
+// ==========================================
+function serializeStore() {
+    const out = {
+        showSunlightEvent: showSunlightEvent,
+        resources: typeof resourcesStore !== 'undefined' ? resourcesStore : {},
+        updatedAt: Date.now()
+    };
+    accounts.forEach(acc => {
+        const s = store[acc.id];
+        out[acc.id] = {
+            soldiers: (s.soldiers || []).map(it => ({ ...it, endTime: it.endTime ? it.endTime.getTime() : null })),
+            tech: (s.tech || []).map(it => ({ ...it, endTime: it.endTime ? it.endTime.getTime() : null })),
+            master: (s.master || []).map(it => ({ ...it, endTime: it.endTime ? it.endTime.getTime() : null })),
+            sunlight: (s.sunlight || []).map(it => ({ ...it, endTime: it.endTime ? it.endTime.getTime() : null })),
+            soldierJobTime: s.soldierJobTime || '',
+            soldierJobDate: s.soldierJobDate ? s.soldierJobDate.getTime() : null,
+            soldierJobConfirmed: !!s.soldierJobConfirmed,
+            soldierJobManual: !!s.soldierJobManual,
+            techJobTime: s.techJobTime || '',
+            techJobDate: s.techJobDate ? s.techJobDate.getTime() : null,
+            techJobConfirmed: !!s.techJobConfirmed,
+            techJobManual: !!s.techJobManual
+        };
+    });
+    return out;
+}
 
-    const prioBox = document.getElementById(`res_prio_${accId}`);
-    if (prioBox) {
-        prioBox.innerHTML = renderPrioSplitInnerHtml(analysis);
+function applySerializedData(data) {
+    if (!data || typeof data !== 'object') return;
+    if (typeof data.showSunlightEvent === 'boolean') {
+        showSunlightEvent = data.showSunlightEvent;
+        updateSunlightToggleBtnUI();
+    }
+    if (data.resources && typeof resourcesStore !== 'undefined') {
+        accounts.forEach(acc => {
+            if (data.resources[acc.id]) {
+                resourcesStore[acc.id] = {
+                    ...resourcesStore[acc.id],
+                    ...data.resources[acc.id]
+                };
+            }
+        });
     }
 
-    analysis.items.forEach(item => {
-        const card = document.getElementById(`res_card_${accId}_${item.key}`);
-        if (card) {
-            card.setAttribute('style', item.inlineGradientStyle);
-            card.classList.toggle('has-candy', item.hasVal);
+    accounts.forEach(acc => {
+        const d = data[acc.id];
+        if (!d) return;
+        ['soldiers', 'tech', 'master', 'sunlight'].forEach(cat => {
+            if (Array.isArray(d[cat]) && d[cat].length > 0) {
+                store[acc.id][cat] = d[cat].map(it => {
+                    if (it.id >= nextId) nextId = it.id + 1;
+                    return {
+                        id: it.id,
+                        d: Number(it.d) || 0,
+                        h: Number(it.h) || 0,
+                        m: Number(it.m) || 0,
+                        endTime: it.endTime ? new Date(it.endTime) : null
+                    };
+                });
+            }
+        });
+        store[acc.id].soldierJobTime = d.soldierJobTime || '';
+        store[acc.id].soldierJobDate = d.soldierJobDate ? new Date(d.soldierJobDate) : null;
+        store[acc.id].soldierJobConfirmed = !!d.soldierJobConfirmed;
+        store[acc.id].soldierJobManual = !!d.soldierJobManual;
+
+        store[acc.id].techJobTime = d.techJobTime || '';
+        store[acc.id].techJobDate = d.techJobDate ? new Date(d.techJobDate) : null;
+        store[acc.id].techJobConfirmed = !!d.techJobConfirmed;
+        store[acc.id].techJobManual = !!d.techJobManual;
+    });
+
+    normalizeAllJobsConsistency();
+}
+
+function saveState() {
+    const payload = serializeStore();
+    latestStateUpdatedAt = payload.updatedAt;
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {}
+
+    if (hasFirebase && dbRef) {
+        dbRef.set(payload).catch(err => console.warn("Firebase 寫入失敗:", err));
+    }
+}
+
+function saveProfiles() {
+    try {
+        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
+    } catch (e) {}
+
+    if (hasFirebase && profileDbRef) {
+        profileDbRef.set(profiles).catch(err => console.warn("Profiles 寫入失敗:", err));
+    }
+}
+
+function loadLocalBackups() {
+    try {
+        const rawP = localStorage.getItem(PROFILE_STORAGE_KEY);
+        if (rawP) {
+            const parsedP = JSON.parse(rawP);
+            accounts.forEach(acc => {
+                if (parsedP && parsedP[acc.id]) {
+                    profiles[acc.id] = { ...profiles[acc.id], ...parsedP[acc.id] };
+                }
+            });
         }
-        const inputId = `res_in_${accId}_${item.key}`;
-        if (inputId !== skipInputId) {
-            const inp = document.getElementById(inputId);
-            if (inp && inp.value !== String(item.valStr)) {
-                inp.value = item.valStr;
+    } catch (e) {}
+
+    try {
+        const rawS = localStorage.getItem(STORAGE_KEY);
+        if (rawS) applySerializedData(JSON.parse(rawS));
+    } catch (e) {}
+}
+
+function setupFirebaseListeners() {
+    const syncBadge = document.getElementById('syncBadge');
+    if (!hasFirebase || !dbRef) {
+        if (syncBadge) {
+            syncBadge.className = 'sync-badge error';
+            syncBadge.innerText = '💾 本地儲存模式';
+        }
+        notifyDataReadyForSplash();
+        return;
+    }
+
+    dbRef.on("value", (snap) => {
+        const val = snap.val();
+        if (val) {
+            applySerializedData(val);
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(val)); } catch (e) {}
+        }
+        if (syncBadge) {
+            syncBadge.className = 'sync-badge connected';
+            syncBadge.innerText = '🟢 雲端已同步';
+        }
+
+        const activeEl = document.activeElement;
+        const isTypingResource = activeEl && activeEl.classList && activeEl.classList.contains('res-num-input');
+        const isTypingTimer = activeEl && activeEl.classList && activeEl.classList.contains('time-input');
+
+        if (!isTypingTimer) {
+            renderGrid();
+        }
+        if (typeof renderResourcesGrid === 'function') {
+            if (isTypingResource) {
+                accounts.forEach(acc => {
+                    if (typeof refreshAccountResourceVisualsOnly === 'function') {
+                        refreshAccountResourceVisualsOnly(acc.id, activeEl.id);
+                    }
+                });
+            } else {
+                renderResourcesGrid();
             }
         }
-        const unitSel = document.getElementById(`res_unit_${accId}_${item.key}`);
-        if (unitSel && unitSel.value !== item.unit) {
-            unitSel.value = item.unit;
+        updateTimeline(true);
+        tickTimers();
+        notifyDataReadyForSplash();
+        isInitialLoadDone = true;
+    }, (err) => {
+        if (syncBadge) {
+            syncBadge.className = 'sync-badge error';
+            syncBadge.innerText = '⚠️ 雲端連線異常';
         }
-        const scaledEl = document.getElementById(`res_scaled_${accId}_${item.key}`);
-        if (scaledEl) {
-            scaledEl.innerText = item.hasVal ? formatScaledMillions(item.scaledVal) : '--';
-        }
+        notifyDataReadyForSplash();
     });
-}
 
-function onResourceNumberTyping(accId, resKey, inputEl) {
-    const cleaned = sanitizeResourceNumberInput(inputEl.value);
-    if (inputEl.value !== cleaned) {
-        inputEl.value = cleaned;
+    if (profileDbRef) {
+        profileDbRef.on("value", (snap) => {
+            const val = snap.val();
+            if (val) {
+                accounts.forEach(acc => {
+                    if (val[acc.id]) {
+                        profiles[acc.id] = { ...profiles[acc.id], ...val[acc.id] };
+                    }
+                });
+                try { localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles)); } catch (e) {}
+                renderGrid();
+                if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+                updateTimeline(true);
+            }
+        });
     }
-    if (!resourcesStore[accId]) resourcesStore[accId] = {};
-    if (!resourcesStore[accId][resKey]) resourcesStore[accId][resKey] = { val: '', unit: 'M' };
-    resourcesStore[accId][resKey].val = cleaned;
-
-    refreshAccountResourceVisualsOnly(accId, inputEl.id);
-    scheduleResourceSave();
 }
 
-function updateResourceUnit(accId, resKey, unitVal) {
-    if (!resourcesStore[accId]) resourcesStore[accId] = {};
-    if (!resourcesStore[accId][resKey]) resourcesStore[accId][resKey] = { val: '', unit: 'M' };
-    resourcesStore[accId][resKey].unit = unitVal;
-    refreshAccountResourceVisualsOnly(accId);
+// ==========================================
+// 9. 職位自動排程與狀態邏輯
+// ==========================================
+function generateJobOptions(selectedVal = '', emptyLabel = '無預約') {
+    let html = `<option value="" ${!selectedVal ? 'selected' : ''}>${emptyLabel}</option>`;
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 30) {
+            const val = `${formatPad(h)}:${formatPad(m)}`;
+            html += `<option value="${val}" ${selectedVal === val ? 'selected' : ''}>${val}</option>`;
+        }
+    }
+    return html;
+}
+
+function getRecommendedJobSlotFromDate(endDate) {
+    if (!endDate || isNaN(endDate.getTime())) return null;
+    const d = new Date(endDate.getTime());
+    const mins = d.getMinutes();
+    if (mins === 0 || mins === 30) {
+        d.setSeconds(0, 0);
+    } else if (mins < 30) {
+        d.setMinutes(30, 0, 0);
+    } else {
+        d.setHours(d.getHours() + 1, 0, 0, 0);
+    }
+    return d;
+}
+
+function autoSyncJobFromTimer(accId, type, endDate) {
+    const manualKey = type === 'soldier' ? 'soldierJobManual' : 'techJobManual';
+    const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+    const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+    const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+
+    if (store[accId][manualKey]) return;
+    const slot = getRecommendedJobSlotFromDate(endDate);
+    if (!slot) return;
+
+    store[accId][dateKey] = slot;
+    store[accId][timeKey] = formatTimeHM(slot);
+    store[accId][confKey] = false;
+}
+
+function setJobTime(accId, type, timeStr, confirmed = false) {
+    isJobSelectActive = false;
+    const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+    const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+    const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+    const manualKey = type === 'soldier' ? 'soldierJobManual' : 'techJobManual';
+
+    if (!timeStr) {
+        store[accId][timeKey] = '';
+        store[accId][dateKey] = null;
+        store[accId][confKey] = false;
+        store[accId][manualKey] = false;
+    } else {
+        const [h, m] = timeStr.split(':').map(Number);
+        const d = getAccurateNow();
+        d.setHours(h, m, 0, 0);
+        if (d.getTime() < getAccurateNow().getTime() - 10 * 60 * 1000) {
+            d.setDate(d.getDate() + 1);
+        }
+        store[accId][timeKey] = timeStr;
+        store[accId][dateKey] = d;
+        store[accId][confKey] = confirmed;
+        store[accId][manualKey] = true;
+    }
+
+    renderGrid();
+    updateTimeline(true);
     saveState();
 }
 
-function handleResFileChange(event) {
-    const file = event.target.files && event.target.files[0];
-    if (file) {
-        runOcrOnImageFile(file, pendingUploadAccId);
+function shiftJobTime(accId, type, deltaMinutes) {
+    const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+    const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+    const manualKey = type === 'soldier' ? 'soldierJobManual' : 'techJobManual';
+
+    let base = store[accId][dateKey];
+    if (!base || isNaN(base.getTime())) {
+        base = getRecommendedJobSlotFromDate(getAccurateNow());
+    }
+    const shifted = new Date(base.getTime() + deltaMinutes * 60 * 1000);
+    store[accId][dateKey] = shifted;
+    store[accId][timeKey] = formatTimeHM(shifted);
+    store[accId][manualKey] = true;
+
+    renderGrid();
+    updateTimeline(true);
+    saveState();
+}
+
+function toggleJobConfirm(accId, type) {
+    const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+    const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+    if (!store[accId][dateKey]) {
+        alert('請先選擇職位預約時間！');
+        return;
+    }
+    if (isJobInCooldown(accId, type, getAccurateNow())) {
+        alert('同一職位目前仍在 10 分鐘冷卻中，冷卻結束後才能重新申請！');
+        return;
+    }
+    store[accId][confKey] = !store[accId][confKey];
+    renderGrid();
+    updateTimeline(true);
+    saveState();
+}
+
+function normalizeAllJobsConsistency() {
+    accounts.forEach(acc => {
+        ['soldier', 'tech'].forEach(type => {
+            const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+            const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+            const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+            const manualKey = type === 'soldier' ? 'soldierJobManual' : 'techJobManual';
+
+            const jDate = store[acc.id][dateKey];
+            const jTime = store[acc.id][timeKey];
+
+            if (jDate && !isNaN(jDate.getTime())) {
+                store[acc.id][timeKey] = formatTimeHM(jDate);
+            } else if (jTime) {
+                const [h, m] = jTime.split(':').map(Number);
+                if (!isNaN(h) && !isNaN(m)) {
+                    const d = getAccurateNow();
+                    d.setHours(h, m, 0, 0);
+                    if (d < getAccurateNow()) d.setDate(d.getDate() + 1);
+                    store[acc.id][dateKey] = d;
+                } else {
+                    store[acc.id][timeKey] = '';
+                    store[acc.id][dateKey] = null;
+                    store[acc.id][confKey] = false;
+                    store[acc.id][manualKey] = false;
+                }
+            } else {
+                store[acc.id][timeKey] = '';
+                store[acc.id][dateKey] = null;
+                store[acc.id][confKey] = false;
+                store[acc.id][manualKey] = false;
+            }
+        });
+    });
+}
+
+function isJobInCooldown(accId, type, now = getAccurateNow()) {
+    const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+    const jobDate = store[accId] ? store[accId][dateKey] : null;
+    if (!jobDate) return false;
+    const diffMs = now.getTime() - jobDate.getTime();
+    return diffMs >= 0 && diffMs < 10 * 60 * 1000;
+}
+
+function hasSameAccountJobConflict(accId) {
+    const s = store[accId];
+    if (!s || !s.soldierJobDate || !s.techJobDate) return false;
+    if (isNaN(s.soldierJobDate.getTime()) || isNaN(s.techJobDate.getTime())) return false;
+    return Math.abs(s.soldierJobDate.getTime() - s.techJobDate.getTime()) < 10 * 60 * 1000;
+}
+
+// ==========================================
+// 10. 計時器操作邏輯
+// ==========================================
+function addTimerItem(accId, category) {
+    const newItem = {
+        id: nextId++,
+        d: 0,
+        h: category === 'sunlight' ? 8 : 0,
+        m: category === 'master' ? 10 : 0,
+        endTime: null
+    };
+    store[accId][category].push(newItem);
+    renderGrid();
+    updateTimeline(true);
+    saveState();
+}
+
+function deleteTimerItem(accId, category, id) {
+    if (store[accId][category].length <= 1) {
+        store[accId][category][0].endTime = null;
+    } else {
+        store[accId][category] = store[accId][category].filter(it => it.id !== id);
+    }
+    renderGrid();
+    updateTimeline(true);
+    saveState();
+}
+
+function updateInputVal(accId, category, id, field, val) {
+    const item = store[accId][category].find(it => it.id === id);
+    if (!item) return;
+    let num = Math.max(0, parseInt(val, 10) || 0);
+    if (field === 'h' && num > 23) num = 23;
+    if (field === 'm' && num > 59) num = 59;
+    item[field] = num;
+    saveState();
+}
+
+function handleTimerInput(event, inputEl, accId, category, id, field, nextIdStr) {
+    let clean = inputEl.value.replace(/\D/g, '').slice(0, 2);
+    if (field === 'h' && Number(clean) > 23) clean = '23';
+    if (field === 'm' && Number(clean) > 59) clean = '59';
+    if (inputEl.value !== clean) {
+        inputEl.value = clean;
+    }
+    updateInputVal(accId, category, id, field, clean);
+
+    if (clean.length >= 2 && nextIdStr) {
+        const nextEl = document.getElementById(nextIdStr);
+        if (nextEl) {
+            nextEl.focus();
+            nextEl.select();
+        }
     }
 }
 
-document.addEventListener('paste', (event) => {
-    const resView = document.getElementById('resourcesView');
-    if (!resView || resView.style.display !== 'block') return;
-    const items = event.clipboardData && event.clipboardData.items;
-    if (!items) return;
-    for (let i = 0; i < items.length; i++) {
-        if (items[i].type && items[i].type.indexOf('image') !== -1) {
-            const blob = items[i].getAsFile();
-            if (blob) {
-                event.preventDefault();
-                runOcrOnImageFile(blob, activePasteAccId);
-                break;
+function handleTimerArrowNav(event, prevIdStr, nextIdStr, accId, category, id) {
+    if (event.key === 'ArrowLeft' && prevIdStr) {
+        event.preventDefault();
+        const prevEl = document.getElementById(prevIdStr);
+        if (prevEl) {
+            prevEl.focus();
+            prevEl.select();
+        }
+    } else if (event.key === 'ArrowRight' && nextIdStr) {
+        event.preventDefault();
+        const nextEl = document.getElementById(nextIdStr);
+        if (nextEl) {
+            nextEl.focus();
+            nextEl.select();
+        }
+    } else if (event.key === 'Enter') {
+        event.preventDefault();
+        startTimer(accId, category, id);
+    }
+}
+
+function startTimer(accId, category, id) {
+    ensureAudioContextUnlocked();
+    const item = store[accId][category].find(it => it.id === id);
+    if (!item) return;
+
+    const totalMs = ((item.d * 24 + item.h) * 60 + item.m) * 60 * 1000;
+    if (totalMs <= 0) {
+        alert('請先輸入倒數時間！');
+        return;
+    }
+
+    const endDate = new Date(getAccurateNow().getTime() + totalMs);
+    item.endTime = endDate;
+
+    if (category === 'soldiers') autoSyncJobFromTimer(accId, 'soldier', endDate);
+    if (category === 'tech') autoSyncJobFromTimer(accId, 'tech', endDate);
+
+    renderGrid();
+    updateTimeline(true);
+    saveState();
+}
+
+function startPresetTimer(accId, category, id, d, h, m) {
+    const item = store[accId][category].find(it => it.id === id);
+    if (!item) return;
+    item.d = d;
+    item.h = h;
+    item.m = m;
+    startTimer(accId, category, id);
+}
+
+function resetTimer(accId, category, id) {
+    const item = store[accId][category].find(it => it.id === id);
+    if (!item) return;
+    if (item.endTime) {
+        const remainMs = Math.max(0, item.endTime.getTime() - getAccurateNow().getTime());
+        const totalMin = Math.ceil(remainMs / 60000);
+        if (totalMin > 0) {
+            item.d = Math.floor(totalMin / 1440);
+            item.h = Math.floor((totalMin % 1440) / 60);
+            item.m = totalMin % 60;
+        }
+    }
+    item.endTime = null;
+    renderGrid();
+    updateTimeline(true);
+    saveState();
+}
+
+function updateSunlightToggleBtnUI() {
+    const btn = document.getElementById('sunlightToggleBtn');
+    if (!btn) return;
+    if (showSunlightEvent) {
+        btn.classList.add('active');
+        btn.innerText = '☀️ 沐光：顯示';
+    } else {
+        btn.classList.remove('active');
+        btn.innerText = '☀️ 沐光：隱藏';
+    }
+}
+
+function toggleSunlightEvent() {
+    showSunlightEvent = !showSunlightEvent;
+    updateSunlightToggleBtnUI();
+    renderGrid();
+    updateTimeline(true);
+    saveState();
+}
+
+// ==========================================
+// 11. 畫面渲染（3 欄主畫面 & 時間線）
+// ==========================================
+function renderProfileHeader(acc) {
+    const p = profiles[acc.id] || {};
+    const avatarSrc = p.avatar || getBearFaceFile(acc.id);
+    const charaBadge = getBearFaceFile(acc.id);
+    const crownHtml = acc.isMain ? `<span class="main-crown-badge">👑 主號</span>` : '';
+    const allianceHtml = p.alliance ? `<span class="profile-alliance">[${p.alliance}]</span>` : '';
+
+    return `
+        <div class="profile-card">
+            <button type="button" class="btn-edit-profile" title="編輯角色名稱與聯盟" onclick="editAccountQuery('${acc.id}')">✏️</button>
+            <div class="profile-avatar-wrap">
+                <img class="profile-avatar" src="${avatarSrc}" alt="${p.name || acc.id}" onerror="this.src='${charaBadge}'">
+                <img class="avatar-chara-badge" src="${charaBadge}" alt="">
+            </div>
+            <div class="profile-details">
+                <div class="profile-name-row">
+                    <span class="profile-name">${p.name || acc.id}</span>
+                    ${crownHtml}
+                    ${allianceHtml}
+                </div>
+                <div class="profile-stats-row">
+                    <span class="stat-pill tg">${p.levelLabel || 'TG'}</span>
+                    <span class="stat-pill power">⚔️ ${formatPower(p.power)}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderTimerRow(accId, category, item, index, isMulti) {
+    const now = getAccurateNow();
+    const isRunning = item.endTime && item.endTime.getTime() > now.getTime();
+    const remainMs = isRunning ? item.endTime.getTime() - now.getTime() : 0;
+    const dueClass = isRunning ? getDueBorderClass(item.endTime) : '';
+    const extraCardClass = category === 'master' ? 'master-card' : (category === 'sunlight' ? 'sunlight-card' : '');
+
+    const leftBadgeHtml = isMulti
+        ? `<div class="left-slot-box"><span class="flower-seq-badge">${index + 1}</span></div>`
+        : '';
+
+    let presetHtml = '';
+    if (!isRunning && category === 'master') {
+        presetHtml = `
+            <div class="preset-row">
+                <button class="btn-preset" onclick="startPresetTimer('${accId}','master',${item.id},0,0,10)">10分</button>
+                <button class="btn-preset" onclick="startPresetTimer('${accId}','master',${item.id},0,2,0)">2時</button>
+                <button class="btn-preset" onclick="startPresetTimer('${accId}','master',${item.id},0,10,0)">10時</button>
+                <button class="btn-preset" onclick="startPresetTimer('${accId}','master',${item.id},0,23,0)">23時</button>
+                <button class="btn-preset" onclick="startPresetTimer('${accId}','master',${item.id},3,0,0)">3天</button>
+                <button class="btn-preset" onclick="startPresetTimer('${accId}','master',${item.id},5,0,0)">5天</button>
+            </div>
+        `;
+    } else if (!isRunning && category === 'sunlight') {
+        presetHtml = `
+            <div class="preset-row">
+                <button class="btn-preset" onclick="startPresetTimer('${accId}','sunlight',${item.id},0,8,0)">▶ 8小時整</button>
+            </div>
+        `;
+    }
+
+    if (isRunning) {
+        return `
+            <div class="timer-item-row">
+                ${leftBadgeHtml}
+                <div class="timer-card ${extraCardClass} ${dueClass}">
+                    <div class="timer-main-row">
+                        <div class="timer-info">
+                            <div class="timer-display" id="cd_${accId}_${category}_${item.id}">${formatCountdown(remainMs)}</div>
+                            <div class="timer-sub">${getDayTagHtml(item.endTime)}完結：${formatFullDateTime(item.endTime)}</div>
+                        </div>
+                        <div class="timer-actions">
+                            <button class="btn-action" onclick="resetTimer('${accId}','${category}',${item.id})">修改</button>
+                            ${isMulti ? `<button class="btn-del" title="刪除" onclick="deleteTimerItem('${accId}','${category}',${item.id})">✕</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    const dId = `in_d_${accId}_${category}_${item.id}`;
+    const hId = `in_h_${accId}_${category}_${item.id}`;
+    const mId = `in_m_${accId}_${category}_${item.id}`;
+
+    return `
+        <div class="timer-item-row">
+            ${leftBadgeHtml}
+            <div class="timer-card ${extraCardClass}">
+                <div class="timer-main-row">
+                    <div class="timer-inputs">
+                        <input type="text" inputmode="numeric" class="time-input" id="${dId}" value="${item.d}" maxlength="2"
+                            onfocus="requestAnimationFrame(() => this.select())"
+                            oninput="handleTimerInput(event, this, '${accId}', '${category}', ${item.id}, 'd', '${hId}')"
+                            onchange="updateInputVal('${accId}','${category}',${item.id},'d',this.value)"
+                            onkeydown="handleTimerArrowNav(event, null, '${hId}', '${accId}', '${category}', ${item.id})">天
+                        <input type="text" inputmode="numeric" class="time-input" id="${hId}" value="${formatPad(item.h)}" maxlength="2"
+                            onfocus="requestAnimationFrame(() => this.select())"
+                            oninput="handleTimerInput(event, this, '${accId}', '${category}', ${item.id}, 'h', '${mId}')"
+                            onchange="updateInputVal('${accId}','${category}',${item.id},'h',this.value)"
+                            onkeydown="handleTimerArrowNav(event, '${dId}', '${mId}', '${accId}', '${category}', ${item.id})">時
+                        <input type="text" inputmode="numeric" class="time-input" id="${mId}" value="${formatPad(item.m)}" maxlength="2"
+                            onfocus="requestAnimationFrame(() => this.select())"
+                            oninput="handleTimerInput(event, this, '${accId}', '${category}', ${item.id}, 'm', null)"
+                            onchange="updateInputVal('${accId}','${category}',${item.id},'m',this.value)"
+                            onkeydown="handleTimerArrowNav(event, '${hId}', null, '${accId}', '${category}', ${item.id})">分
+                    </div>
+                    <div class="timer-actions">
+                        <button class="btn-action" onclick="startTimer('${accId}','${category}',${item.id})">▶ 開始</button>
+                        ${isMulti ? `<button class="btn-del" title="刪除" onclick="deleteTimerItem('${accId}','${category}',${item.id})">✕</button>` : ''}
+                    </div>
+                </div>
+                ${presetHtml}
+            </div>
+        </div>
+    `;
+}
+
+function renderJobSummaryBox(accId) {
+    const s = store[accId];
+    const now = getAccurateNow();
+    const hasConflict = hasSameAccountJobConflict(accId);
+
+    const buildCard = (label, type) => {
+        const jDate = type === 'soldier' ? s.soldierJobDate : s.techJobDate;
+        const jConf = type === 'soldier' ? s.soldierJobConfirmed : s.techJobConfirmed;
+        const inCooldown = isJobInCooldown(accId, type, now);
+
+        let dueBorderClass = '';
+        let pillHtml = `<span class="status-pill none">未預約</span>`;
+        let timeText = '尚未設定時段';
+        let remainText = '';
+
+        if (jDate && !isNaN(jDate.getTime())) {
+            dueBorderClass = getDueBorderClass(jDate);
+            timeText = `${getDayTagHtml(jDate)}${formatFullDateTime(jDate)}`;
+            const diffMs = jDate.getTime() - now.getTime();
+
+            if (inCooldown) {
+                const cdRemainMin = Math.max(1, Math.ceil((10 * 60 * 1000 - (now.getTime() - jDate.getTime())) / 60000));
+                pillHtml = `<span class="status-pill cooldown">⏳ 冷卻剩 ${cdRemainMin} 分</span>`;
+                remainText = `同職位冷卻中（不可重申）`;
+            } else if (diffMs > 0) {
+                if (hasConflict) {
+                    pillHtml = `<button type="button" class="status-pill conflict clickable" title="點擊切換確認狀態" onclick="toggleJobConfirm('${accId}','${type}')">⚠️ 撞期·${jConf ? '已確認' : '待確認'}</button>`;
+                    remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span> · 同帳號雙職位同時間`;
+                } else {
+                    pillHtml = jConf
+                        ? `<button type="button" class="status-pill confirmed clickable" title="點擊取消確認" onclick="toggleJobConfirm('${accId}','${type}')">✔ 已確認</button>`
+                        : `<button type="button" class="status-pill pending clickable" title="點擊直接確認預約" onclick="toggleJobConfirm('${accId}','${type}')">⏳ 待確認</button>`;
+                    remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span>`;
+                }
+            } else {
+                pillHtml = `<span class="status-pill none">已過期</span>`;
             }
         }
+
+        return `
+            <div class="job-status-card ${dueBorderClass} ${hasConflict && jDate ? 'job-conflict-border' : ''}">
+                <div class="job-status-row-split">
+                    <div class="job-status-left">
+                        <div class="job-status-title-line">${label}：${timeText}</div>
+                        <div class="job-status-sub-line">${remainText || '&nbsp;'}</div>
+                    </div>
+                    <div class="job-status-right">
+                        ${pillHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    return `
+        <div class="job-section">
+            <div class="job-section-header">
+                <span class="job-section-title">🏛️ 職位預約狀態</span>
+                <button class="btn-goto-timeline" onclick="openTimelineView()">管理預約 →</button>
+            </div>
+            ${buildCard('⚔️ 士兵職位', 'soldier')}
+            ${buildCard('🔬 科技職位', 'tech')}
+        </div>
+    `;
+}
+
+function renderGrid() {
+    const grid = document.getElementById('gridView');
+    if (!grid) return;
+
+    grid.innerHTML = accounts.map(acc => {
+        const s = store[acc.id];
+        const catBlocks = [
+            { key: 'soldiers', title: '⚔️ 士兵訓練', allowAdd: true },
+            { key: 'tech', title: '🔬 科技研究', allowAdd: true },
+            { key: 'master', title: '📖 大師技能', allowAdd: false },
+            ...(showSunlightEvent ? [{ key: 'sunlight', title: '☀️ 沐光之旅', allowAdd: false }] : [])
+        ];
+
+        const sectionsHtml = catBlocks.map(blk => {
+            const list = s[blk.key] || [];
+            const isMulti = list.length > 1;
+            return `
+                <div class="section-block">
+                    <div class="section-header">
+                        <span>${blk.title}</span>
+                        ${blk.allowAdd ? `<button class="btn-add" title="新增列隊" onclick="addTimerItem('${acc.id}','${blk.key}')">+</button>` : ''}
+                    </div>
+                    ${list.map((it, idx) => renderTimerRow(acc.id, blk.key, it, idx, isMulti)).join('')}
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="account-column ${acc.id}">
+                ${renderProfileHeader(acc)}
+                ${sectionsHtml}
+                ${renderJobSummaryBox(acc.id)}
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleShowAllTimelineDays() {
+    showAllTimelineDays = !showAllTimelineDays;
+    updateTimeline(true);
+}
+
+function updateTimeline(force = false) {
+    const tlView = document.getElementById('timelineView');
+    if (!force && (!tlView || tlView.style.display !== 'block')) return;
+
+    const tasksEl = document.getElementById('timeline_tasks');
+    const soldierJobsEl = document.getElementById('timeline_soldier_jobs');
+    const techJobsEl = document.getElementById('timeline_tech_jobs');
+    if (!tasksEl || !soldierJobsEl || !techJobsEl) return;
+
+    const now = getAccurateNow();
+    const allTasks = [];
+
+    accounts.forEach(acc => {
+        const s = store[acc.id];
+        const cats = [
+            { key: 'soldiers', label: '士兵', tagClass: 'tag-soldier' },
+            { key: 'tech', label: '科技', tagClass: 'tag-tech' },
+            { key: 'master', label: '大師', tagClass: 'tag-master' },
+            ...(showSunlightEvent ? [{ key: 'sunlight', label: '沐光', tagClass: 'tag-sunlight' }] : [])
+        ];
+        cats.forEach(c => {
+            (s[c.key] || []).forEach(it => {
+                if (it.endTime && it.endTime.getTime() > now.getTime()) {
+                    allTasks.push({
+                        accId: acc.id,
+                        accName: getDisplayAccountName(acc.id),
+                        label: c.label,
+                        tagClass: c.tagClass,
+                        endTime: it.endTime
+                    });
+                }
+            });
+        });
+    });
+
+    allTasks.sort((a, b) => a.endTime - b.endTime);
+
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const limitDate = new Date(startToday.getTime() + 2 * 86400000);
+    const visibleTasks = showAllTimelineDays ? allTasks : allTasks.filter(t => t.endTime < limitDate);
+
+    if (visibleTasks.length === 0) {
+        tasksEl.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:24px 8px; font-size:14px;">目前沒有進行中的倒數項目</div>`;
+    } else {
+        let lastDateStr = '';
+        tasksEl.innerHTML = visibleTasks.map(t => {
+            const dStr = `${t.endTime.getFullYear()}-${t.endTime.getMonth()}-${t.endTime.getDate()}`;
+            const divider = (lastDateStr && lastDateStr !== dStr)
+                ? `<div class="date-dot-divider"><div class="date-dot-line"></div></div>`
+                : '';
+            lastDateStr = dStr;
+
+            return `
+                ${divider}
+                <div class="timeline-item ${t.accId}">
+                    <img class="tl-bear-sticker" src="${getBearFaceFile(t.accId)}" alt="">
+                    <div class="tl-left-group">
+                        <span class="tl-acc-name">${t.accName}</span>
+                        <span class="tag ${t.tagClass}">${t.label}</span>
+                    </div>
+                    <div style="text-align:right; font-size:13px;">
+                        <div>${getDayTagHtml(t.endTime)}${formatFullDateTime(t.endTime)}</div>
+                        <div style="font-size:12px; opacity:0.85;">${formatCountdown(t.endTime - now)}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    if (allTasks.length > visibleTasks.length || showAllTimelineDays) {
+        tasksEl.innerHTML += `
+            <button class="btn-more-tasks" onclick="toggleShowAllTimelineDays()">
+                ${showAllTimelineDays ? '收起後天以後項目 ▲' : `顯示全部 (${allTasks.length} 項) ▼`}
+            </button>
+        `;
+    }
+
+    const activeEl = document.activeElement;
+    const isSelectFocused = activeEl && activeEl.classList && activeEl.classList.contains('job-time-select');
+    if (!force && (isJobSelectActive || isSelectFocused)) {
+        accounts.forEach(acc => {
+            ['soldier', 'tech'].forEach(type => {
+                const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+                const jDate = store[acc.id][dateKey];
+                const metaEl = document.getElementById(`tl_job_meta_${acc.id}_${type}`);
+                if (metaEl && jDate && !isNaN(jDate.getTime())) {
+                    const diff = jDate.getTime() - now.getTime();
+                    metaEl.innerHTML = diff > 0
+                        ? `${getDayTagHtml(jDate)}${formatFullDateTime(jDate)}（還有 ${formatCountdown(diff)}）`
+                        : `${formatFullDateTime(jDate)}（已過期）`;
+                }
+            });
+        });
+        return;
+    }
+
+    const renderJobColumn = (type) => {
+        const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+        const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+        const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+
+        return accounts.map(acc => {
+            const s = store[acc.id];
+            const jTime = s[timeKey] || '';
+            const jDate = s[dateKey];
+            const jConf = !!s[confKey];
+            const accName = getDisplayAccountName(acc.id);
+            const inCooldown = isJobInCooldown(acc.id, type, now);
+            const hasConflict = hasSameAccountJobConflict(acc.id);
+            const dueBorderClass = jDate ? getDueBorderClass(jDate) : '';
+
+            let metaText = '尚未預約';
+            if (jDate && !isNaN(jDate.getTime())) {
+                const diff = jDate.getTime() - now.getTime();
+                metaText = diff > 0
+                    ? `${getDayTagHtml(jDate)}${formatFullDateTime(jDate)}（還有 ${formatCountdown(diff)}）`
+                    : `${formatFullDateTime(jDate)}（已過期）`;
+            }
+
+            let warningHtml = '';
+            if (inCooldown) {
+                warningHtml = `<div class="job-warning-box">⏳ 同一職位拿到後 10 分鐘冷卻中，暫不可重新申請</div>`;
+            } else if (hasConflict && jDate) {
+                warningHtml = `<div class="job-warning-box">⚠️ 同帳號士兵與科技職位不能同一時間，請錯開時段</div>`;
+            }
+
+            return `
+                <div class="job-manage-card ${acc.id} ${dueBorderClass}">
+                    <img class="job-bear-sticker" src="${getBearFaceFile(acc.id)}" alt="">
+                    <div class="job-manage-top">
+                        <span>${accName}</span>
+                        <button class="btn-confirm-job ${jConf ? 'confirmed' : ''}" onclick="toggleJobConfirm('${acc.id}','${type}')">
+                            ${jConf ? '✔ 已確認預約' : '⏳ 標記已確認'}
+                        </button>
+                    </div>
+                    <div class="job-manage-controls">
+                        <select class="job-time-select"
+                            onfocus="isJobSelectActive=true"
+                            onmousedown="isJobSelectActive=true"
+                            onblur="isJobSelectActive=false"
+                            onchange="setJobTime('${acc.id}','${type}',this.value,false)">
+                            ${generateJobOptions(jTime, '無預約')}
+                        </select>
+                        <button class="btn-shift" onclick="shiftJobTime('${acc.id}','${type}',-30)">-30分</button>
+                        <button class="btn-shift" onclick="shiftJobTime('${acc.id}','${type}',30)">+30分</button>
+                    </div>
+                    <div class="job-manage-meta">
+                        <span id="tl_job_meta_${acc.id}_${type}">${metaText}</span>
+                    </div>
+                    ${warningHtml}
+                </div>
+            `;
+        }).join('');
+    };
+
+    soldierJobsEl.innerHTML = renderJobColumn('soldier');
+    techJobsEl.innerHTML = renderJobColumn('tech');
+}
+
+// ==========================================
+// 12. 每秒倒數與到期通知檢查（任何分頁、背景醒來皆立即補檢）
+// ==========================================
+function tickTimers() {
+    const now = getAccurateNow();
+    const nowMs = now.getTime();
+    let anyTimerFinished = false;
+
+    accounts.forEach(acc => {
+        const s = store[acc.id];
+        const accName = getDisplayAccountName(acc.id);
+        const catNames = {
+            soldiers: '士兵訓練',
+            tech: '科技研究',
+            master: '大師技能',
+            sunlight: '沐光之旅'
+        };
+
+        ['soldiers', 'tech', 'master', 'sunlight'].forEach(cat => {
+            (s[cat] || []).forEach(it => {
+                if (!it.endTime) return;
+                const endMs = it.endTime.getTime();
+                const remain = endMs - nowMs;
+                const el = document.getElementById(`cd_${acc.id}_${cat}_${it.id}`);
+                if (el && remain > 0) {
+                    el.innerText = formatCountdown(remain);
+                } else if (remain <= 0) {
+                    const evKey = `timer_${acc.id}_${cat}_${it.id}_${endMs}`;
+                    it.endTime = null;
+                    anyTimerFinished = true;
+                    if (!triggeredEventKeys.has(evKey)) {
+                        triggeredEventKeys.add(evKey);
+                        pushNotificationEvent({
+                            id: evKey,
+                            accId: acc.id,
+                            category: cat,
+                            itemId: it.id,
+                            message: `[${accName}] ${catNames[cat]} 已完成！`,
+                            timestamp: nowMs,
+                            unread: true
+                        }, true);
+                    }
+                }
+            });
+        });
+
+        [
+            { type: 'soldier', label: '士兵職位', date: s.soldierJobDate },
+            { type: 'tech', label: '科技職位', date: s.techJobDate }
+        ].forEach(job => {
+            if (!job.date || isNaN(job.date.getTime())) return;
+            const jobMs = job.date.getTime();
+            const diff = jobMs - nowMs;
+            // 放寬至 30 分鐘內，避免背景分頁節流或重整頁面漏掉職位提醒
+            if (diff <= 0 && diff > -30 * 60 * 1000) {
+                const jKey = `job_${acc.id}_${job.type}_${jobMs}`;
+                if (!triggeredEventKeys.has(jKey)) {
+                    triggeredEventKeys.add(jKey);
+                    pushNotificationEvent({
+                        id: jKey,
+                        accId: acc.id,
+                        category: `job_${job.type}`,
+                        message: `[${accName}] ${job.label}預約時間 (${formatTimeHM(job.date)}) 已到！`,
+                        timestamp: nowMs,
+                        unread: true
+                    }, true);
+                }
+            }
+        });
+    });
+
+    if (anyTimerFinished) {
+        renderGrid();
+        saveState();
+    }
+
+    updateTimeline(false);
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        tickTimers();
     }
 });
 
 // ==========================================
-// 精準 4 格固定座標 OCR 辨識（中英文介面通用，完全避開 Items）
+// 13. 頁面分頁切換（粉藍圓圈兩線選單 + URL Hash 記憶）
 // ==========================================
-const FIXED_IN_STOCK_BOXES = [
-    { key: 'bread', y0: 0.335, y1: 0.405 },
-    { key: 'wood',  y0: 0.405, y1: 0.475 },
-    { key: 'stone', y0: 0.475, y1: 0.545 },
-    { key: 'iron',  y0: 0.545, y1: 0.615 }
-];
+function hideAllMainViews() {
+    const grid = document.getElementById('gridView');
+    const timeline = document.getElementById('timelineView');
+    const resView = document.getElementById('resourcesView');
+    if (grid) grid.style.display = 'none';
+    if (timeline) timeline.style.display = 'none';
+    if (resView) resView.style.display = 'none';
+}
 
-async function getOcrWorker() {
-    if (typeof Tesseract === 'undefined') {
-        throw new Error("Tesseract OCR 尚未載入");
+function toggleNavDropdown(event) {
+    if (event) event.stopPropagation();
+    ensureAudioContextUnlocked();
+    const bellDrop = document.getElementById('notifDropdown');
+    if (bellDrop) bellDrop.classList.remove('open');
+
+    const navDrop = document.getElementById('navDropdown');
+    if (navDrop) navDrop.classList.toggle('open');
+}
+
+function selectNavPage(tabName) {
+    const navDrop = document.getElementById('navDropdown');
+    if (navDrop) navDrop.classList.remove('open');
+    switchMainTab(tabName, true);
+}
+
+function switchMainTab(tabName, updateUrlHash = true) {
+    const grid = document.getElementById('gridView');
+    const timeline = document.getElementById('timelineView');
+    const resView = document.getElementById('resourcesView');
+    const timerOnlyBtns = document.getElementById('timerOnlyBtns');
+    const btn = document.getElementById('toggleBtn');
+    const pageTitle = document.getElementById('pageMainTitle');
+    const navItemAlarm = document.getElementById('navItemAlarm');
+    const navItemResources = document.getElementById('navItemResources');
+
+    hideAllMainViews();
+
+    const isAlarmSection = (tabName === 'grid' || tabName === 'timeline');
+    if (timerOnlyBtns) {
+        timerOnlyBtns.style.display = isAlarmSection ? 'inline-flex' : 'none';
     }
-    if (tesseractWorker) return tesseractWorker;
-    tesseractWorker = await Tesseract.createWorker('eng');
-    await tesseractWorker.setParameters({
-        tessedit_char_whitelist: '0123456789.BMK',
-        tessedit_pageseg_mode: '7'
-    });
-    return tesseractWorker;
-}
+    if (navItemAlarm) navItemAlarm.classList.toggle('active', isAlarmSection);
+    if (navItemResources) navItemResources.classList.toggle('active', tabName === 'resources');
 
-function loadImageFromBlob(file) {
-    return new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => {
-            URL.revokeObjectURL(url);
-            resolve(img);
-        };
-        img.onerror = (e) => {
-            URL.revokeObjectURL(url);
-            reject(e);
-        };
-        img.src = url;
-    });
-}
-
-function cropFixedInStockCell(img, y0Ratio, y1Ratio) {
-    const isTwoPanel = (img.width / img.height) > 0.9;
-    const panelWidth = isTwoPanel ? img.width * 0.5 : img.width;
-
-    // 嚴格鎖定在右側「In Stock / 資源總量」欄位（65% ~ 90%），完全不會切到中間 Items
-    const sx = Math.round(panelWidth * 0.65);
-    const sw = Math.round(panelWidth * 0.25);
-    const sy = Math.round(img.height * y0Ratio);
-    const sh = Math.round(img.height * (y1Ratio - y0Ratio));
-
-    const scale = 3;
-    const pad = 18;
-    const canvas = document.createElement('canvas');
-    canvas.width = sw * scale + pad * 2;
-    canvas.height = sh * scale + pad * 2;
-
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, sx, sy, sw, sh, pad, pad, sw * scale, sh * scale);
-
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const d = imgData.data;
-    for (let i = 0; i < d.length; i += 4) {
-        const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-        const val = lum < 155 ? 0 : 255;
-        d[i] = d[i + 1] = d[i + 2] = val;
-    }
-    ctx.putImageData(imgData, 0, 0);
-    return canvas;
-}
-
-function parseOcrCellText(rawText) {
-    const clean = String(rawText || '').replace(/\s+/g, '').toUpperCase();
-    const match = clean.match(/(\d+(?:\.\d+)?)([BMK])/);
-    if (!match) return null;
-
-    let numStr = match[1];
-    const unit = match[2];
-
-    if (unit === 'B' && !numStr.includes('.') && numStr.length >= 3) {
-        numStr = `${numStr[0]}.${numStr.slice(1, 3)}`;
+    if (tabName === 'timeline') {
+        if (timeline) timeline.style.display = 'block';
+        if (btn) btn.innerHTML = '<img class="btn-icon-svg" src="./assets/btn_change.svg" alt=""> 切換 3 欄視圖';
+        if (pageTitle) pageTitle.innerText = '多帳戶鬧鐘助手';
+        updateTimeline(true);
+    } else if (tabName === 'resources') {
+        if (resView) resView.style.display = 'block';
+        if (pageTitle) pageTitle.innerText = '多帳戶資源採集';
+        if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+    } else {
+        tabName = 'grid';
+        if (grid) grid.style.display = 'grid';
+        if (btn) btn.innerHTML = '<img class="btn-icon-svg" src="./assets/btn_change.svg" alt=""> 切換時間線';
+        if (pageTitle) pageTitle.innerText = '多帳戶鬧鐘助手';
     }
 
-    const numVal = parseFloat(numStr);
-    if (isNaN(numVal) || numVal <= 0) return null;
-
-    return { num: numStr, unit };
-}
-
-async function runOcrOnImageFile(file, accId) {
-    ocrStatusText[accId] = 'OCR 辨識中...';
-    renderResourcesGrid();
-
-    try {
-        const img = await loadImageFromBlob(file);
-        const worker = await getOcrWorker();
-        let filledCount = 0;
-
-        for (const box of FIXED_IN_STOCK_BOXES) {
-            const cellCanvas = cropFixedInStockCell(img, box.y0, box.y1);
-            const { data } = await worker.recognize(cellCanvas);
-            const parsed = parseOcrCellText(data && data.text);
-            if (parsed) {
-                resourcesStore[accId][box.key] = { val: parsed.num, unit: parsed.unit };
-                filledCount++;
-            }
+    if (updateUrlHash) {
+        const nextHash = tabName === 'grid' ? '' : `#${tabName}`;
+        if (window.location.hash !== nextHash) {
+            history.replaceState(null, '', nextHash || window.location.pathname + window.location.search);
         }
-
-        ocrStatusText[accId] = filledCount > 0
-            ? `已填入 ${filledCount} 項`
-            : '未認出數值';
-        renderResourcesGrid();
-        saveState();
-    } catch (err) {
-        console.error('OCR Error:', err);
-        ocrStatusText[accId] = '辨識失敗';
-        renderResourcesGrid();
     }
 }
+
+function toggleResourcesView() {
+    const resView = document.getElementById('resourcesView');
+    const isCurrentlyOpen = resView && resView.style.display === 'block';
+    switchMainTab(isCurrentlyOpen ? 'grid' : 'resources');
+}
+
+function openTimelineView() {
+    switchMainTab('timeline');
+}
+
+function toggleView() {
+    const timeline = document.getElementById('timelineView');
+    const isCurrentlyOpen = timeline && timeline.style.display === 'block';
+    switchMainTab(isCurrentlyOpen ? 'grid' : 'timeline');
+}
+
+function restoreTabFromHash() {
+    const hash = (window.location.hash || '').replace('#', '').trim();
+    if (hash === 'resources' || hash === 'timeline') {
+        switchMainTab(hash, false);
+    } else {
+        switchMainTab('grid', false);
+    }
+}
+
+window.addEventListener('hashchange', restoreTabFromHash);
+
+document.addEventListener('click', (e) => {
+    const bellWrapper = document.getElementById('bellWrapper');
+    const bellDrop = document.getElementById('notifDropdown');
+    if (bellDrop && bellDrop.classList.contains('open') && bellWrapper && !bellWrapper.contains(e.target)) {
+        bellDrop.classList.remove('open');
+    }
+
+    const navWrapper = document.getElementById('navMenuWrapper');
+    const navDrop = document.getElementById('navDropdown');
+    if (navDrop && navDrop.classList.contains('open') && navWrapper && !navWrapper.contains(e.target)) {
+        navDrop.classList.remove('open');
+    }
+});
+
+// ==========================================
+// 14. 啟動初始化
+// ==========================================
+function init() {
+    injectGlobalToastStyles();
+    setupGlobalAudioUnlock();
+    startSplashLoader();
+    updateNotifBadgeUI();
+    loadNotifHistory();
+    loadLocalBackups();
+    updateSunlightToggleBtnUI();
+    renderGrid();
+    restoreTabFromHash();
+
+    setupFirebaseListeners();
+    setupAutoTimeSync();
+    fetchAllProfiles();
+
+    tickTimers();
+    setInterval(tickTimers, 1000);
+    setInterval(renderBellUI, 30000);
+}
+
+init();
