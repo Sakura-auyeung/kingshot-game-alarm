@@ -43,45 +43,21 @@ function unitMultiplier(unit) {
 }
 
 // ==========================================
-// Excel 風格三色階連續漸變色計算（0.0 綠 -> 0.5 黃 -> 1.0 紅）
+// Excel 5 色階對應糖果斜向漸層（翠綠 -> 黃綠 -> 暖金黃 -> 蜜橘橙 -> 草莓粉紅）
 // ==========================================
-function lerpColorChannel(a, b, t) {
-    return Math.round(a + (b - a) * t);
-}
+const CANDY_5_LEVELS = [
+    'linear-gradient(135deg, #58C984 0%, #38A866 100%)', // 第 1 階：最缺（翠綠）
+    'linear-gradient(135deg, #9BD65A 0%, #7AB838 100%)', // 第 2 階：次缺（黃綠）
+    'linear-gradient(135deg, #F7B733 0%, #E69A15 100%)', // 第 3 階：中間（暖金黃）
+    'linear-gradient(135deg, #FF9966 0%, #F27935 100%)', // 第 4 階：偏多（蜜橘橙）
+    'linear-gradient(135deg, #FF7EA5 0%, #EB5A87 100%)'  // 第 5 階：最多（草莓粉紅）
+];
 
-function interpolateRgb(rgb1, rgb2, t) {
-    const r = lerpColorChannel(rgb1[0], rgb2[0], t);
-    const g = lerpColorChannel(rgb1[1], rgb2[1], t);
-    const b = lerpColorChannel(rgb1[2], rgb2[2], t);
-    return `rgb(${r}, ${g}, ${b})`;
-}
-
-function getExcelGradientStyle(pos) {
+function getCandy5LevelStyle(pos) {
     if (pos === null || pos === undefined || isNaN(pos)) return '';
     const clamped = Math.max(0, Math.min(1, pos));
-
-    // 柔和馬卡龍三色階背景（綠 #B6F0C8 -> 黃 #FFF099 -> 紅 #FFB8B8）
-    const bgGreen  = [182, 240, 200];
-    const bgYellow = [255, 240, 153];
-    const bgRed    = [255, 184, 184];
-
-    // 對應細邊框色（深綠 #48A868 -> 暖金 #D9B43B -> 柔紅 #E06666）
-    const bdGreen  = [72, 168, 104];
-    const bdYellow = [217, 180, 59];
-    const bdRed    = [224, 102, 102];
-
-    let bgColor;
-    let bdColor;
-    if (clamped <= 0.5) {
-        const t = clamped / 0.5;
-        bgColor = interpolateRgb(bgGreen, bgYellow, t);
-        bdColor = interpolateRgb(bdGreen, bdYellow, t);
-    } else {
-        const t = (clamped - 0.5) / 0.5;
-        bgColor = interpolateRgb(bgYellow, bgRed, t);
-        bdColor = interpolateRgb(bdYellow, bdRed, t);
-    }
-    return `background-color: ${bgColor}; border-color: ${bdColor};`;
+    const idx = Math.min(4, Math.floor(clamped * 5));
+    return `background: ${CANDY_5_LEVELS[idx]};`;
 }
 
 function getAccountResourceAnalysis(accId) {
@@ -125,7 +101,7 @@ function getAccountResourceAnalysis(accId) {
         return {
             ...item,
             ratioPos,
-            inlineGradientStyle: getExcelGradientStyle(ratioPos)
+            inlineGradientStyle: getCandy5LevelStyle(ratioPos)
         };
     });
 
@@ -143,18 +119,6 @@ function setPasteTarget(accId) {
     activePasteAccId = accId;
     pendingUploadAccId = accId;
     renderResourcesGrid();
-}
-
-function openFilePickerForAcc(event, accId) {
-    if (event) event.stopPropagation();
-    activePasteAccId = accId;
-    pendingUploadAccId = accId;
-    renderResourcesGrid();
-    const fileInput = document.getElementById('resFileInput');
-    if (fileInput) {
-        fileInput.value = '';
-        fileInput.click();
-    }
 }
 
 function sanitizeResourceNumberInput(raw) {
@@ -194,14 +158,12 @@ function renderResourcesGrid() {
     if (!grid) return;
 
     grid.innerHTML = accounts.map(acc => {
-        const p = profiles[acc.id] || {};
-        const displayName = p.name || acc.id;
         const analysis = getAccountResourceAnalysis(acc.id);
         const isActiveTarget = (activePasteAccId === acc.id);
         const statusMsg = ocrStatusText[acc.id] || '';
 
         const rowsHtml = analysis.items.map(item => `
-            <div class="res-row-card" id="res_card_${acc.id}_${item.key}" style="${item.inlineGradientStyle}">
+            <div class="res-row-card ${item.hasVal ? 'has-candy' : ''}" id="res_card_${acc.id}_${item.key}" style="${item.inlineGradientStyle}">
                 <div class="res-card-left-icon">
                     ${renderResCardBigIconHtml(item)}
                 </div>
@@ -237,15 +199,10 @@ function renderResourcesGrid() {
 
                 <div class="res-merged-row ${isActiveTarget ? 'active-target' : ''}">
                     <div class="res-merged-col paste-col">
-                        <div class="res-paste-top">
-                            <button type="button" class="res-target-btn" onclick="setPasteTarget('${acc.id}')">
-                                ${isActiveTarget ? '✅ 目標：' : '📌 目標：'}[${displayName}]
-                            </button>
-                            <button type="button" class="res-pick-file-btn" title="選擇截圖檔" onclick="openFilePickerForAcc(event, '${acc.id}')">
-                                📁 選檔
-                            </button>
-                        </div>
-                        <div class="res-paste-hint">${statusMsg ? `<span class="res-ocr-status">${statusMsg}</span>` : 'Ctrl+V 貼上資源總量截圖'}</div>
+                        <button type="button" class="res-target-btn" onclick="setPasteTarget('${acc.id}')">
+                            ${isActiveTarget ? '✔ 貼上目標' : '📌 貼上目標'}
+                        </button>
+                        ${statusMsg ? `<div class="res-ocr-status">${statusMsg}</div>` : ''}
                     </div>
 
                     <div class="res-merged-col prio-col" id="res_prio_${acc.id}">
@@ -271,6 +228,7 @@ function refreshAccountResourceVisualsOnly(accId, skipInputId = null) {
         const card = document.getElementById(`res_card_${accId}_${item.key}`);
         if (card) {
             card.setAttribute('style', item.inlineGradientStyle);
+            card.classList.toggle('has-candy', item.hasVal);
         }
         const inputId = `res_in_${accId}_${item.key}`;
         if (inputId !== skipInputId) {
@@ -447,13 +405,13 @@ async function runOcrOnImageFile(file, accId) {
         }
 
         ocrStatusText[accId] = filledCount > 0
-            ? `已填入 ${filledCount} 項資源總量`
-            : '未認出數值，請確認截圖格式';
+            ? `已填入 ${filledCount} 項`
+            : '未認出數值';
         renderResourcesGrid();
         saveState();
     } catch (err) {
         console.error('OCR Error:', err);
-        ocrStatusText[accId] = '辨識失敗，請手動輸入';
+        ocrStatusText[accId] = '辨識失敗';
         renderResourcesGrid();
     }
 }
