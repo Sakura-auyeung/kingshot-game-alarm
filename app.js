@@ -264,13 +264,17 @@ async function fetchSingleProfile(accId) {
     if (!p || !p.queryName) return false;
 
     const rawUrl = `https://kingdom-1177.vercel.app/api/governor-profile?name=${encodeURIComponent(p.queryName)}&alliance=${encodeURIComponent(p.queryAlliance || '')}`;
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`;
+    const candidateUrls = [
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rawUrl)}`
+    ];
 
-    for (const targetUrl of [rawUrl, proxyUrl]) {
+    for (const targetUrl of candidateUrls) {
         try {
             const res = await fetch(targetUrl, { cache: 'no-store' });
             if (!res.ok) continue;
-            const data = await res.json();
+            const text = await res.text();
+            const data = JSON.parse(text);
             if (data && data.ok && data.governor) {
                 const gov = data.governor;
                 profiles[accId] = {
