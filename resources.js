@@ -294,7 +294,7 @@ document.addEventListener('paste', (event) => {
 });
 
 // ==========================================
-// 精準 4 格固定座標 OCR 辨識（中英文介面通用，完全避開 Items）
+// 精準 4 格固定座標 OCR 辨識（雙通道高對比灰階 + 自動重試，精準辨識 B / M / K）
 // ==========================================
 const FIXED_IN_STOCK_BOXES = [
     { key: 'bread', y0: 0.335, y1: 0.405 },
@@ -332,17 +332,18 @@ function loadImageFromBlob(file) {
     });
 }
 
-function cropFixedInStockCell(img, y0Ratio, y1Ratio) {
+// mode: 'soft' 保留字體筆畫圓孔灰階對比；'sharp' 高亮度閾值適合粗字體
+function cropFixedInStockCell(img, y0Ratio, y1Ratio, mode = 'soft') {
     const isTwoPanel = (img.width / img.height) > 0.9;
     const panelWidth = isTwoPanel ? img.width * 0.5 : img.width;
 
-    const sx = Math.round(panelWidth * 0.65);
-    const sw = Math.round(panelWidth * 0.25);
+    const sx = Math.round(panelWidth * 0.64);
+    const sw = Math.round(panelWidth * 0.27);
     const sy = Math.round(img.height * y0Ratio);
     const sh = Math.round(img.height * (y1Ratio - y0Ratio));
 
     const scale = 3;
-    const pad = 18;
+    const pad = 20;
     const canvas = document.createElement('canvas');
     canvas.width = sw * scale + pad * 2;
     canvas.height = sh * scale + pad * 2;
@@ -357,9 +358,23 @@ function cropFixedInStockCell(img, y0Ratio, y1Ratio) {
 
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const d = imgData.data;
+
     for (let i = 0; i < d.length; i += 4) {
         const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-        const val = lum < 155 ? 0 : 255;
+        let val = 255;
+        if (mode === 'soft') {
+            // 柔和對比拉伸：背景漂白、保留字體筆畫邊緣抗鋸齒，避免 B 的圓洞糊掉
+            if (lum >= 175) {
+                val = 255;
+            } else if (lum <= 95) {
+                val = 0;
+            } else {
+                val = Math.round(((lum - 95) / 80) * 255);
+            }
+        } else {
+            // 備援清晰二值化（較高閾值，防筆畫斷裂）
+            val = lum < 138 ? 0 : 255;
+        }
         d[i] = d[i + 1] = d[i + 2] = val;
     }
     ctx.putImageData(imgData, 0, 0);
@@ -368,14 +383,33 @@ function cropFixedInStockCell(img, y0Ratio, y1Ratio) {
 
 function parseOcrCellText(rawText) {
     const clean = String(rawText || '').replace(/\s+/g, '').toUpperCase();
-    const match = clean.match(/(\d+(?:\.\d+)?)([BMK])/);
+    if (!clean) return null;
+
+    // 1. 標準匹配：數字 + B/M/K（忽略單位後面可能黏到的雜點）
+    let match = clean.match(/(\d+(?:\.\d+)?)([BMK])/);
+
+    // 2. 容錯匹配：若字母 B 被誤認成 8 或 3（例如 1.558 -> 1.55B, 2.418 -> 2.41B）
+    if (!match) {
+        const bMisread = clean.match(/^(\d+\.\d{2})[83]$/);
+        if (bMisread) {
+            match = [clean, bMisread[1], 'B'];
+        }
+    }
+
     if (!match) return null;
 
     let numStr = match[1];
     const unit = match[2];
 
+    // 若漏認小數點但為 3 位以上整數且單位為 B（例如 155B -> 1.55B）
     if (unit === 'B' && !numStr.includes('.') && numStr.length >= 3) {
         numStr = `${numStr[0]}.${numStr.slice(1, 3)}`;
+    }
+
+    // 淨化小數點後最多保留 2 位，避免雜點變成 20.495
+    if (numStr.includes('.')) {
+        const parts = numStr.split('.');
+        numStr = `${parts[0]}.${parts[1].slice(0, 2)}`;
     }
 
     const numVal = parseFloat(numStr);
@@ -394,9 +428,18 @@ async function runOcrOnImageFile(file, accId) {
         let filledCount = 0;
 
         for (const box of FIXED_IN_STOCK_BOXES) {
-            const cellCanvas = cropFixedInStockCell(img, box.y0, box.y1);
-            const { data } = await worker.recognize(cellCanvas);
-            const parsed = parseOcrCellText(data && data.text);
+            // 第一輪：柔和灰階對比（保留 B 內部圓孔細節）
+            const softCanvas = cropFixedInStockCell(img, box.y0, box.y1, 'soft');
+            const res1 = await worker.recognize(softCanvas);
+            let parsed = parseOcrCellText(res1 && res1.data && res1.data.text);
+
+            // 若第一輪未認出，自動用第二輪清晰二值化重試該格
+            if (!parsed) {
+                const sharpCanvas = cropFixedInStockCell(img, box.y0, box.y1, 'sharp');
+                const res2 = await worker.recognize(sharpCanvas);
+                parsed = parseOcrCellText(res2 && res2.data && res2.data.text);
+            }
+
             if (parsed) {
                 resourcesStore[accId][box.key] = { val: parsed.num, unit: parsed.unit };
                 filledCount++;
