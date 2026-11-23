@@ -128,9 +128,9 @@ function getBearFaceFile(accId) {
 }
 
 let profiles = {
-    h: { queryName: 'Howard', queryAlliance: 'TER', name: 'Howard', alliance: 'TER', levelLabel: 'TG3', power: 0, avatar: '' },
-    z: { queryName: 'Zoey', queryAlliance: '777', name: 'Zoey', alliance: '777', levelLabel: 'TG5', power: 0, avatar: '' },
-    p: { queryName: 'Patrick', queryAlliance: 'TER', name: 'Patrick', alliance: 'TER', levelLabel: 'TG3', power: 0, avatar: '' }
+    h: { queryName: 'Howard', queryAlliance: '777', name: 'Howard', alliance: '777', levelLabel: 'TG3', power: 0, avatar: '' },
+    z: { queryName: 'Zoey', queryAlliance: 'TER', name: 'Zoey', alliance: 'TER', levelLabel: 'TG5', power: 0, avatar: '' },
+    p: { queryName: 'Patrick', queryAlliance: '777', name: 'Patrick', alliance: '777', levelLabel: 'TG3', power: 0, avatar: '' }
 };
 
 let store = {
