@@ -86,6 +86,7 @@ let profiles = {
 let showSunlightEvent = true;
 let showAllTimelineDays = false;
 let latestStateUpdatedAt = 0;
+let isJobSelectActive = false;
 
 let store = {
     h: {
@@ -1041,6 +1042,7 @@ function autoSyncJobFromTimer(accId, type, endDate) {
 }
 
 function setJobTime(accId, type, timeStr, confirmed = false) {
+    isJobSelectActive = false;
     const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
     const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
     const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
@@ -1607,6 +1609,26 @@ function updateTimeline(force = false) {
         `;
     }
 
+    // 若使用者正打開職位下拉選單，跳過重繪下拉選單以免秒關，只更新倒數文字
+    const activeEl = document.activeElement;
+    const isSelectFocused = activeEl && activeEl.classList && activeEl.classList.contains('job-time-select');
+    if (!force && (isJobSelectActive || isSelectFocused)) {
+        accounts.forEach(acc => {
+            ['soldier', 'tech'].forEach(type => {
+                const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+                const jDate = store[acc.id][dateKey];
+                const metaEl = document.getElementById(`tl_job_meta_${acc.id}_${type}`);
+                if (metaEl && jDate && !isNaN(jDate.getTime())) {
+                    const diff = jDate.getTime() - now.getTime();
+                    metaEl.innerHTML = diff > 0
+                        ? `${getDayTagHtml(jDate)}${formatFullDateTime(jDate)}（還有 ${formatCountdown(diff)}）`
+                        : `${formatFullDateTime(jDate)}（已過期）`;
+                }
+            });
+        });
+        return;
+    }
+
     const renderJobColumn = (type) => {
         const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
         const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
@@ -1647,14 +1669,18 @@ function updateTimeline(force = false) {
                         </button>
                     </div>
                     <div class="job-manage-controls">
-                        <select onchange="setJobTime('${acc.id}','${type}',this.value,false)">
+                        <select class="job-time-select"
+                            onfocus="isJobSelectActive=true"
+                            onmousedown="isJobSelectActive=true"
+                            onblur="isJobSelectActive=false"
+                            onchange="setJobTime('${acc.id}','${type}',this.value,false)">
                             ${generateJobOptions(jTime, '無預約')}
                         </select>
                         <button class="btn-shift" onclick="shiftJobTime('${acc.id}','${type}',-30)">-30分</button>
                         <button class="btn-shift" onclick="shiftJobTime('${acc.id}','${type}',30)">+30分</button>
                     </div>
                     <div class="job-manage-meta">
-                        <span>${metaText}</span>
+                        <span id="tl_job_meta_${acc.id}_${type}">${metaText}</span>
                     </div>
                     ${warningHtml}
                 </div>
