@@ -442,30 +442,42 @@ function requestDesktopNotificationPermission() {
 }
 
 function sendDesktopNotification(title, body) {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    try {
-        const n = new Notification(title, {
-            body: body,
-            icon: './assets/chara_face_1-1.png'
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+        try {
+            const n = new Notification(title, {
+                body: body,
+                icon: './assets/chara_face_1-1.png'
+            });
+            activeSystemNotifications.push(n);
+            n.onclick = () => {
+                window.focus();
+                n.close();
+            };
+        } catch (e) {}
+    } else if (Notification.permission === 'default') {
+        Notification.requestPermission().then((perm) => {
+            updateNotifBadgeUI();
+            if (perm === 'granted') {
+                sendDesktopNotification(title, body);
+            }
         });
-        activeSystemNotifications.push(n);
-        n.onclick = () => {
-            window.focus();
-            n.close();
-        };
-    } catch (e) {}
+    }
 }
 
+/* 第 2 點：按「測試鈴聲」時，恢復像初始版本一樣的右下角桌面彈窗提醒 */
 function testAlarm() {
     ensureAudioContext();
     playSingleChime();
     const nowMs = getAccurateNow().getTime();
+    const msg = `【測試】 [${getDisplayAccountName('z')}] 士兵訓練 已完成！`;
+    sendDesktopNotification('⏰ 遊戲鬧鐘測試提醒', msg);
     pushNotificationEvent({
         id: `test_${nowMs}`,
         accId: 'z',
         category: 'soldiers',
         itemId: null,
-        message: `【測試】 [${getDisplayAccountName('z')}] 士兵訓練 已完成！`,
+        message: msg,
         timestamp: nowMs,
         unread: true
     }, false);
@@ -580,7 +592,6 @@ function inferAccIdFromMessage(msg) {
     return 'z';
 }
 
-// 士兵與科技預設歸零為 0 天 00 時 00 分；大師預設 10 分；沐光預設 8 小時
 function getDefaultDurationForCategory(accId, category, itemId) {
     if (category === 'master') return { d: 0, h: 0, m: 10 };
     if (category === 'sunlight') return { d: 0, h: 8, m: 0 };
@@ -739,11 +750,11 @@ function renderBellUI() {
                         <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_d_${idx}" value="${defD}" maxlength="2"
                             onfocus="this.select()"
                             onkeydown="handleTodoArrowNav(event, null, 'todo_h_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
-                            onkeyup="autoJumpTodoInput(event, this, 'todo_h_${idx}')">天
+                            oninput="autoJumpTodoInput(event, this, 'todo_h_${idx}')">天
                         <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_h_${idx}" value="${formatPad(defH)}" maxlength="2"
                             onfocus="this.select()"
                             onkeydown="handleTodoArrowNav(event, 'todo_d_${idx}', 'todo_m_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
-                            onkeyup="autoJumpTodoInput(event, this, 'todo_m_${idx}')">時
+                            oninput="autoJumpTodoInput(event, this, 'todo_m_${idx}')">時
                         <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_m_${idx}" value="${formatPad(defM)}" maxlength="2"
                             onfocus="this.select()"
                             onkeydown="handleTodoArrowNav(event, 'todo_h_${idx}', null, ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">分
@@ -962,6 +973,8 @@ function setupFirebaseListeners() {
 
 // ==========================================
 // 9. 職位自動排程與狀態邏輯
+//    - 同帳號同一職位：拿到職位後有 10 分鐘冷卻，冷卻內不能重新申請同一職位
+//    - 同帳號不同職位（士兵 vs 科技）：沒有 10 分鐘冷卻，但不能同一時間（重疊時標示提醒）
 // ==========================================
 function generateJobOptions(selectedVal = '', emptyLabel = '無預約') {
     let html = `<option value="" ${!selectedVal ? 'selected' : ''}>${emptyLabel}</option>`;
@@ -1058,6 +1071,10 @@ function toggleJobConfirm(accId, type) {
         alert('請先選擇職位預約時間！');
         return;
     }
+    if (isJobInCooldown(accId, type, getAccurateNow())) {
+        alert('同一職位目前仍在 10 分鐘冷卻中，冷卻結束後才能重新申請！');
+        return;
+    }
     store[accId][confKey] = !store[accId][confKey];
     renderGrid();
     updateTimeline(true);
@@ -1105,7 +1122,14 @@ function isJobInCooldown(accId, type, now = getAccurateNow()) {
     const jobDate = store[accId] ? store[accId][dateKey] : null;
     if (!jobDate) return false;
     const diffMs = now.getTime() - jobDate.getTime();
-    return diffMs >= 0 && diffMs <= 10 * 60 * 1000;
+    return diffMs >= 0 && diffMs < 10 * 60 * 1000;
+}
+
+function hasSameAccountJobConflict(accId) {
+    const s = store[accId];
+    if (!s || !s.soldierJobDate || !s.techJobDate) return false;
+    if (isNaN(s.soldierJobDate.getTime()) || isNaN(s.techJobDate.getTime())) return false;
+    return Math.abs(s.soldierJobDate.getTime() - s.techJobDate.getTime()) < 10 * 60 * 1000;
 }
 
 // ==========================================
@@ -1139,15 +1163,26 @@ function deleteTimerItem(accId, category, id) {
 function updateInputVal(accId, category, id, field, val) {
     const item = store[accId][category].find(it => it.id === id);
     if (!item) return;
-    item[field] = Math.max(0, parseInt(val, 10) || 0);
+    let num = Math.max(0, parseInt(val, 10) || 0);
+    if (field === 'h' && num > 23) num = 23;
+    if (field === 'm' && num > 59) num = 59;
+    item[field] = num;
     saveState();
 }
 
-function autoJumpTimerInput(event, inputEl, nextIdStr) {
-    if (!nextIdStr) return;
-    if (event && ['Tab', 'Shift', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Delete', 'Enter'].includes(event.key)) return;
-    const clean = inputEl.value.replace(/\D/g, '');
-    if (clean.length >= 2) {
+/* 第 4 & 5 點修復：
+   - 由 0 首次輸入兩位數（例如 18、24）即時同步並自動跳格
+   - 輸入一位數（例如 6）後按 -> 可靠跳到下一格 */
+function handleTimerInput(event, inputEl, accId, category, id, field, nextIdStr) {
+    let clean = inputEl.value.replace(/\D/g, '').slice(0, 2);
+    if (field === 'h' && Number(clean) > 23) clean = '23';
+    if (field === 'm' && Number(clean) > 59) clean = '59';
+    if (inputEl.value !== clean) {
+        inputEl.value = clean;
+    }
+    updateInputVal(accId, category, id, field, clean);
+
+    if (clean.length >= 2 && nextIdStr) {
         const nextEl = document.getElementById(nextIdStr);
         if (nextEl) {
             nextEl.focus();
@@ -1160,11 +1195,17 @@ function handleTimerArrowNav(event, prevIdStr, nextIdStr, accId, category, id) {
     if (event.key === 'ArrowLeft' && prevIdStr) {
         event.preventDefault();
         const prevEl = document.getElementById(prevIdStr);
-        if (prevEl) { prevEl.focus(); prevEl.select(); }
+        if (prevEl) {
+            prevEl.focus();
+            prevEl.select();
+        }
     } else if (event.key === 'ArrowRight' && nextIdStr) {
         event.preventDefault();
         const nextEl = document.getElementById(nextIdStr);
-        if (nextEl) { nextEl.focus(); nextEl.select(); }
+        if (nextEl) {
+            nextEl.focus();
+            nextEl.select();
+        }
     } else if (event.key === 'Enter') {
         event.preventDefault();
         startTimer(accId, category, id);
@@ -1202,9 +1243,19 @@ function startPresetTimer(accId, category, id, d, h, m) {
     startTimer(accId, category, id);
 }
 
+/* 第 1 點：點擊「修改」時保留目前剩餘時間帶回天/時/分方便調整 */
 function resetTimer(accId, category, id) {
     const item = store[accId][category].find(it => it.id === id);
     if (!item) return;
+    if (item.endTime) {
+        const remainMs = Math.max(0, item.endTime.getTime() - getAccurateNow().getTime());
+        const totalMin = Math.ceil(remainMs / 60000);
+        if (totalMin > 0) {
+            item.d = Math.floor(totalMin / 1440);
+            item.h = Math.floor((totalMin % 1440) / 60);
+            item.m = totalMin % 60;
+        }
+    }
     item.endTime = null;
     renderGrid();
     updateTimeline(true);
@@ -1305,7 +1356,7 @@ function renderTimerRow(accId, category, item, index, isMulti) {
                             <div class="timer-sub">${getDayTagHtml(item.endTime)}完結：${formatFullDateTime(item.endTime)}</div>
                         </div>
                         <div class="timer-actions">
-                            <button class="btn-action" onclick="resetTimer('${accId}','${category}',${item.id})">重設</button>
+                            <button class="btn-action" onclick="resetTimer('${accId}','${category}',${item.id})">修改</button>
                             ${isMulti ? `<button class="btn-del" title="刪除" onclick="deleteTimerItem('${accId}','${category}',${item.id})">✕</button>` : ''}
                         </div>
                     </div>
@@ -1325,17 +1376,18 @@ function renderTimerRow(accId, category, item, index, isMulti) {
                 <div class="timer-main-row">
                     <div class="timer-inputs">
                         <input type="text" inputmode="numeric" class="time-input" id="${dId}" value="${item.d}" maxlength="2"
-                            onfocus="this.select()"
+                            onfocus="requestAnimationFrame(() => this.select())"
+                            oninput="handleTimerInput(event, this, '${accId}', '${category}', ${item.id}, 'd', '${hId}')"
                             onchange="updateInputVal('${accId}','${category}',${item.id},'d',this.value)"
-                            onkeydown="handleTimerArrowNav(event, null, '${hId}', '${accId}', '${category}', ${item.id})"
-                            onkeyup="autoJumpTimerInput(event, this, '${hId}')">天
+                            onkeydown="handleTimerArrowNav(event, null, '${hId}', '${accId}', '${category}', ${item.id})">天
                         <input type="text" inputmode="numeric" class="time-input" id="${hId}" value="${formatPad(item.h)}" maxlength="2"
-                            onfocus="this.select()"
+                            onfocus="requestAnimationFrame(() => this.select())"
+                            oninput="handleTimerInput(event, this, '${accId}', '${category}', ${item.id}, 'h', '${mId}')"
                             onchange="updateInputVal('${accId}','${category}',${item.id},'h',this.value)"
-                            onkeydown="handleTimerArrowNav(event, '${dId}', '${mId}', '${accId}', '${category}', ${item.id})"
-                            onkeyup="autoJumpTimerInput(event, this, '${mId}')">時
+                            onkeydown="handleTimerArrowNav(event, '${dId}', '${mId}', '${accId}', '${category}', ${item.id})">時
                         <input type="text" inputmode="numeric" class="time-input" id="${mId}" value="${formatPad(item.m)}" maxlength="2"
-                            onfocus="this.select()"
+                            onfocus="requestAnimationFrame(() => this.select())"
+                            oninput="handleTimerInput(event, this, '${accId}', '${category}', ${item.id}, 'm', null)"
                             onchange="updateInputVal('${accId}','${category}',${item.id},'m',this.value)"
                             onkeydown="handleTimerArrowNav(event, '${hId}', null, '${accId}', '${category}', ${item.id})">分
                     </div>
@@ -1350,43 +1402,59 @@ function renderTimerRow(accId, category, item, index, isMulti) {
     `;
 }
 
+/* 第 3、6、7 點整合：
+   - 第 3 點：前方直接可按「⏳ 待確認 / ✔ 已確認」切換確認，不擅自替玩家拍板；顯示同職位 10 分鐘冷卻與同帳號雙職位同時間重疊警示
+   - 第 6 點：今天/明天外粗框（due-today / due-tomorrow）套用到職位卡片
+   - 第 7 點：右側狀態標籤（士兵與科技職位皆適用）佔 1.5~2 行高度且不撐高整列 */
 function renderJobSummaryBox(accId) {
     const s = store[accId];
     const now = getAccurateNow();
+    const hasConflict = hasSameAccountJobConflict(accId);
 
     const buildCard = (label, type) => {
         const jDate = type === 'soldier' ? s.soldierJobDate : s.techJobDate;
         const jConf = type === 'soldier' ? s.soldierJobConfirmed : s.techJobConfirmed;
         const inCooldown = isJobInCooldown(accId, type, now);
 
+        let dueBorderClass = '';
         let pillHtml = `<span class="status-pill none">未預約</span>`;
         let timeText = '尚未設定時段';
         let remainText = '';
 
         if (jDate && !isNaN(jDate.getTime())) {
+            dueBorderClass = getDueBorderClass(jDate);
             timeText = `${getDayTagHtml(jDate)}${formatFullDateTime(jDate)}`;
             const diffMs = jDate.getTime() - now.getTime();
+
             if (inCooldown) {
-                pillHtml = `<span class="status-pill cooldown">冷卻中</span>`;
-                remainText = `已過 ${Math.floor(-diffMs / 60000)} 分鐘`;
+                const cdRemainMin = Math.max(1, Math.ceil((10 * 60 * 1000 - (now.getTime() - jDate.getTime())) / 60000));
+                pillHtml = `<span class="status-pill cooldown">⏳ 10分冷卻<br>剩 ${cdRemainMin} 分</span>`;
+                remainText = `同職位冷卻中（不可重申）`;
             } else if (diffMs > 0) {
-                pillHtml = jConf
-                    ? `<span class="status-pill confirmed">✔ 已確認</span>`
-                    : `<span class="status-pill pending">⏳ 待確認</span>`;
-                remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span>`;
+                if (hasConflict) {
+                    pillHtml = `<button type="button" class="status-pill conflict clickable" title="點擊切換確認狀態" onclick="toggleJobConfirm('${accId}','${type}')">⚠️ 撞期<br>${jConf ? '已確認' : '待確認'}</button>`;
+                    remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span> · 同帳號雙職位同時間`;
+                } else {
+                    pillHtml = jConf
+                        ? `<button type="button" class="status-pill confirmed clickable" title="點擊取消確認" onclick="toggleJobConfirm('${accId}','${type}')">✔<br>已確認</button>`
+                        : `<button type="button" class="status-pill pending clickable" title="點擊直接確認預約" onclick="toggleJobConfirm('${accId}','${type}')">⏳<br>待確認</button>`;
+                    remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span>`;
+                }
             } else {
                 pillHtml = `<span class="status-pill none">已過期</span>`;
             }
         }
 
         return `
-            <div class="job-status-card">
-                <div class="job-status-top">
-                    <span>${label}：${timeText}</span>
-                    ${pillHtml}
-                </div>
-                <div class="job-status-bottom">
-                    <span>${remainText}</span>
+            <div class="job-status-card ${dueBorderClass} ${hasConflict && jDate ? 'job-conflict-border' : ''}">
+                <div class="job-status-row-split">
+                    <div class="job-status-left">
+                        <div class="job-status-title-line">${label}：${timeText}</div>
+                        <div class="job-status-sub-line">${remainText || '&nbsp;'}</div>
+                    </div>
+                    <div class="job-status-right">
+                        ${pillHtml}
+                    </div>
                 </div>
             </div>
         `;
@@ -1534,6 +1602,9 @@ function updateTimeline(force = false) {
             const jDate = s[dateKey];
             const jConf = !!s[confKey];
             const accName = getDisplayAccountName(acc.id);
+            const inCooldown = isJobInCooldown(acc.id, type, now);
+            const hasConflict = hasSameAccountJobConflict(acc.id);
+            const dueBorderClass = jDate ? getDueBorderClass(jDate) : '';
 
             let metaText = '尚未預約';
             if (jDate && !isNaN(jDate.getTime())) {
@@ -1543,8 +1614,15 @@ function updateTimeline(force = false) {
                     : `${formatFullDateTime(jDate)}（已過期）`;
             }
 
+            let warningHtml = '';
+            if (inCooldown) {
+                warningHtml = `<div class="job-warning-box">⏳ 同一職位拿到後 10 分鐘冷卻中，暫不可重新申請</div>`;
+            } else if (hasConflict && jDate) {
+                warningHtml = `<div class="job-warning-box">⚠️ 同帳號士兵與科技職位不能同一時間，請錯開時段</div>`;
+            }
+
             return `
-                <div class="job-manage-card ${acc.id}">
+                <div class="job-manage-card ${acc.id} ${dueBorderClass}">
                     <img class="job-bear-sticker" src="${getBearFaceFile(acc.id)}" alt="">
                     <div class="job-manage-top">
                         <span>${accName}</span>
@@ -1562,6 +1640,7 @@ function updateTimeline(force = false) {
                     <div class="job-manage-meta">
                         <span>${metaText}</span>
                     </div>
+                    ${warningHtml}
                 </div>
             `;
         }).join('');
