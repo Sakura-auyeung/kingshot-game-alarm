@@ -1,1101 +1,152 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-HK">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>多帳戶鬧鐘與資源助手（第一份完整版）</title>
-  <style>
-    :root {
-      --bg-canvas: #fff8fa;
-      --card-bg: #ffffff;
-      --border-soft: #f0dce3;
-      --text-main: #3b2f35;
-      --text-muted: #7c6972;
-      --accent-pink: #ec6b9b;
-      --accent-pink-soft: #fde8f0;
-      --accent-amber: #e59a24;
-      --accent-amber-soft: #fff4df;
-      --accent-green: #2c9a6b;
-      --accent-green-soft: #e6f7ef;
-      --accent-red: #d64550;
-      --accent-red-soft: #fdeaec;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 14px 18px 24px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-      background: var(--bg-canvas);
-      color: var(--text-main);
-    }
-
-    /* 頂部導覽列 */
-    .top-bar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      background: #fff;
-      border: 1px solid var(--border-soft);
-      border-radius: 14px;
-      padding: 10px 16px;
-      margin-bottom: 14px;
-    }
-
-    .brand-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-    }
-
-    .tab-switch,
-    .action-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    button {
-      cursor: pointer;
-      border: 1px solid var(--border-soft);
-      background: #fff;
-      color: var(--text-main);
-      border-radius: 9px;
-      padding: 6px 12px;
-      font-size: 13px;
-      font-weight: 600;
-      transition: all 0.15s ease;
-    }
-
-    button:hover {
-      background: var(--accent-pink-soft);
-    }
-
-    button.active-tab {
-      background: var(--accent-pink);
-      color: #fff;
-      border-color: var(--accent-pink);
-    }
-
-    button.btn-primary {
-      background: var(--accent-pink);
-      color: #fff;
-      border-color: var(--accent-pink);
-    }
-
-    button.btn-confirm {
-      background: var(--accent-green-soft);
-      color: var(--accent-green);
-      border-color: #9dd8be;
-      padding: 4px 10px;
-      font-size: 12px;
-    }
-
-    button.btn-confirm:hover {
-      background: var(--accent-green);
-      color: #fff;
-    }
-
-    /* 兩個分頁整體高度一致（平時不捲動即可看全貌） */
-    .tab-panel {
-      display: none;
-      min-height: calc(100vh - 96px);
-    }
-
-    .tab-panel.active {
-      display: block;
-    }
-
-    .three-col-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      align-items: stretch;
-      min-height: calc(100vh - 96px);
-    }
-
-    @media (max-width: 980px) {
-      .three-col-grid {
-        grid-template-columns: 1fr;
-        min-height: auto;
-      }
-      .tab-panel {
-        min-height: auto;
-      }
-    }
-
-    /* 帳戶主卡 */
-    .account-card {
-      background: var(--card-bg);
-      border: 2px solid var(--border-soft);
-      border-radius: 18px;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .account-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-bottom: 6px;
-      border-bottom: 1px dashed var(--border-soft);
-    }
-
-    .account-name {
-      font-size: 16px;
-      font-weight: 800;
-    }
-
-    .account-meta {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    /* 計時器區塊 */
-    .timer-section {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .timer-box {
-      border: 1px solid var(--border-soft);
-      border-radius: 12px;
-      padding: 8px 10px;
-      background: #fffdfd;
-    }
-
-    .timer-title-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 13px;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-
-    .time-inputs {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .time-field {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .time-input {
-      width: 44px;
-      text-align: center;
-      padding: 5px 4px;
-      border: 1px solid #d9c2cb;
-      border-radius: 7px;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-main);
-      background: #fff;
-    }
-
-    .time-input:focus {
-      outline: 2px solid var(--accent-pink);
-      border-color: var(--accent-pink);
-    }
-
-    .running-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .countdown-text {
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--accent-pink);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .eta-text {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    /* 職位預約區塊（#7：狀態標籤佔 1.5~2 行不影響列高；#6：今天/明天外粗框） */
-    .job-section {
-      border-top: 1px dashed var(--border-soft);
-      padding-top: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .job-section-title {
-      font-size: 13px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .job-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      border: 1px solid var(--border-soft);
-      border-radius: 11px;
-      padding: 6px 9px;
-      min-height: 46px;
-      background: #fff;
-    }
-
-    /* 第 6 點：今天／明天外粗框 */
-    .job-row.is-today-or-tomorrow {
-      border: 2.5px solid var(--accent-amber);
-      background: #fffdf8;
-    }
-
-    .job-row.has-conflict {
-      border: 2.5px solid var(--accent-red);
-      background: var(--accent-red-soft);
-    }
-
-    .job-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-    }
-
-    .job-main-line {
-      font-size: 12.5px;
-      font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .job-sub-line {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .job-right-controls {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    /* 第 7 點：狀態標籤佔 1.5~2 行高度，但不撐高整列 */
-    .status-badge-tall {
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      line-height: 1.15;
-      height: 32px;
-      padding: 2px 8px;
-      border-radius: 9px;
-      font-size: 11px;
-      font-weight: 700;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    .badge-confirmed {
-      background: var(--accent-green-soft);
-      color: var(--accent-green);
-      border: 1px solid #9dd8be;
-    }
-
-    .badge-pending {
-      background: var(--accent-amber-soft);
-      color: #a86807;
-      border: 1px solid #f3ca82;
-    }
-
-    .badge-cooldown {
-      background: #eef1f6;
-      color: #4b5563;
-      border: 1px solid #cbd5e1;
-    }
-
-    .badge-conflict {
-      background: var(--accent-red-soft);
-      color: var(--accent-red);
-      border: 1px solid #f3a6ad;
-    }
-
-    /* 資源分頁大執（#8：精簡/合併/1列2欄；#9：支援多位數與小數點後兩位） */
-    .res-top-compact {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      background: #fff;
-      border: 1px solid var(--border-soft);
-      border-radius: 12px;
-      padding: 7px 12px;
-      margin-bottom: 10px;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    /* 合併原本分開的「貼上目標/選檔」與「採集優先/紅線差距」為 1 列 2 欄 */
-    .res-merged-2col {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 8px;
-      background: #fff9fb;
-      border: 1px solid var(--border-soft);
-      border-radius: 11px;
-      padding: 7px 9px;
-    }
-
-    .res-col-box {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 4px;
-      padding: 4px 6px;
-      border-radius: 8px;
-      background: #fff;
-      border: 1px solid #f5e6ec;
-      font-size: 12px;
-    }
-
-    .res-target-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    .res-list {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-      flex: 1;
-    }
-
-    .res-item-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      border: 1px solid var(--border-soft);
-      border-radius: 11px;
-      padding: 7px 10px;
-      background: #fffdfd;
-    }
-
-    .res-name-group {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 96px;
-    }
-
-    .res-name {
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .res-ratio-hint {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .res-input-group {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .res-qty-input {
-      width: 92px;
-      padding: 5px 8px;
-      border: 1px solid #d4bcc6;
-      border-radius: 8px;
-      font-size: 13.5px;
-      font-weight: 700;
-      text-align: right;
-    }
-
-    .res-unit-select {
-      padding: 5px 6px;
-      border: 1px solid #d4bcc6;
-      border-radius: 8px;
-      font-size: 12.5px;
-      font-weight: 700;
-      background: #fff;
-    }
-
-    /* 第 2 點：右下角桌面彈窗樣式 */
-    .toast-container {
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-width: 340px;
-    }
-
-    .toast-card {
-      background: #fff;
-      border: 2px solid var(--accent-pink);
-      border-left: 6px solid var(--accent-pink);
-      border-radius: 12px;
-      padding: 10px 14px;
-      box-shadow: 0 8px 24px rgba(59, 47, 53, 0.14);
-      font-size: 13px;
-    }
-
-    .toast-title {
-      font-weight: 800;
-      margin-bottom: 3px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多帳戶鬧鐘與職位助手</title>
+    <link rel="icon" type="image/png" href="./assets/chara_face_1-1.png">
+    <link rel="apple-touch-icon" href="./assets/chara_face_1-1.png">
+    <!-- 引入 Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <!-- 引入 Tesseract.js 純前端 OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- 外部樣式表 -->
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <header class="top-bar">
-    <div class="brand-group">
-      <span>🐻 多帳戶鬧鐘與資源助手</span>
-      <div class="tab-switch">
-        <button id="tabBtnAlarm" class="active-tab" onclick="switchTab('alarm')">⏰ 鬧鐘分頁</button>
-        <button id="tabBtnResources" onclick="switchTab('resources')">📦 資源分頁</button>
-      </div>
+
+    <div class="header-frill"></div>
+
+    <div class="loading-splash" id="loadingSplash">
+        <div class="loading-stage">
+            <img class="loading-frame frame-1" src="./assets/img_op_1.png" alt="">
+            <img class="loading-frame frame-2" src="./assets/img_op_2.png" alt="SHAKI!!">
+        </div>
+        <div class="loading-text">LOADING...</div>
     </div>
-    <div class="action-group">
-      <button onclick="triggerTestAlert()">🔔 測試鈴聲</button>
-    </div>
-  </header>
 
-  <!-- 鬧鐘分頁 -->
-  <section id="panelAlarm" class="tab-panel active">
-    <div id="alarmGrid" class="three-col-grid"></div>
-  </section>
-
-  <!-- 資源分頁 -->
-  <section id="panelResources" class="tab-panel">
-    <div class="res-top-compact">
-      <span>📋 支援 Ctrl+V 貼上或手動輸入（可輸入多位數與小數點後兩位）</span>
-      <span>比例：糧 20：木 20：石 4：鐵 1</span>
-    </div>
-    <div id="resourcesGrid" class="three-col-grid"></div>
-  </section>
-
-  <!-- 右下角彈窗容器（第 2 點） -->
-  <div id="toastContainer" class="toast-container"></div>
-
-  <script>
-    const ACCOUNTS = [
-      { id: 'acc1', name: 'Howard', tag: '777', power: '2.80 億' },
-      { id: 'acc2', name: 'Zoey', tag: 'TER', power: '4.34 億' },
-      { id: 'acc3', name: 'Patrick', tag: '777', power: '2.65 億' }
-    ];
-
-    const JOB_TYPES = [
-      { key: 'troop', label: '士兵職位', icon: '⚔️' },
-      { key: 'tech', label: '科技職位', icon: '🔬' }
-    ];
-
-    const RESOURCES = [
-      { key: 'food', label: '糧食', icon: '🍞', ratio: 20 },
-      { key: 'wood', label: '木材', icon: '🪵', ratio: 20 },
-      { key: 'stone', label: '石材', icon: '🪨', ratio: 4 },
-      { key: 'iron', label: '鐵礦', icon: '⛏️', ratio: 1 }
-    ];
-
-    const state = {
-      activeTab: 'alarm',
-      pasteTargetId: 'acc1',
-      timers: {},
-      jobs: {},
-      resources: {}
-    };
-
-    function initState() {
-      ACCOUNTS.forEach((acc) => {
-        state.timers[acc.id] = {
-          troop: { running: false, endAt: null, d: 0, h: 0, m: 0 },
-          tech: { running: false, endAt: null, d: 0, h: 0, m: 0 }
-        };
-        state.jobs[acc.id] = {
-          // 預設帶出範例：今天時段觸發第 6 點「今天/明天外粗框」與第 7 點「狀態標籤佔 1.5~2 行」
-          troop: {
-            scheduledAt: Date.now() + 2 * 3600 * 1000,
-            confirmed: false,
-            lastClaimedAt: null
-          },
-          tech: {
-            scheduledAt: Date.now() + 5 * 3600 * 1000,
-            confirmed: true,
-            lastClaimedAt: Date.now() - 4 * 60 * 1000 // 示範 10 分鐘冷卻中
-          }
-        };
-        state.resources[acc.id] = {
-          food: { raw: '', unit: 'M' },
-          wood: { raw: '', unit: 'M' },
-          stone: { raw: '', unit: 'M' },
-          iron: { raw: '', unit: 'M' }
-        };
-      });
-    }
-
-    function switchTab(tabName) {
-      state.activeTab = tabName;
-      document.getElementById('tabBtnAlarm').classList.toggle('active-tab', tabName === 'alarm');
-      document.getElementById('tabBtnResources').classList.toggle('active-tab', tabName === 'resources');
-      document.getElementById('panelAlarm').classList.toggle('active', tabName === 'alarm');
-      document.getElementById('panelResources').classList.toggle('active', tabName === 'resources');
-      if (tabName === 'resources') {
-        renderResources();
-      } else {
-        renderAlarm();
-      }
-    }
-
-    /* 第 2 點：按「測試鈴聲」時顯示右下角桌面彈窗提醒 */
-    function triggerTestAlert() {
-      showBottomRightToast('🔔 測試鈴聲提醒', '右下角彈窗已恢復，計時與職位通知會在此提示。');
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = 660;
-        gain.gain.setValueAtTime(0.08, ctx.currentTime);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.25);
-      } catch (_) {}
-    }
-
-    function showBottomRightToast(title, message) {
-      const container = document.getElementById('toastContainer');
-      const card = document.createElement('div');
-      card.className = 'toast-card';
-      card.innerHTML = `<div class="toast-title">${title}</div><div>${message}</div>`;
-      container.appendChild(card);
-      setTimeout(() => {
-        card.remove();
-      }, 4200);
-    }
-
-    /* 第 4 & 5 點：天/時/分輸入框跳格邏輯
-       - 保留打滿兩位數（例如 06、18、24）自動跳格
-       - 修復由 0 首次輸入兩位數時不自動跳格的問題
-       - 修復輸入一位數（例如 6）後，按 -> 或 Tab 無法可靠跳到下一格的問題 */
-    function bindTimeInputEvents(inputEl, prevId, nextId, accId, category, unitKey) {
-      inputEl.addEventListener('focus', () => {
-        // 延遲選取，避免首次由 0 改打兩位數時選取狀態干擾字數判斷
-        requestAnimationFrame(() => inputEl.select());
-      });
-
-      inputEl.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowRight' || e.key === 'Tab') {
-          if (nextId) {
-            e.preventDefault();
-            const target = document.getElementById(nextId);
-            if (target) {
-              target.focus();
-              target.select();
+    <script>
+        setTimeout(function () {
+            var sp = document.getElementById('loadingSplash');
+            if (sp) {
+                sp.classList.add('shaki');
+                setTimeout(function () {
+                    sp.classList.add('hidden');
+                }, 250);
             }
-          }
-        } else if (e.key === 'ArrowLeft') {
-          if (prevId) {
-            e.preventDefault();
-            const target = document.getElementById(prevId);
-            if (target) {
-              target.focus();
-              target.select();
-            }
-          }
-        }
-      });
+        }, 950);
+    </script>
 
-      inputEl.addEventListener('input', () => {
-        // 只保留數字，最多 2 位
-        let cleaned = inputEl.value.replace(/\D/g, '').slice(0, 2);
-        if (unitKey === 'h' && Number(cleaned) > 23) cleaned = '23';
-        if (unitKey === 'm' && Number(cleaned) > 59) cleaned = '59';
+    <div class="header">
+        <div class="title-group">
+            <img class="header-mascot-img" src="./assets/chara_face_1-1.png" alt="鬆弛熊">
+            <h1 id="pageMainTitle">多帳戶鬧鐘助手</h1>
+            <span class="sync-badge" id="syncBadge">⏳ 連線雲端中...</span>
+            <span class="notif-badge" id="notifBadge" onclick="requestDesktopNotificationPermission()">🔔 點擊開啟右下角桌面彈窗</span>
+        </div>
 
-        state.timers[accId][category][unitKey] = Number(cleaned || 0);
-        inputEl.value = cleaned;
+        <div class="header-btns">
+            <!-- 計時頁面專屬按鈕區 -->
+            <div class="timer-only-btns" id="timerOnlyBtns">
+                <button class="pill-btn btn-event-toggle active" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光：顯示</button>
+                <button class="pill-btn btn-test" onclick="testAlarm()">🔔 測試鈴聲</button>
+                <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">
+                    <img class="btn-icon-svg" src="./assets/btn_change.svg" alt=""> 切換時間線
+                </button>
+            </div>
 
-        // 只要輸入滿 2 位數字，就自動跳到下一格（包含原本為 0 的首次輸入）
-        if (cleaned.length >= 2 && nextId) {
-          const target = document.getElementById(nextId);
-          if (target) {
-            target.focus();
-            target.select();
-          }
-        }
-      });
-
-      inputEl.addEventListener('blur', () => {
-        const val = Number(inputEl.value.replace(/\D/g, '') || 0);
-        state.timers[accId][category][unitKey] = val;
-        inputEl.value = String(val);
-      });
-    }
-
-    function startTimer(accId, category) {
-      const t = state.timers[accId][category];
-      const totalMs = (((t.d || 0) * 24 + (t.h || 0)) * 60 + (t.m || 0)) * 60 * 1000;
-      if (totalMs <= 0) return;
-      t.running = true;
-      t.endAt = Date.now() + totalMs;
-
-      // 在「前面」直接帶出建議預約時段，但不擅自替玩家拍板確認（考量遊戲裡不只有自己）
-      const job = state.jobs[accId][category];
-      if (job && !job.confirmed) {
-        job.scheduledAt = t.endAt;
-      }
-      renderAlarm();
-    }
-
-    /* 第 1 點：進行中計時卡片右側的「重設」改為「修改」 */
-    function modifyRunningTimer(accId, category) {
-      const t = state.timers[accId][category];
-      const remainMs = Math.max(0, (t.endAt || Date.now()) - Date.now());
-      const totalMin = Math.ceil(remainMs / 60000);
-      t.d = Math.floor(totalMin / 1440);
-      t.h = Math.floor((totalMin % 1440) / 60);
-      t.m = totalMin % 60;
-      t.running = false;
-      t.endAt = null;
-      renderAlarm();
-    }
-
-    /* 第 3 點：職位規則判斷
-       - 同帳號同一職位：拿到職位後有 10 分鐘冷卻，冷卻內不能重新申請同一職位
-       - 同帳號不同職位（士兵 vs 科技）：沒有 10 分鐘冷卻，但不能同一時間（重疊/接近時標示提醒） */
-    function evaluateJobStatus(accId, jobKey) {
-      const now = Date.now();
-      const job = state.jobs[accId][jobKey];
-      const otherKey = jobKey === 'troop' ? 'tech' : 'troop';
-      const otherJob = state.jobs[accId][otherKey];
-
-      const cooldownMs = 10 * 60 * 1000;
-      const inCooldown = job.lastClaimedAt && (now - job.lastClaimedAt < cooldownMs);
-      const cooldownEndAt = job.lastClaimedAt ? job.lastClaimedAt + cooldownMs : null;
-
-      // 檢查同帳號不同職位是否同一時間（例如相隔小於 10 分鐘視為重疊/同一時段）
-      const hasOverlapWithOtherJob =
-        job.scheduledAt &&
-        otherJob &&
-        otherJob.scheduledAt &&
-        Math.abs(job.scheduledAt - otherJob.scheduledAt) < 10 * 60 * 1000;
-
-      return { inCooldown, cooldownEndAt, hasOverlapWithOtherJob };
-    }
-
-    function confirmJobInFront(accId, jobKey) {
-      const { inCooldown, cooldownEndAt } = evaluateJobStatus(accId, jobKey);
-      if (inCooldown) {
-        showBottomRightToast(
-          '⏳ 10 分鐘冷卻中',
-          `同一職位需於 ${formatClock(cooldownEndAt)} 後才能重新申請。`
-        );
-        return;
-      }
-      const job = state.jobs[accId][jobKey];
-      job.confirmed = true;
-      job.lastClaimedAt = Date.now();
-      renderAlarm();
-    }
-
-    function isTodayOrTomorrow(ts) {
-      if (!ts) return false;
-      const target = new Date(ts);
-      const now = new Date();
-      const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const startDayAfterTomorrow = startToday + 2 * 24 * 3600 * 1000;
-      return ts >= startToday && ts < startDayAfterTomorrow;
-    }
-
-    function getDayTag(ts) {
-      if (!ts) return '';
-      const target = new Date(ts);
-      const now = new Date();
-      const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const startTomorrow = startToday + 24 * 3600 * 1000;
-      const startDayAfter = startTomorrow + 24 * 3600 * 1000;
-      if (ts >= startToday && ts < startTomorrow) return '今日 ';
-      if (ts >= startTomorrow && ts < startDayAfter) return '明日 ';
-      return '';
-    }
-
-    function formatDateTime(ts) {
-      if (!ts) return '尚未設定時段';
-      const d = new Date(ts);
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      const hh = String(d.getHours()).padStart(2, '0');
-      const mi = String(d.getMinutes()).padStart(2, '0');
-      return `${getDayTag(ts)}${mm}/${dd} ${hh}:${mi}`;
-    }
-
-    function formatClock(ts) {
-      const d = new Date(ts);
-      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-    }
-
-    function formatDuration(ms) {
-      const sec = Math.max(0, Math.floor(ms / 1000));
-      const d = Math.floor(sec / 86400);
-      const h = Math.floor((sec % 86400) / 3600);
-      const m = Math.floor((sec % 3600) / 60);
-      const s = sec % 60;
-      const hms = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-      return d > 0 ? `${d}天 ${hms}` : hms;
-    }
-
-    function renderAlarm() {
-      const grid = document.getElementById('alarmGrid');
-      grid.innerHTML = '';
-
-      ACCOUNTS.forEach((acc) => {
-        const card = document.createElement('div');
-        card.className = 'account-card';
-
-        const categories = [
-          { key: 'troop', label: '⚔️ 士兵訓練' },
-          { key: 'tech', label: '🔬 科技研究' }
-        ];
-
-        const timersHtml = categories
-          .map((cat) => {
-            const t = state.timers[acc.id][cat.key];
-            const idD = `t_${acc.id}_${cat.key}_d`;
-            const idH = `t_${acc.id}_${cat.key}_h`;
-            const idM = `t_${acc.id}_${cat.key}_m`;
-
-            if (t.running) {
-              const remain = Math.max(0, (t.endAt || Date.now()) - Date.now());
-              return `
-                <div class="timer-box">
-                  <div class="timer-title-row"><span>${cat.label}</span></div>
-                  <div class="running-row">
-                    <div>
-                      <div class="countdown-text">${formatDuration(remain)}</div>
-                      <div class="eta-text">完成：${formatDateTime(t.endAt)}</div>
+            <!-- 全局保留：鈴鐺待辦清單 -->
+            <div class="bell-wrapper" id="bellWrapper">
+                <button class="btn-bell" id="bellBtn" title="待辦清單與提醒紀錄" onclick="toggleBellDropdown(event)">
+                    🔔
+                    <span class="bell-count-badge" id="bellCountBadge">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown" onclick="event.stopPropagation()">
+                    <div class="notif-dropdown-header">
+                        <span>📋 待辦清單 & 提醒紀錄</span>
+                        <div class="notif-header-actions">
+                            <button class="btn-notif-mini" onclick="markAllNotifsRead()">全部完成</button>
+                            <button class="btn-notif-mini" onclick="clearAllNotifs()">清空已處理</button>
+                        </div>
                     </div>
-                    <button onclick="modifyRunningTimer('${acc.id}', '${cat.key}')">修改</button>
-                  </div>
+                    <div class="notif-dropdown-list" id="notifDropdownList"></div>
                 </div>
-              `;
-            }
+            </div>
 
-            return `
-              <div class="timer-box">
-                <div class="timer-title-row"><span>${cat.label}</span></div>
-                <div class="running-row">
-                  <div class="time-inputs">
-                    <label class="time-field">
-                      <input id="${idD}" class="time-input" type="text" inputmode="numeric" value="${t.d}" />天
-                    </label>
-                    <label class="time-field">
-                      <input id="${idH}" class="time-input" type="text" inputmode="numeric" value="${t.h}" />時
-                    </label>
-                    <label class="time-field">
-                      <input id="${idM}" class="time-input" type="text" inputmode="numeric" value="${t.m}" />分
-                    </label>
-                  </div>
-                  <button class="btn-primary" onclick="startTimer('${acc.id}', '${cat.key}')">▶ 開始</button>
+            <!-- 全局保留：粉藍圓圈兩橫線功能選單 -->
+            <div class="nav-menu-wrapper" id="navMenuWrapper">
+                <button class="btn-nav-circle" id="navMenuBtn" title="切換功能分頁" onclick="toggleNavDropdown(event)" aria-label="功能選單">
+                    <span class="nav-two-lines"></span>
+                </button>
+                <div class="nav-dropdown" id="navDropdown" onclick="event.stopPropagation()">
+                    <button type="button" class="nav-dropdown-item active" id="navItemAlarm" onclick="selectNavPage('grid')">
+                        ⏰ 鬧鐘
+                    </button>
+                    <button type="button" class="nav-dropdown-item" id="navItemResources" onclick="selectNavPage('resources')">
+                        🌾 資源採集
+                    </button>
                 </div>
-              </div>
-            `;
-          })
-          .join('');
-
-        const jobsHtml = JOB_TYPES.map((jt) => {
-          const job = state.jobs[acc.id][jt.key];
-          const { inCooldown, cooldownEndAt, hasOverlapWithOtherJob } = evaluateJobStatus(acc.id, jt.key);
-          const todayOrTomorrow = isTodayOrTomorrow(job.scheduledAt);
-
-          let rowClass = 'job-row';
-          if (hasOverlapWithOtherJob) {
-            rowClass += ' has-conflict';
-          } else if (todayOrTomorrow) {
-            rowClass += ' is-today-or-tomorrow';
-          }
-
-          let subText = job.scheduledAt ? `建議/預約：${formatDateTime(job.scheduledAt)}` : '尚未預約';
-          if (hasOverlapWithOtherJob) {
-            subText += ' · ⚠️ 同帳號另一職位時間重疊，請錯開';
-          }
-
-          let badgeHtml = '';
-          if (hasOverlapWithOtherJob) {
-            badgeHtml = `<span class="status-badge-tall badge-conflict">⚠️ 撞期<br>需錯開</span>`;
-          } else if (inCooldown) {
-            badgeHtml = `<span class="status-badge-tall badge-cooldown">⏳ 10分冷卻<br>${formatClock(cooldownEndAt)}可重申</span>`;
-          } else if (job.confirmed) {
-            badgeHtml = `<span class="status-badge-tall badge-confirmed">✓ 已確認<br>預約</span>`;
-          } else {
-            badgeHtml = `<span class="status-badge-tall badge-pending">⏳ 待確認<br>建議時段</span>`;
-          }
-
-          const actionBtn =
-            !job.confirmed && !inCooldown
-              ? `<button class="btn-confirm" onclick="confirmJobInFront('${acc.id}', '${jt.key}')">✔ 確認</button>`
-              : '';
-
-          return `
-            <div class="${rowClass}">
-              <div class="job-info">
-                <div class="job-main-line">${jt.icon} ${jt.label}：${formatDateTime(job.scheduledAt)}</div>
-                <div class="job-sub-line">${subText}</div>
-              </div>
-              <div class="job-right-controls">
-                ${badgeHtml}
-                ${actionBtn}
-              </div>
             </div>
-          `;
-        }).join('');
+        </div>
+    </div>
 
-        card.innerHTML = `
-          <div>
-            <div class="account-header">
-              <span class="account-name">${acc.name} [${acc.tag}]</span>
-              <span class="account-meta">戰力 ${acc.power}</span>
-            </div>
-            <div class="timer-section" style="margin-top: 8px;">
-              ${timersHtml}
-            </div>
-          </div>
-          <div class="job-section">
-            <div class="job-section-title"><span>🏛️ 職位預約狀態（前方直接確認）</span></div>
-            ${jobsHtml}
-          </div>
-        `;
+    <div class="grid-view" id="gridView"></div>
 
-        grid.appendChild(card);
-
-        categories.forEach((cat) => {
-          if (!state.timers[acc.id][cat.key].running) {
-            const idD = `t_${acc.id}_${cat.key}_d`;
-            const idH = `t_${acc.id}_${cat.key}_h`;
-            const idM = `t_${acc.id}_${cat.key}_m`;
-            bindTimeInputEvents(document.getElementById(idD), null, idH, acc.id, cat.key, 'd');
-            bindTimeInputEvents(document.getElementById(idH), idD, idM, acc.id, cat.key, 'h');
-            bindTimeInputEvents(document.getElementById(idM), idH, null, acc.id, cat.key, 'm');
-          }
-        });
-      });
-    }
-
-    /* 第 9 點：手動輸入資源數量時，允許個位/十位/百位整數，以及小數點與小數點後兩位（例如 1、12、125、1.25） */
-    function sanitizeDecimalInput(rawVal) {
-      let s = rawVal.replace(/[^\d.]/g, '');
-      const parts = s.split('.');
-      if (parts.length > 2) {
-        s = parts[0] + '.' + parts.slice(1).join('');
-      }
-      const splitAfterDot = s.split('.');
-      if (splitAfterDot.length === 2) {
-        s = splitAfterDot[0] + '.' + splitAfterDot[1].slice(0, 2);
-      }
-      return s;
-    }
-
-    function computePrioritySummary(accId) {
-      const resMap = state.resources[accId];
-      const toBase = (key) => {
-        const item = resMap[key];
-        const num = parseFloat(item.raw);
-        if (Number.isNaN(num)) return null;
-        const mult = item.unit === 'B' ? 1000 : 1;
-        return num * mult;
-      };
-
-      const foodVal = toBase('food');
-      const woodVal = toBase('wood');
-      const stoneVal = toBase('stone');
-      const ironVal = toBase('iron');
-
-      if ([foodVal, woodVal, stoneVal, ironVal].some((v) => v === null)) {
-        return { text: '尚未填齊數值', gapText: '紅線差距：--' };
-      }
-
-      const ratios = [
-        { label: '糧食', score: foodVal / 20 },
-        { label: '木材', score: woodVal / 20 },
-        { label: '石材', score: stoneVal / 4 },
-        { label: '鐵礦', score: ironVal / 1 }
-      ].sort((a, b) => a.score - b.score);
-
-      const lowest = ratios[0];
-      const highest = ratios[ratios.length - 1];
-      const gap = (highest.score - lowest.score).toFixed(2);
-      return {
-        text: `優先：${lowest.label}`,
-        gapText: `紅線差距：${gap}M`
-      };
-    }
-
-    function renderResources() {
-      const grid = document.getElementById('resourcesGrid');
-      grid.innerHTML = '';
-
-      ACCOUNTS.forEach((acc) => {
-        const isTarget = state.pasteTargetId === acc.id;
-        const prio = computePrioritySummary(acc.id);
-
-        const itemsHtml = RESOURCES.map((r) => {
-          const item = state.resources[acc.id][r.key];
-          return `
-            <div class="res-item-row">
-              <div class="res-name-group">
-                <span class="res-name">${r.icon} ${r.label}</span>
-                <span class="res-ratio-hint">比例 ÷${r.ratio}</span>
-              </div>
-              <div class="res-input-group">
-                <input
-                  type="text"
-                  inputmode="decimal"
-                  class="res-qty-input"
-                  placeholder="0.00"
-                  value="${item.raw}"
-                  oninput="onResourceQtyInput('${acc.id}', '${r.key}', this)"
-                />
-                <select
-                  class="res-unit-select"
-                  onchange="onResourceUnitChange('${acc.id}', '${r.key}', this.value)"
-                >
-                  <option value="M" ${item.unit === 'M' ? 'selected' : ''}>M</option>
-                  <option value="B" ${item.unit === 'B' ? 'selected' : ''}>B</option>
-                </select>
-              </div>
-            </div>
-          `;
-        }).join('');
-
-        const card = document.createElement('div');
-        card.className = 'account-card';
-        card.innerHTML = `
-          <div>
-            <div class="account-header">
-              <span class="account-name">${acc.name} [${acc.tag}]</span>
-              <span class="account-meta">戰力 ${acc.power}</span>
+    <div class="timeline-view" id="timelineView">
+        <div class="timeline-grid">
+            <div class="timeline-column">
+                <h3>⏱️ 訓練 / 研究 / 技能 / 活動完結</h3>
+                <div class="timeline-list-body" id="timeline_tasks"></div>
             </div>
 
-            <!-- 第 8 點：精簡合併為 1 列 2 欄 -->
-            <div class="res-merged-2col" style="margin-top: 8px;">
-              <div class="res-col-box">
-                <div class="res-target-row">
-                  <button
-                    class="${isTarget ? 'btn-primary' : ''}"
-                    style="padding: 4px 8px; font-size: 12px;"
-                    onclick="setPasteTarget('${acc.id}')"
-                  >
-                    ${isTarget ? '✓ 貼上目標' : '📌 設目標'}
-                  </button>
-                  <label style="font-size: 12px; cursor: pointer;">
-                    📁 選檔
-                    <input type="file" accept="image/*" style="display:none;" onchange="handleFilePick('${acc.id}', this)" />
-                  </label>
-                </div>
-                <div style="font-size: 11px; color: var(--text-muted);">對齊 In Stock</div>
-              </div>
-
-              <div class="res-col-box">
-                <div style="font-weight: 700;">${prio.text}</div>
-                <div style="font-size: 11px; color: var(--text-muted);">${prio.gapText}</div>
-              </div>
+            <div class="timeline-column">
+                <h3>🏛️ 士兵職位預約管理</h3>
+                <div class="timeline-list-body" id="timeline_soldier_jobs"></div>
             </div>
-          </div>
 
-          <div class="res-list" style="margin-top: 8px;">
-            ${itemsHtml}
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-    }
+            <div class="timeline-column">
+                <h3>🏛️ 科技職位預約管理</h3>
+                <div class="timeline-list-body" id="timeline_tech_jobs"></div>
+            </div>
+        </div>
+    </div>
 
-    function setPasteTarget(accId) {
-      state.pasteTargetId = accId;
-      renderResources();
-    }
+    <div class="resources-view" id="resourcesView">
+        <div class="res-top-banner">
+            <div>
+                <strong>Ctrl+V 貼上截圖</strong>或<strong>手動輸入數值</strong>（自動對齊 In Stock）
+            </div>
+            <div>
+                比例：<strong>糧 20 : 木 20 : 石 4 : 鐵 1</strong>（綠＝最缺 ｜ 紅＝最唔缺）
+            </div>
+        </div>
+        <div class="res-grid" id="resourcesGrid"></div>
+    </div>
 
-    function handleFilePick(accId, inputEl) {
-      if (inputEl.files && inputEl.files[0]) {
-        state.pasteTargetId = accId;
-        showBottomRightToast('📁 已選擇圖片', `目標帳戶：${accId}（${inputEl.files[0].name}）`);
-        renderResources();
-      }
-    }
+    <!-- 奶油風雙欄位角色編輯彈窗 -->
+    <div class="profile-modal-backdrop" id="profileEditModal" onclick="closeProfileEditModal()">
+        <div class="profile-modal-card" onclick="event.stopPropagation()">
+            <div class="profile-modal-title">✏️ 編輯角色查詢資料</div>
+            <div class="profile-modal-field">
+                <label for="modalProfileName">遊戲角色名稱</label>
+                <input type="text" id="modalProfileName" placeholder="例如：Zoey">
+            </div>
+            <div class="profile-modal-field">
+                <label for="modalProfileAlliance">所屬聯盟標籤</label>
+                <input type="text" id="modalProfileAlliance" placeholder="例如：TER 或 777">
+            </div>
+            <div class="profile-modal-actions">
+                <button type="button" class="btn-modal-cancel" onclick="closeProfileEditModal()">取消</button>
+                <button type="button" class="btn-modal-save" onclick="saveProfileEditModal()">儲存並更新</button>
+            </div>
+        </div>
+    </div>
 
-    function onResourceQtyInput(accId, resKey, inputEl) {
-      const cleaned = sanitizeDecimalInput(inputEl.value);
-      state.resources[accId][resKey].raw = cleaned;
-      if (inputEl.value !== cleaned) {
-        inputEl.value = cleaned;
-      }
-      // 更新採集優先與紅線差距顯示，不打斷目前輸入游標
-      renderResources();
-      const selector = `#resourcesGrid .account-card:nth-child(${ACCOUNTS.findIndex((a) => a.id === accId) + 1}) .res-item-row:nth-child(${RESOURCES.findIndex((r) => r.key === resKey) + 1}) .res-qty-input`;
-      const refocused = document.querySelector(selector);
-      if (refocused) {
-        refocused.focus();
-        const len = refocused.value.length;
-        refocused.setSelectionRange(len, len);
-      }
-    }
+    <input type="file" id="resFileInput" accept="image/*" style="display:none" onchange="handleResFileChange(event)">
 
-    function onResourceUnitChange(accId, resKey, unitVal) {
-      state.resources[accId][resKey].unit = unitVal;
-      renderResources();
-    }
-
-    // 每秒更新進行中的倒數計時
-    setInterval(() => {
-      if (state.activeTab !== 'alarm') return;
-      let hasRunning = false;
-      ACCOUNTS.forEach((acc) => {
-        ['troop', 'tech'].forEach((cat) => {
-          const t = state.timers[acc.id][cat];
-          if (t.running) {
-            hasRunning = true;
-            if (Date.now() >= t.endAt) {
-              t.running = false;
-              t.endAt = null;
-              showBottomRightToast('⏰ 計時完成', `${acc.name} 的${cat === 'troop' ? '士兵訓練' : '科技研究'}已結束！`);
-            }
-          }
-        });
-      });
-      if (hasRunning) {
-        renderAlarm();
-      }
-    }, 1000);
-
-    initState();
-    renderAlarm();
-  </script>
+    <!-- 主邏輯與資源 OCR 模組 -->
+    <script src="./app.js"></script>
+    <script src="./resources.js"></script>
 </body>
 </html>
