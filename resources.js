@@ -23,6 +23,14 @@ let activePasteAccId = 'z';
 let pendingUploadAccId = 'z';
 let ocrStatusText = { h: '', z: '', p: '' };
 let tesseractWorker = null;
+let resSaveDebounceTimer = null;
+
+function scheduleResourceSave() {
+    if (resSaveDebounceTimer) clearTimeout(resSaveDebounceTimer);
+    resSaveDebounceTimer = setTimeout(() => {
+        saveState();
+    }, 350);
+}
 
 function unitMultiplier(unit) {
     if (unit === 'B') return 1e9;
@@ -103,7 +111,6 @@ function openFilePickerForAcc(event, accId) {
     }
 }
 
-/* 允許個位/十位/百位整數，以及小數點與小數點後兩位 */
 function sanitizeResourceNumberInput(raw) {
     let s = String(raw || '').replace(/[^\d.]/g, '');
     const dotIndex = s.indexOf('.');
@@ -146,8 +153,10 @@ function renderResourcesGrid() {
                         <input type="text" inputmode="decimal" class="res-num-input"
                             id="res_in_${acc.id}_${item.key}"
                             value="${item.valStr}" placeholder="0.00"
-                            oninput="onResourceNumberTyping('${acc.id}', '${item.key}', this)">
+                            oninput="onResourceNumberTyping('${acc.id}', '${item.key}', this)"
+                            onblur="saveState()">
                         <select class="res-unit-select"
+                            id="res_unit_${acc.id}_${item.key}"
                             onchange="updateResourceUnit('${acc.id}', '${item.key}', this.value)">
                             <option value="K" ${item.unit === 'K' ? 'selected' : ''}>K</option>
                             <option value="M" ${item.unit === 'M' ? 'selected' : ''}>M</option>
@@ -166,7 +175,6 @@ function renderResourcesGrid() {
             <div class="account-column ${acc.id}">
                 ${renderProfileHeader(acc)}
 
-                <!-- 第 8 點：將「設為貼上目標/選檔」與「採集優先/紅線差距」精簡合併為 1 列 2 欄 -->
                 <div class="res-merged-row ${isActiveTarget ? 'active-target' : ''}">
                     <div class="res-merged-col paste-col">
                         <div class="res-paste-top">
@@ -197,8 +205,7 @@ function renderResourcesGrid() {
     }).join('');
 }
 
-/* 局部更新數值、顏色與優先度，不整張重繪輸入框，避免游標失去焦點（修復第 9 點） */
-function refreshAccountResourceVisualsOnly(accId) {
+function refreshAccountResourceVisualsOnly(accId, skipInputId = null) {
     const analysis = getAccountResourceAnalysis(accId);
 
     const prioBox = document.getElementById(`res_prio_${accId}`);
@@ -225,6 +232,17 @@ function refreshAccountResourceVisualsOnly(accId) {
         if (card) {
             card.className = `res-row-card ${item.tierClass}`;
         }
+        const inputId = `res_in_${accId}_${item.key}`;
+        if (inputId !== skipInputId) {
+            const inp = document.getElementById(inputId);
+            if (inp && inp.value !== String(item.valStr)) {
+                inp.value = item.valStr;
+            }
+        }
+        const unitSel = document.getElementById(`res_unit_${accId}_${item.key}`);
+        if (unitSel && unitSel.value !== item.unit) {
+            unitSel.value = item.unit;
+        }
         const stockEl = document.getElementById(`res_stock_${accId}_${item.key}`);
         if (stockEl) {
             stockEl.innerText = item.hasVal ? `庫存：${item.valStr}${item.unit}` : '未填寫';
@@ -245,8 +263,8 @@ function onResourceNumberTyping(accId, resKey, inputEl) {
     if (!resourcesStore[accId][resKey]) resourcesStore[accId][resKey] = { val: '', unit: 'M' };
     resourcesStore[accId][resKey].val = cleaned;
 
-    refreshAccountResourceVisualsOnly(accId);
-    saveState();
+    refreshAccountResourceVisualsOnly(accId, inputEl.id);
+    scheduleResourceSave();
 }
 
 function updateResourceUnit(accId, resKey, unitVal) {
@@ -281,6 +299,9 @@ document.addEventListener('paste', (event) => {
     }
 });
 
+// ==========================================
+// OCR 辨識區段（保持原狀未改動）
+// ==========================================
 async function getOcrWorker() {
     if (typeof Tesseract === 'undefined') {
         throw new Error("Tesseract OCR 尚未載入");
