@@ -87,6 +87,8 @@ let showSunlightEvent = true;
 let showAllTimelineDays = false;
 let latestStateUpdatedAt = 0;
 let isJobSelectActive = false;
+let isTimerInputEditing = false;
+let timerBlurUnlockHandle = null;
 
 let store = {
     h: {
@@ -175,7 +177,7 @@ function setupAutoTimeSync() {
             const offset = snap.val();
             if (typeof offset === "number" && Math.abs(offset) < 12 * 3600 * 1000) {
                 serverTimeOffsetMs = offset;
-                renderGrid();
+                if (!isTimerInputEditing) renderGrid();
                 updateTimeline(true);
             }
         });
@@ -303,7 +305,7 @@ async function fetchAllProfiles() {
     }
     if (anyUpdated) {
         saveProfiles();
-        renderGrid();
+        if (!isTimerInputEditing) renderGrid();
         if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
         updateTimeline(true);
     }
@@ -1143,7 +1145,7 @@ function setupFirebaseListeners() {
 
         const activeEl = document.activeElement;
         const isTypingResource = activeEl && activeEl.classList && activeEl.classList.contains('res-num-input');
-        const isTypingTimer = activeEl && activeEl.classList && activeEl.classList.contains('time-input');
+        const isTypingTimer = isTimerInputEditing || (activeEl && activeEl.classList && activeEl.classList.contains('time-input'));
 
         if (!isTypingTimer) {
             renderGrid();
@@ -1181,7 +1183,7 @@ function setupFirebaseListeners() {
                     }
                 });
                 try { localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles)); } catch (e) {}
-                renderGrid();
+                if (!isTimerInputEditing) renderGrid();
                 if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
                 updateTimeline(true);
             }
@@ -1223,7 +1225,11 @@ function autoSyncJobFromTimer(accId, type, endDate) {
     const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
     const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
 
-    if (store[accId][manualKey]) return;
+    // 若職位已鎖定確認、或曾手動設定時段、或目前仍在該職位 10 分鐘冷卻期內，絕對不刷新或解除鎖定
+    if (store[accId][confKey] || store[accId][manualKey] || isJobInCooldown(accId, type, getAccurateNow())) {
+        return;
+    }
+
     const slot = getRecommendedJobSlotFromDate(endDate);
     if (!slot) return;
 
@@ -1350,9 +1356,40 @@ function hasSameAccountJobConflict(accId) {
 }
 
 // ==========================================
-// 10. 計時器操作邏輯
+// 10. 計時器操作邏輯（防重畫搶焦點 + <- / -> 等同 Shift+Tab / Tab）
 // ==========================================
+function onTimerInputFocus(inputEl) {
+    if (timerBlurUnlockHandle) {
+        clearTimeout(timerBlurUnlockHandle);
+        timerBlurUnlockHandle = null;
+    }
+    isTimerInputEditing = true;
+    requestAnimationFrame(() => {
+        if (document.activeElement === inputEl) {
+            inputEl.select();
+        }
+    });
+}
+
+function onTimerInputBlur(inputEl, accId, category, id, field) {
+    updateInputVal(accId, category, id, field, inputEl.value, false);
+    const item = store[accId]?.[category]?.find(it => it.id === id);
+    if (item) {
+        inputEl.value = (field === 'd') ? String(item.d) : formatPad(item[field]);
+    }
+    if (timerBlurUnlockHandle) clearTimeout(timerBlurUnlockHandle);
+    timerBlurUnlockHandle = setTimeout(() => {
+        const activeEl = document.activeElement;
+        const stillInTimer = activeEl && activeEl.classList && activeEl.classList.contains('time-input');
+        if (!stillInTimer) {
+            isTimerInputEditing = false;
+            saveState();
+        }
+    }, 120);
+}
+
 function addTimerItem(accId, category) {
+    isTimerInputEditing = false;
     const newItem = {
         id: nextId++,
         d: 0,
@@ -1367,6 +1404,7 @@ function addTimerItem(accId, category) {
 }
 
 function deleteTimerItem(accId, category, id) {
+    isTimerInputEditing = false;
     if (store[accId][category].length <= 1) {
         store[accId][category][0].endTime = null;
     } else {
@@ -1377,24 +1415,25 @@ function deleteTimerItem(accId, category, id) {
     saveState();
 }
 
-function updateInputVal(accId, category, id, field, val) {
+function updateInputVal(accId, category, id, field, val, shouldSaveNow = false) {
     const item = store[accId][category].find(it => it.id === id);
     if (!item) return;
     let num = Math.max(0, parseInt(val, 10) || 0);
     if (field === 'h' && num > 23) num = 23;
     if (field === 'm' && num > 59) num = 59;
     item[field] = num;
-    saveState();
+    if (shouldSaveNow) saveState();
 }
 
 function handleTimerInput(event, inputEl, accId, category, id, field, nextIdStr) {
+    isTimerInputEditing = true;
     let clean = inputEl.value.replace(/\D/g, '').slice(0, 2);
     if (field === 'h' && Number(clean) > 23) clean = '23';
     if (field === 'm' && Number(clean) > 59) clean = '59';
     if (inputEl.value !== clean) {
         inputEl.value = clean;
     }
-    updateInputVal(accId, category, id, field, clean);
+    updateInputVal(accId, category, id, field, clean, false);
 
     if (clean.length >= 2 && nextIdStr) {
         const nextEl = document.getElementById(nextIdStr);
@@ -1405,28 +1444,38 @@ function handleTimerInput(event, inputEl, accId, category, id, field, nextIdStr)
     }
 }
 
-function handleTimerArrowNav(event, prevIdStr, nextIdStr, accId, category, id) {
-    if (event.key === 'ArrowLeft' && prevIdStr) {
+function handleTimerArrowNav(event, prevIdStr, nextIdStr, accId, category, id, field) {
+    if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        const prevEl = document.getElementById(prevIdStr);
-        if (prevEl) {
-            prevEl.focus();
-            prevEl.select();
+        isTimerInputEditing = true;
+        if (prevIdStr) {
+            const prevEl = document.getElementById(prevIdStr);
+            if (prevEl) {
+                prevEl.focus();
+                prevEl.select();
+            }
         }
-    } else if (event.key === 'ArrowRight' && nextIdStr) {
+    } else if (event.key === 'ArrowRight') {
         event.preventDefault();
-        const nextEl = document.getElementById(nextIdStr);
-        if (nextEl) {
-            nextEl.focus();
-            nextEl.select();
+        isTimerInputEditing = true;
+        if (nextIdStr) {
+            const nextEl = document.getElementById(nextIdStr);
+            if (nextEl) {
+                nextEl.focus();
+                nextEl.select();
+            }
+        } else {
+            event.target.blur();
         }
     } else if (event.key === 'Enter') {
         event.preventDefault();
+        isTimerInputEditing = false;
         startTimer(accId, category, id);
     }
 }
 
 function startTimer(accId, category, id) {
+    isTimerInputEditing = false;
     ensureAudioContextUnlocked();
     const item = store[accId][category].find(it => it.id === id);
     if (!item) return;
@@ -1449,6 +1498,7 @@ function startTimer(accId, category, id) {
 }
 
 function startPresetTimer(accId, category, id, d, h, m) {
+    isTimerInputEditing = false;
     const item = store[accId][category].find(it => it.id === id);
     if (!item) return;
     item.d = d;
@@ -1458,6 +1508,7 @@ function startPresetTimer(accId, category, id, d, h, m) {
 }
 
 function resetTimer(accId, category, id) {
+    isTimerInputEditing = false;
     const item = store[accId][category].find(it => it.id === id);
     if (!item) return;
     if (item.endTime) {
@@ -1589,20 +1640,20 @@ function renderTimerRow(accId, category, item, index, isMulti) {
                 <div class="timer-main-row">
                     <div class="timer-inputs">
                         <input type="text" inputmode="numeric" class="time-input" id="${dId}" value="${item.d}" maxlength="2"
-                            onfocus="requestAnimationFrame(() => this.select())"
+                            onfocus="onTimerInputFocus(this)"
+                            onblur="onTimerInputBlur(this, '${accId}', '${category}', ${item.id}, 'd')"
                             oninput="handleTimerInput(event, this, '${accId}', '${category}', ${item.id}, 'd', '${hId}')"
-                            onchange="updateInputVal('${accId}','${category}',${item.id},'d',this.value)"
-                            onkeydown="handleTimerArrowNav(event, null, '${hId}', '${accId}', '${category}', ${item.id})">天
+                            onkeydown="handleTimerArrowNav(event, null, '${hId}', '${accId}', '${category}', ${item.id}, 'd')">天
                         <input type="text" inputmode="numeric" class="time-input" id="${hId}" value="${formatPad(item.h)}" maxlength="2"
-                            onfocus="requestAnimationFrame(() => this.select())"
+                            onfocus="onTimerInputFocus(this)"
+                            onblur="onTimerInputBlur(this, '${accId}', '${category}', ${item.id}, 'h')"
                             oninput="handleTimerInput(event, this, '${accId}', '${category}', ${item.id}, 'h', '${mId}')"
-                            onchange="updateInputVal('${accId}','${category}',${item.id},'h',this.value)"
-                            onkeydown="handleTimerArrowNav(event, '${dId}', '${mId}', '${accId}', '${category}', ${item.id})">時
+                            onkeydown="handleTimerArrowNav(event, '${dId}', '${mId}', '${accId}', '${category}', ${item.id}, 'h')">時
                         <input type="text" inputmode="numeric" class="time-input" id="${mId}" value="${formatPad(item.m)}" maxlength="2"
-                            onfocus="requestAnimationFrame(() => this.select())"
+                            onfocus="onTimerInputFocus(this)"
+                            onblur="onTimerInputBlur(this, '${accId}', '${category}', ${item.id}, 'm')"
                             oninput="handleTimerInput(event, this, '${accId}', '${category}', ${item.id}, 'm', null)"
-                            onchange="updateInputVal('${accId}','${category}',${item.id},'m',this.value)"
-                            onkeydown="handleTimerArrowNav(event, '${hId}', null, '${accId}', '${category}', ${item.id})">分
+                            onkeydown="handleTimerArrowNav(event, '${hId}', null, '${accId}', '${category}', ${item.id}, 'm')">分
                     </div>
                     <div class="timer-actions">
                         <button class="btn-action" onclick="startTimer('${accId}','${category}',${item.id})">▶ 開始</button>
@@ -1935,7 +1986,6 @@ function tickTimers() {
             if (!job.date || isNaN(job.date.getTime())) return;
             const jobMs = job.date.getTime();
             const diff = jobMs - nowMs;
-            // 放寬至 30 分鐘內，避免背景分頁節流或重整頁面漏掉職位提醒
             if (diff <= 0 && diff > -30 * 60 * 1000) {
                 const jKey = `job_${acc.id}_${job.type}_${jobMs}`;
                 if (!triggeredEventKeys.has(jKey)) {
@@ -1954,7 +2004,7 @@ function tickTimers() {
     });
 
     if (anyTimerFinished) {
-        renderGrid();
+        if (!isTimerInputEditing) renderGrid();
         saveState();
     }
 
