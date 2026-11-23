@@ -9,8 +9,12 @@ const RESOURCE_DEFS = [
     { key: 'iron',   label: '鐵',   iconFile: './assets/item_icon_icon.png',  ratio: 1  }
 ];
 
-function renderResIconHtml(item) {
-    return `<span class="res-icon-wrap"><img class="res-item-png" src="${item.iconFile}" alt="${item.label}"></span>`;
+function renderResCardBigIconHtml(item) {
+    return `<span class="res-card-big-icon-wrap"><img class="res-card-big-png" src="${item.iconFile}" alt="${item.label}"></span>`;
+}
+
+function renderPrioBigIconHtml(item) {
+    return `<span class="res-prio-big-icon-wrap"><img class="res-prio-big-png" src="${item.iconFile}" alt="${item.label}" title="${item.label}"></span>`;
 }
 
 let resourcesStore = {
@@ -36,6 +40,48 @@ function unitMultiplier(unit) {
     if (unit === 'B') return 1e9;
     if (unit === 'K') return 1e3;
     return 1e6;
+}
+
+// ==========================================
+// Excel 風格三色階連續漸變色計算（0.0 綠 -> 0.5 黃 -> 1.0 紅）
+// ==========================================
+function lerpColorChannel(a, b, t) {
+    return Math.round(a + (b - a) * t);
+}
+
+function interpolateRgb(rgb1, rgb2, t) {
+    const r = lerpColorChannel(rgb1[0], rgb2[0], t);
+    const g = lerpColorChannel(rgb1[1], rgb2[1], t);
+    const b = lerpColorChannel(rgb1[2], rgb2[2], t);
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+function getExcelGradientStyle(pos) {
+    if (pos === null || pos === undefined || isNaN(pos)) return '';
+    const clamped = Math.max(0, Math.min(1, pos));
+
+    // 柔和馬卡龍三色階背景（綠 #B6F0C8 -> 黃 #FFF099 -> 紅 #FFB8B8）
+    const bgGreen  = [182, 240, 200];
+    const bgYellow = [255, 240, 153];
+    const bgRed    = [255, 184, 184];
+
+    // 對應細邊框色（深綠 #48A868 -> 暖金 #D9B43B -> 柔紅 #E06666）
+    const bdGreen  = [72, 168, 104];
+    const bdYellow = [217, 180, 59];
+    const bdRed    = [224, 102, 102];
+
+    let bgColor;
+    let bdColor;
+    if (clamped <= 0.5) {
+        const t = clamped / 0.5;
+        bgColor = interpolateRgb(bgGreen, bgYellow, t);
+        bdColor = interpolateRgb(bdGreen, bdYellow, t);
+    } else {
+        const t = (clamped - 0.5) / 0.5;
+        bgColor = interpolateRgb(bgYellow, bgRed, t);
+        bdColor = interpolateRgb(bdYellow, bdRed, t);
+    }
+    return `background-color: ${bgColor}; border-color: ${bdColor};`;
 }
 
 function getAccountResourceAnalysis(accId) {
@@ -70,17 +116,17 @@ function getAccountResourceAnalysis(accId) {
     }
 
     const coloredItems = items.map(item => {
-        let tierClass = '';
+        let ratioPos = null;
         if (item.hasVal && validItems.length > 1 && maxScaled > minScaled) {
-            const ratioPos = (item.scaledVal - minScaled) / (maxScaled - minScaled);
-            if (ratioPos <= 0.25) tierClass = 'tier-green';
-            else if (ratioPos <= 0.55) tierClass = 'tier-mid-green';
-            else if (ratioPos <= 0.85) tierClass = 'tier-mid-red';
-            else tierClass = 'tier-red';
-        } else if (item.hasVal && validItems.length === 1) {
-            tierClass = 'tier-green';
+            ratioPos = (item.scaledVal - minScaled) / (maxScaled - minScaled);
+        } else if (item.hasVal) {
+            ratioPos = 0;
         }
-        return { ...item, tierClass };
+        return {
+            ...item,
+            ratioPos,
+            inlineGradientStyle: getExcelGradientStyle(ratioPos)
+        };
     });
 
     return { items: coloredItems, bestItem, gapM, hasAny: validItems.length > 0 };
@@ -122,6 +168,27 @@ function sanitizeResourceNumberInput(raw) {
     return s;
 }
 
+function renderPrioSplitInnerHtml(analysis) {
+    const gapText = (analysis.hasAny && analysis.gapM !== null)
+        ? `差距：<strong>${analysis.gapM.toFixed(1)}M</strong>`
+        : `差距：--`;
+    const bigIconHtml = (analysis.hasAny && analysis.bestItem)
+        ? renderPrioBigIconHtml(analysis.bestItem)
+        : `<span class="res-prio-empty">--</span>`;
+
+    return `
+        <div class="res-prio-split">
+            <div class="res-prio-left">
+                <div class="res-prio-title">採集優先</div>
+                <div class="res-gap-line">${gapText}</div>
+            </div>
+            <div class="res-prio-right">
+                ${bigIconHtml}
+            </div>
+        </div>
+    `;
+}
+
 function renderResourcesGrid() {
     const grid = document.getElementById('resourcesGrid');
     if (!grid) return;
@@ -133,40 +200,33 @@ function renderResourcesGrid() {
         const isActiveTarget = (activePasteAccId === acc.id);
         const statusMsg = ocrStatusText[acc.id] || '';
 
-        const bestHtml = analysis.hasAny && analysis.bestItem
-            ? `<span class="res-best-badge">${renderResIconHtml(analysis.bestItem)}${analysis.bestItem.label}</span>`
-            : `<span class="status-pill none">未填數量</span>`;
-
-        const gapText = (analysis.hasAny && analysis.gapM !== null)
-            ? `差距：<strong>${analysis.gapM.toFixed(1)}M</strong>`
-            : `差距：--`;
-
         const rowsHtml = analysis.items.map(item => `
-            <div class="res-row-card ${item.tierClass}" id="res_card_${acc.id}_${item.key}">
-                <div class="res-row-top">
-                    <div class="res-name-group">
-                        ${renderResIconHtml(item)}
-                        <span>${item.label}</span>
-                        <span class="res-ratio-tag">÷${item.ratio}</span>
-                    </div>
-                    <div class="res-input-group">
-                        <input type="text" inputmode="decimal" class="res-num-input"
-                            id="res_in_${acc.id}_${item.key}"
-                            value="${item.valStr}" placeholder="0.00"
-                            oninput="onResourceNumberTyping('${acc.id}', '${item.key}', this)"
-                            onblur="saveState()">
-                        <select class="res-unit-select"
-                            id="res_unit_${acc.id}_${item.key}"
-                            onchange="updateResourceUnit('${acc.id}', '${item.key}', this.value)">
-                            <option value="K" ${item.unit === 'K' ? 'selected' : ''}>K</option>
-                            <option value="M" ${item.unit === 'M' ? 'selected' : ''}>M</option>
-                            <option value="B" ${item.unit === 'B' ? 'selected' : ''}>B</option>
-                        </select>
-                    </div>
+            <div class="res-row-card" id="res_card_${acc.id}_${item.key}" style="${item.inlineGradientStyle}">
+                <div class="res-card-left-icon">
+                    ${renderResCardBigIconHtml(item)}
                 </div>
-                <div class="res-row-bottom">
-                    <span id="res_stock_${acc.id}_${item.key}">${item.hasVal ? `庫存：${item.valStr}${item.unit}` : '未填寫'}</span>
-                    <span class="res-scaled-val" id="res_scaled_${acc.id}_${item.key}">${item.hasVal ? formatScaledMillions(item.scaledVal) : '--'}</span>
+                <div class="res-card-right-body">
+                    <div class="res-row-top">
+                        <span class="res-name-title">${item.label}</span>
+                        <div class="res-input-group">
+                            <input type="text" inputmode="decimal" class="res-num-input"
+                                id="res_in_${acc.id}_${item.key}"
+                                value="${item.valStr}" placeholder="0.00"
+                                oninput="onResourceNumberTyping('${acc.id}', '${item.key}', this)"
+                                onblur="saveState()">
+                            <select class="res-unit-select"
+                                id="res_unit_${acc.id}_${item.key}"
+                                onchange="updateResourceUnit('${acc.id}', '${item.key}', this.value)">
+                                <option value="K" ${item.unit === 'K' ? 'selected' : ''}>K</option>
+                                <option value="M" ${item.unit === 'M' ? 'selected' : ''}>M</option>
+                                <option value="B" ${item.unit === 'B' ? 'selected' : ''}>B</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="res-row-bottom">
+                        <span class="res-ratio-tag">比例 ÷${item.ratio}</span>
+                        <span class="res-scaled-val" id="res_scaled_${acc.id}_${item.key}">${item.hasVal ? formatScaledMillions(item.scaledVal) : '--'}</span>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -189,13 +249,7 @@ function renderResourcesGrid() {
                     </div>
 
                     <div class="res-merged-col prio-col" id="res_prio_${acc.id}">
-                        <div class="res-best-line">
-                            <span>採集優先</span>
-                            ${bestHtml}
-                        </div>
-                        <div class="res-gap-line">
-                            <span>${gapText}</span>
-                        </div>
+                        ${renderPrioSplitInnerHtml(analysis)}
                     </div>
                 </div>
 
@@ -210,27 +264,13 @@ function refreshAccountResourceVisualsOnly(accId, skipInputId = null) {
 
     const prioBox = document.getElementById(`res_prio_${accId}`);
     if (prioBox) {
-        const bestHtml = analysis.hasAny && analysis.bestItem
-            ? `<span class="res-best-badge">${renderResIconHtml(analysis.bestItem)}${analysis.bestItem.label}</span>`
-            : `<span class="status-pill none">未填數量</span>`;
-        const gapText = (analysis.hasAny && analysis.gapM !== null)
-            ? `差距：<strong>${analysis.gapM.toFixed(1)}M</strong>`
-            : `差距：--`;
-        prioBox.innerHTML = `
-            <div class="res-best-line">
-                <span>採集優先</span>
-                ${bestHtml}
-            </div>
-            <div class="res-gap-line">
-                <span>${gapText}</span>
-            </div>
-        `;
+        prioBox.innerHTML = renderPrioSplitInnerHtml(analysis);
     }
 
     analysis.items.forEach(item => {
         const card = document.getElementById(`res_card_${accId}_${item.key}`);
         if (card) {
-            card.className = `res-row-card ${item.tierClass}`;
+            card.setAttribute('style', item.inlineGradientStyle);
         }
         const inputId = `res_in_${accId}_${item.key}`;
         if (inputId !== skipInputId) {
@@ -242,10 +282,6 @@ function refreshAccountResourceVisualsOnly(accId, skipInputId = null) {
         const unitSel = document.getElementById(`res_unit_${accId}_${item.key}`);
         if (unitSel && unitSel.value !== item.unit) {
             unitSel.value = item.unit;
-        }
-        const stockEl = document.getElementById(`res_stock_${accId}_${item.key}`);
-        if (stockEl) {
-            stockEl.innerText = item.hasVal ? `庫存：${item.valStr}${item.unit}` : '未填寫';
         }
         const scaledEl = document.getElementById(`res_scaled_${accId}_${item.key}`);
         if (scaledEl) {
@@ -362,7 +398,6 @@ function cropFixedInStockCell(img, y0Ratio, y1Ratio) {
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, sx, sy, sw, sh, pad, pad, sw * scale, sh * scale);
 
-    // 針對米黃背景 + 深棕色粗體字做高對比二值化，保留小數點
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const d = imgData.data;
     for (let i = 0; i < d.length; i += 4) {
@@ -382,7 +417,6 @@ function parseOcrCellText(rawText) {
     let numStr = match[1];
     const unit = match[2];
 
-    // 若偶發漏掉小數點且為 B 單位（例如 158B -> 1.58B）
     if (unit === 'B' && !numStr.includes('.') && numStr.length >= 3) {
         numStr = `${numStr[0]}.${numStr.slice(1, 3)}`;
     }
