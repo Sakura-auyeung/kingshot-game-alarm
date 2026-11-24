@@ -2,7 +2,6 @@
 // TIMERS.JS：計時器輸入、主畫面渲染、時間線渲染、分頁切換與啟動
 // ==========================================
 
-// 1. 計時器操作邏輯（防重畫搶焦點 + <- / -> 等同 Shift+Tab / Tab）
 function onTimerInputFocus(inputEl) {
     if (timerBlurUnlockHandle) {
         clearTimeout(timerBlurUnlockHandle);
@@ -170,6 +169,12 @@ function resetTimer(accId, category, id) {
         }
     }
     item.endTime = null;
+    if (category === 'soldiers' && store[accId] && !store[accId].soldierJobConfirmed) {
+        store[accId].soldierJobManual = false;
+    }
+    if (category === 'tech' && store[accId] && !store[accId].techJobConfirmed) {
+        store[accId].techJobManual = false;
+    }
     renderGrid();
     updateTimeline(true);
     saveState();
@@ -195,7 +200,6 @@ function toggleSunlightEvent() {
     saveState();
 }
 
-// 2. 畫面渲染（3 欄主畫面 & 時間線）
 function renderProfileHeader(acc) {
     const p = profiles[acc.id] || {};
     const avatarSrc = p.avatar || getBearFaceFile(acc.id);
@@ -446,7 +450,7 @@ function updateTimeline(force = false) {
                     const diff = jDate.getTime() - now.getTime();
                     metaEl.innerHTML = diff > 0
                         ? `${getDayTagHtml(jDate)}${formatFullDateTime(jDate)}（還有 ${formatCountdown(diff)}）`
-                        : `${formatFullDateTime(jDate)}（已過期）`;
+                        : `${formatFullDateTime(jDate)}（已解鎖）`;
                 }
             });
         });
@@ -465,7 +469,7 @@ function updateTimeline(force = false) {
             const jConf = !!s[confKey];
             const accName = getDisplayAccountName(acc.id);
             const inCooldown = isJobInCooldown(acc.id, type, now);
-            const conflicts = jDate ? findJobConflicts(acc.id, type, jDate) : [];
+            const conflicts = jDate ? findSameJobCrossAccountConflicts(acc.id, type, jDate) : [];
             const hasConflict = conflicts.length > 0;
             const dueBorderClass = jDate ? getDueBorderClass(jDate) : '';
 
@@ -474,15 +478,15 @@ function updateTimeline(force = false) {
                 const diff = jDate.getTime() - now.getTime();
                 metaText = diff > 0
                     ? `${getDayTagHtml(jDate)}${formatFullDateTime(jDate)}（還有 ${formatCountdown(diff)}）`
-                    : `${formatFullDateTime(jDate)}（已過期）`;
+                    : `${formatFullDateTime(jDate)}（已解鎖）`;
             }
 
             let warningHtml = '';
             if (inCooldown) {
                 warningHtml = `<div class="job-warning-box">⏳ 同一職位拿到後 10 分鐘冷卻中，暫不可重新申請</div>`;
             } else if (hasConflict && jDate) {
-                const detail = conflicts.map(c => `[${c.accName}] ${c.typeLabel}`).join('、');
-                warningHtml = `<div class="job-warning-box">⚠️ 與 ${detail} 時段相撞，請錯開</div>`;
+                const whoText = formatConflictNamesChinese(conflicts);
+                warningHtml = `<div class="job-warning-box">⚠️ 與 ${whoText} 同時段相撞</div>`;
             }
 
             return `
@@ -518,11 +522,11 @@ function updateTimeline(force = false) {
     techJobsEl.innerHTML = renderJobColumn('tech');
 }
 
-// 3. 每秒倒數與到期通知檢查（任何分頁、背景醒來皆立即補檢）
+// 3. 每秒倒數、到期通知、10 分鐘冷卻結束推播與過期自動解鎖
 function tickTimers() {
     const now = getAccurateNow();
     const nowMs = now.getTime();
-    let anyTimerFinished = false;
+    let anyStateChanged = false;
 
     accounts.forEach(acc => {
         const s = store[acc.id];
@@ -545,7 +549,7 @@ function tickTimers() {
                 } else if (remain <= 0) {
                     const evKey = `timer_${acc.id}_${cat}_${it.id}_${endMs}`;
                     it.endTime = null;
-                    anyTimerFinished = true;
+                    anyStateChanged = true;
                     if (!triggeredEventKeys.has(evKey)) {
                         triggeredEventKeys.add(evKey);
                         pushNotificationEvent({
@@ -563,13 +567,15 @@ function tickTimers() {
         });
 
         [
-            { type: 'soldier', label: '士兵職位', date: s.soldierJobDate },
-            { type: 'tech', label: '科技職位', date: s.techJobDate }
+            { type: 'soldier', label: '士兵職位', date: s.soldierJobDate, conf: s.soldierJobConfirmed, cat: 'soldiers' },
+            { type: 'tech', label: '科技職位', date: s.techJobDate, conf: s.techJobConfirmed, cat: 'tech' }
         ].forEach(job => {
             if (!job.date || isNaN(job.date.getTime())) return;
             const jobMs = job.date.getTime();
             const diff = jobMs - nowMs;
-            if (diff <= 0 && diff > -30 * 60 * 1000) {
+
+            // 預約時間到達提醒
+            if (diff <= 0 && diff > -10 * 60 * 1000) {
                 const jKey = `job_${acc.id}_${job.type}_${jobMs}`;
                 if (!triggeredEventKeys.has(jKey)) {
                     triggeredEventKeys.add(jKey);
@@ -583,10 +589,33 @@ function tickTimers() {
                     }, true);
                 }
             }
+
+            // 已確認職位過了 10 分鐘冷卻期：自動推送重新預約待辦到鈴鐺
+            if (job.conf && nowMs - jobMs >= 10 * 60 * 1000 && nowMs - jobMs < 24 * 3600 * 1000) {
+                const cdKey = `cooldown_${acc.id}_${job.type}_${jobMs}`;
+                if (!triggeredEventKeys.has(cdKey)) {
+                    triggeredEventKeys.add(cdKey);
+                    const activeEnd = getLatestActiveCategoryEndDate(acc.id, job.cat);
+                    const recSlot = activeEnd ? getRecommendedJobSlotFromDate(activeEnd) : null;
+                    pushNotificationEvent({
+                        id: cdKey,
+                        accId: acc.id,
+                        category: `cooldown_${job.type}`,
+                        recommendedTime: recSlot ? formatTimeHM(recSlot) : '',
+                        message: `[${accName}] ${job.label} 10 分鐘冷卻已結束，可重新預約！`,
+                        timestamp: nowMs,
+                        unread: true
+                    }, true);
+                }
+            }
         });
     });
 
-    if (anyTimerFinished) {
+    if (typeof unlockExpiredJobsIfNeeded === 'function' && unlockExpiredJobsIfNeeded(now)) {
+        anyStateChanged = true;
+    }
+
+    if (anyStateChanged) {
         if (!isTimerInputEditing) renderGrid();
         saveState();
     }
@@ -600,7 +629,6 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-// 4. 頁面分頁切換（粉藍圓圈兩線選單 + URL Hash 記憶）
 function hideAllMainViews() {
     const grid = document.getElementById('gridView');
     const timeline = document.getElementById('timelineView');
@@ -710,9 +738,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// 5. 啟動初始化
 function init() {
-    injectGlobalToastStyles();
     setupGlobalAudioUnlock();
     startSplashLoader();
     updateNotifBadgeUI();
