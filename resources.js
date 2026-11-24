@@ -277,20 +277,6 @@ function handleResourceEnterKey(event, accId, resKey) {
     scheduleResourceSave();
 }
 
-    // 同一帳號 4 格填完後，自動跳去下一個帳號的「糧食」
-    const accIdx = accounts.findIndex(a => a.id === accId);
-    if (accIdx >= 0 && accIdx < accounts.length - 1) {
-        const nextAccId = accounts[accIdx + 1].id;
-        const nextAccFirstEl = document.getElementById(`res_in_${nextAccId}_${RESOURCE_DEFS[0].key}`);
-        if (nextAccFirstEl) {
-            nextAccFirstEl.focus();
-            nextAccFirstEl.select();
-        }
-    } else {
-        event.target.blur();
-    }
-}
-
 function onResourceNumberTyping(accId, resKey, inputEl) {
     const cleaned = sanitizeResourceNumberInput(inputEl.value);
     if (inputEl.value !== cleaned) {
