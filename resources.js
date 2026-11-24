@@ -176,7 +176,7 @@ function renderResourcesGrid() {
                                 value="${item.valStr}" placeholder="0.00"
                                 onfocus="this.select()"
                                 oninput="onResourceNumberTyping('${acc.id}', '${item.key}', this)"
-                                onblur="saveState()">
+                                onblur="scheduleResourceSave()">
                             <select class="res-unit-select"
                                 id="res_unit_${acc.id}_${item.key}"
                                 onchange="updateResourceUnit('${acc.id}', '${item.key}', this.value)">
@@ -270,7 +270,7 @@ function updateResourceUnit(accId, resKey, unitVal) {
     saveState();
 }
 
-// 全域監聽所有資源輸入框的 Enter 鍵（相容實體鍵盤、小鍵盤與中文輸入法）
+// 全域監聽所有資源輸入框的 Enter 鍵（唯一一份，避免重複觸發跳過頭）
 document.addEventListener('keydown', (event) => {
     const target = event.target;
     if (!target || !target.classList || !target.classList.contains('res-num-input')) return;
@@ -285,14 +285,11 @@ document.addEventListener('keydown', (event) => {
 
         if (curIdx >= 0 && curIdx < allInputs.length - 1) {
             const nextInput = allInputs[curIdx + 1];
-            setTimeout(() => {
-                nextInput.focus();
-                nextInput.select();
-            }, 10);
+            nextInput.focus();
+            nextInput.select();
         } else {
             target.blur();
         }
-
         scheduleResourceSave();
     }
 }, true);
@@ -391,7 +388,6 @@ function cropFixedInStockCell(img, y0Ratio, y1Ratio, mode = 'soft') {
         const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
         let val = 255;
         if (mode === 'soft') {
-            // 柔和對比拉伸：背景漂白、保留字體筆畫邊緣抗鋸齒，避免 B 的圓洞糊掉
             if (lum >= 175) {
                 val = 255;
             } else if (lum <= 95) {
@@ -400,7 +396,6 @@ function cropFixedInStockCell(img, y0Ratio, y1Ratio, mode = 'soft') {
                 val = Math.round(((lum - 95) / 80) * 255);
             }
         } else {
-            // 備援清晰二值化（較高閾值，防筆畫斷裂）
             val = lum < 138 ? 0 : 255;
         }
         d[i] = d[i + 1] = d[i + 2] = val;
@@ -413,10 +408,8 @@ function parseOcrCellText(rawText) {
     const clean = String(rawText || '').replace(/\s+/g, '').toUpperCase();
     if (!clean) return null;
 
-    // 1. 標準匹配：數字 + B/M/K（忽略單位後面可能黏到的雜點）
     let match = clean.match(/(\d+(?:\.\d+)?)([BMK])/);
 
-    // 2. 容錯匹配：若字母 B 被誤認成 8 或 3（例如 1.558 -> 1.55B, 2.418 -> 2.41B）
     if (!match) {
         const bMisread = clean.match(/^(\d+\.\d{2})[83]$/);
         if (bMisread) {
@@ -429,12 +422,10 @@ function parseOcrCellText(rawText) {
     let numStr = match[1];
     const unit = match[2];
 
-    // 若漏認小數點但為 3 位以上整數且單位為 B（例如 155B -> 1.55B）
     if (unit === 'B' && !numStr.includes('.') && numStr.length >= 3) {
         numStr = `${numStr[0]}.${numStr.slice(1, 3)}`;
     }
 
-    // 淨化小數點後最多保留 2 位，避免雜點變成 20.495
     if (numStr.includes('.')) {
         const parts = numStr.split('.');
         numStr = `${parts[0]}.${parts[1].slice(0, 2)}`;
@@ -456,12 +447,10 @@ async function runOcrOnImageFile(file, accId) {
         let filledCount = 0;
 
         for (const box of FIXED_IN_STOCK_BOXES) {
-            // 第一輪：柔和灰階對比（保留 B 內部圓孔細節）
             const softCanvas = cropFixedInStockCell(img, box.y0, box.y1, 'soft');
             const res1 = await worker.recognize(softCanvas);
             let parsed = parseOcrCellText(res1 && res1.data && res1.data.text);
 
-            // 若第一輪未認出，自動用第二輪清晰二值化重試該格
             if (!parsed) {
                 const sharpCanvas = cropFixedInStockCell(img, box.y0, box.y1, 'sharp');
                 const res2 = await worker.recognize(sharpCanvas);
