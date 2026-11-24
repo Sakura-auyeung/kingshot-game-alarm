@@ -1,5 +1,5 @@
 // ==========================================
-// JOBS.JS：全帳號職位自動排程、兩層撞期防呆與狀態卡片渲染
+// JOBS.JS：全帳號職位自動排程、過期解鎖、兩層撞期防呆與狀態卡片渲染
 // ==========================================
 
 function generateJobOptions(selectedVal = '', emptyLabel = '無預約') {
@@ -43,56 +43,49 @@ function getLatestActiveCategoryEndDate(accId, category) {
 
 function isJobInCooldown(accId, type, now = getAccurateNow()) {
     const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+    const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
     const jobDate = store[accId] ? store[accId][dateKey] : null;
-    if (!jobDate) return false;
+    const isConf = store[accId] ? !!store[accId][confKey] : false;
+    if (!jobDate || !isConf) return false;
     const diffMs = now.getTime() - jobDate.getTime();
     return diffMs >= 0 && diffMs < 10 * 60 * 1000;
 }
 
-// 檢查指定帳號與職位在 targetDate 時，是否與其他職位在 10 分鐘內相撞
-// 包含：(1) 同帳號雙職位撞期 (2) 不同帳號預約同一職位同一時段
-function findJobConflicts(accId, type, targetDate) {
+// 檢查跨帳號同職位撞期（20 分鐘內視為同時段相撞）
+function findSameJobCrossAccountConflicts(accId, type, targetDate) {
     if (!targetDate || isNaN(targetDate.getTime())) return [];
     const targetMs = targetDate.getTime();
     const conflicts = [];
 
     accounts.forEach(otherAcc => {
+        if (otherAcc.id === accId) return;
         const otherStore = store[otherAcc.id];
         if (!otherStore) return;
 
-        ['soldier', 'tech'].forEach(otherType => {
-            if (otherAcc.id === accId && otherType === type) return;
+        const otherDate = type === 'soldier' ? otherStore.soldierJobDate : otherStore.techJobDate;
+        const otherConf = type === 'soldier' ? !!otherStore.soldierJobConfirmed : !!otherStore.techJobConfirmed;
+        if (!otherDate || isNaN(otherDate.getTime())) return;
 
-            const isSameAcc = (otherAcc.id === accId);
-            const isSameType = (otherType === type);
-            if (!isSameAcc && !isSameType) return;
-
-            const otherDate = otherType === 'soldier' ? otherStore.soldierJobDate : otherStore.techJobDate;
-            if (!otherDate || isNaN(otherDate.getTime())) return;
-
-            if (Math.abs(otherDate.getTime() - targetMs) < 10 * 60 * 1000) {
-                conflicts.push({
-                    accId: otherAcc.id,
-                    accName: getDisplayAccountName(otherAcc.id),
-                    type: otherType,
-                    typeLabel: otherType === 'soldier' ? '⚔️ 士兵職位' : '🔬 科技職位',
-                    date: otherDate,
-                    reason: isSameAcc
-                        ? '同一帳號不能同時段擔任雙職位'
-                        : '不同帳號預約了同一職位同一時段'
-                });
-            }
-        });
+        if (Math.abs(otherDate.getTime() - targetMs) < 20 * 60 * 1000) {
+            conflicts.push({
+                accId: otherAcc.id,
+                accName: getDisplayAccountName(otherAcc.id),
+                type,
+                typeLabel: type === 'soldier' ? '⚔️ 士兵職位' : '🔬 科技職位',
+                date: otherDate,
+                confirmed: otherConf
+            });
+        }
     });
 
     return conflicts;
 }
 
-function hasAnyJobConflict(accId, type) {
-    const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
-    const jDate = store[accId] ? store[accId][dateKey] : null;
-    if (!jDate) return false;
-    return findJobConflicts(accId, type, jDate).length > 0;
+function formatConflictNamesChinese(conflicts) {
+    const names = [...new Set(conflicts.map(c => c.accName))];
+    if (names.length === 0) return '';
+    if (names.length === 1) return names[0];
+    return `${names[0]}（及 ${names.slice(1).join('、')}）`;
 }
 
 function closeJobConflictModal() {
@@ -100,8 +93,9 @@ function closeJobConflictModal() {
     if (modal) modal.classList.remove('open');
 }
 
-// 紅框職位撞期確認彈窗（第一層防呆）
-function openJobConflictModal({ accId, type, targetDate, conflicts, onProceed, onShiftAuto }) {
+// 第一層防呆：紅框警示彈窗（與角色編輯彈窗同尺寸、無輸入框）
+// 若對方已確認則阻擋確認；若對方未確認則提供「依然確認 / 返回修改」
+function openJobConflictModal({ accId, type, targetDate, conflicts, onProceed }) {
     const modal = document.getElementById('jobConflictModal');
     const titleEl = document.getElementById('jobConflictModalTitle');
     const bodyEl = document.getElementById('jobConflictModalBody');
@@ -111,54 +105,54 @@ function openJobConflictModal({ accId, type, targetDate, conflicts, onProceed, o
     const myName = getDisplayAccountName(accId);
     const myTypeLabel = type === 'soldier' ? '⚔️ 士兵職位' : '🔬 科技職位';
     const timeLabel = formatFullDateTime(targetDate);
+    const hasConfirmedOpponent = conflicts.some(c => c.confirmed);
 
     if (titleEl) {
-        titleEl.innerText = '⚠️ 職位時段相撞提醒';
+        titleEl.innerText = hasConfirmedOpponent ? '🚫 職位時段已被確認佔用' : '⚠️ 職位時段相撞提醒';
     }
 
     const listHtml = conflicts.map(c =>
-        `• <strong>[${c.accName}] ${c.typeLabel}</strong>（${formatFullDateTime(c.date)}）<br><span style="font-size:12.5px; color:#8C6A58;">原因：${c.reason}</span>`
+        `• <strong>[${c.accName}] ${c.typeLabel}</strong>（${formatFullDateTime(c.date)}）— <strong>${c.confirmed ? '✔ 已確認鎖定' : '⏳ 尚未確認'}</strong>`
     ).join('<br>');
 
-    bodyEl.innerHTML = `
-        你為 <strong>[${myName}] ${myTypeLabel}</strong> 設定的時段（<strong>${timeLabel}</strong>）與以下預約重疊：<br><br>
-        ${listHtml}<br><br>
-        是否要自動順延 30 分鐘錯開時段，或仍要保留重疊？
-    `;
+    if (hasConfirmedOpponent) {
+        bodyEl.innerHTML = `
+            你為 <strong>[${myName}] ${myTypeLabel}</strong> 選擇的時段（<strong>${timeLabel}</strong>）與已確認的預約相撞：<br><br>
+            ${listHtml}<br><br>
+            對方已確認鎖定此時段，無法重複確認，請返回修改時間！
+        `;
+    } else {
+        bodyEl.innerHTML = `
+            你為 <strong>[${myName}] ${myTypeLabel}</strong> 選擇的時段（<strong>${timeLabel}</strong>）與其他帳號相撞：<br><br>
+            ${listHtml}<br><br>
+            對方尚未確認預約，請問是否依然要確認此時段？
+        `;
+    }
 
     actionsEl.innerHTML = '';
 
-    const btnCancel = document.createElement('button');
-    btnCancel.type = 'button';
-    btnCancel.className = 'btn-modal-cancel';
-    btnCancel.innerText = '取消返回';
-    btnCancel.onclick = () => {
+    const btnBack = document.createElement('button');
+    btnBack.type = 'button';
+    btnBack.className = 'btn-modal-cancel';
+    btnBack.innerText = '返回修改';
+    btnBack.onclick = () => {
         closeJobConflictModal();
         if (typeof renderGrid === 'function') renderGrid();
         if (typeof updateTimeline === 'function') updateTimeline(true);
     };
+    actionsEl.appendChild(btnBack);
 
-    const btnProceed = document.createElement('button');
-    btnProceed.type = 'button';
-    btnProceed.className = 'btn-modal-danger';
-    btnProceed.innerText = '仍要保留重疊';
-    btnProceed.onclick = () => {
-        closeJobConflictModal();
-        if (typeof onProceed === 'function') onProceed();
-    };
-
-    const btnShift = document.createElement('button');
-    btnShift.type = 'button';
-    btnShift.className = 'btn-modal-save';
-    btnShift.innerText = '自動順延 +30分';
-    btnShift.onclick = () => {
-        closeJobConflictModal();
-        if (typeof onShiftAuto === 'function') onShiftAuto();
-    };
-
-    actionsEl.appendChild(btnCancel);
-    actionsEl.appendChild(btnProceed);
-    actionsEl.appendChild(btnShift);
+    if (!hasConfirmedOpponent && typeof onProceed === 'function') {
+        const btnConfirmAnyway = document.createElement('button');
+        btnConfirmAnyway.type = 'button';
+        btnConfirmAnyway.className = 'btn-modal-danger';
+        btnConfirmAnyway.innerText = '依然確認';
+        btnConfirmAnyway.onclick = () => {
+            closeJobConflictModal();
+            onProceed();
+        };
+        actionsEl.appendChild(btnConfirmAnyway);
+    }
 
     modal.classList.add('open');
 }
@@ -169,7 +163,6 @@ function autoSyncJobFromTimer(accId, type, endDate, forceSync = false) {
     const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
     const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
 
-    // 若職位已鎖定確認、已手動固定、或目前仍在冷卻期內，不覆蓋
     if (!forceSync && (store[accId][confKey] || store[accId][manualKey] || isJobInCooldown(accId, type, getAccurateNow()))) {
         return;
     }
@@ -223,18 +216,15 @@ function setJobTime(accId, type, timeStr, confirmed = false) {
         d.setDate(d.getDate() + 1);
     }
 
-    const conflicts = findJobConflicts(accId, type, d);
+    // 手動改時間先解除鎖定，並檢查是否與他號同職位撞期（第一層防呆）
+    const conflicts = findSameJobCrossAccountConflicts(accId, type, d);
     if (conflicts.length > 0) {
         openJobConflictModal({
             accId,
             type,
             targetDate: d,
             conflicts,
-            onProceed: () => applyJobTimeDirect(accId, type, d, confirmed),
-            onShiftAuto: () => {
-                const shifted = new Date(d.getTime() + 30 * 60 * 1000);
-                applyJobTimeDirect(accId, type, shifted, confirmed);
-            }
+            onProceed: () => applyJobTimeDirect(accId, type, d, confirmed)
         });
         return;
     }
@@ -244,32 +234,26 @@ function setJobTime(accId, type, timeStr, confirmed = false) {
 
 function shiftJobTime(accId, type, deltaMinutes) {
     const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
-    const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
 
     let base = store[accId][dateKey];
     if (!base || isNaN(base.getTime())) {
         base = getRecommendedJobSlotFromDate(getAccurateNow());
     }
     const shifted = new Date(base.getTime() + deltaMinutes * 60 * 1000);
-    const keepConfirmed = !!store[accId][confKey];
 
-    const conflicts = findJobConflicts(accId, type, shifted);
+    const conflicts = findSameJobCrossAccountConflicts(accId, type, shifted);
     if (conflicts.length > 0) {
         openJobConflictModal({
             accId,
             type,
             targetDate: shifted,
             conflicts,
-            onProceed: () => applyJobTimeDirect(accId, type, shifted, keepConfirmed),
-            onShiftAuto: () => {
-                const nextSlot = new Date(shifted.getTime() + 30 * 60 * 1000);
-                applyJobTimeDirect(accId, type, nextSlot, keepConfirmed);
-            }
+            onProceed: () => applyJobTimeDirect(accId, type, shifted, false)
         });
         return;
     }
 
-    applyJobTimeDirect(accId, type, shifted, keepConfirmed);
+    applyJobTimeDirect(accId, type, shifted, false);
 }
 
 function toggleJobConfirm(accId, type) {
@@ -289,7 +273,7 @@ function toggleJobConfirm(accId, type) {
 
     const wasConfirmed = !!store[accId][confKey];
     if (wasConfirmed) {
-        // 解除鎖定：取消手動固定旗標，並立刻對齊目前正在跑的士兵／科技倒數時間
+        // 解除鎖定：立刻解除手動鎖定並對齊目前進行中的倒數
         store[accId][confKey] = false;
         store[accId][manualKey] = false;
         const cat = type === 'soldier' ? 'soldiers' : 'tech';
@@ -303,8 +287,8 @@ function toggleJobConfirm(accId, type) {
         return;
     }
 
-    // 準備鎖定確認前，先檢查是否有與其他職位重疊（第一層防呆）
-    const conflicts = findJobConflicts(accId, type, jDate);
+    // 準備按「✔ 已確認」前，檢查跨帳號同職位撞期（第一層防呆）
+    const conflicts = findSameJobCrossAccountConflicts(accId, type, jDate);
     if (conflicts.length > 0) {
         openJobConflictModal({
             accId,
@@ -316,10 +300,6 @@ function toggleJobConfirm(accId, type) {
                 if (typeof renderGrid === 'function') renderGrid();
                 if (typeof updateTimeline === 'function') updateTimeline(true);
                 saveState();
-            },
-            onShiftAuto: () => {
-                const shifted = new Date(jDate.getTime() + 30 * 60 * 1000);
-                applyJobTimeDirect(accId, type, shifted, true);
             }
         });
         return;
@@ -333,11 +313,10 @@ function toggleJobConfirm(accId, type) {
 
 function handleConflictPillClick(accId, type) {
     const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
-    const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
     const jDate = store[accId][dateKey];
     if (!jDate) return;
 
-    const conflicts = findJobConflicts(accId, type, jDate);
+    const conflicts = findSameJobCrossAccountConflicts(accId, type, jDate);
     if (conflicts.length === 0) {
         toggleJobConfirm(accId, type);
         return;
@@ -349,16 +328,54 @@ function handleConflictPillClick(accId, type) {
         targetDate: jDate,
         conflicts,
         onProceed: () => {
-            store[accId][confKey] = !store[accId][confKey];
+            store[accId][type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed'] = true;
             if (typeof renderGrid === 'function') renderGrid();
             if (typeof updateTimeline === 'function') updateTimeline(true);
             saveState();
-        },
-        onShiftAuto: () => {
-            const shifted = new Date(jDate.getTime() + 30 * 60 * 1000);
-            applyJobTimeDirect(accId, type, shifted, !!store[accId][confKey]);
         }
     });
+}
+
+// 過期自動解鎖檢查（回傳是否有任何狀態被更新）
+function unlockExpiredJobsIfNeeded(now = getAccurateNow()) {
+    const nowMs = now.getTime();
+    let changed = false;
+
+    accounts.forEach(acc => {
+        ['soldier', 'tech'].forEach(type => {
+            const timeKey = type === 'soldier' ? 'soldierJobTime' : 'techJobTime';
+            const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+            const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+            const manualKey = type === 'soldier' ? 'soldierJobManual' : 'techJobManual';
+
+            const jDate = store[acc.id][dateKey];
+            const jConf = !!store[acc.id][confKey];
+            if (!jDate || isNaN(jDate.getTime())) return;
+
+            const elapsedMs = nowMs - jDate.getTime();
+            // 若為已確認預約，保留 10 分鐘冷卻期，過了 10 分鐘立刻解鎖；若未確認，只要時間一過就立刻解鎖
+            const isExpired = jConf ? (elapsedMs >= 10 * 60 * 1000) : (elapsedMs > 0);
+
+            if (isExpired) {
+                store[acc.id][confKey] = false;
+                store[acc.id][manualKey] = false;
+
+                const cat = type === 'soldier' ? 'soldiers' : 'tech';
+                const activeEndDate = getLatestActiveCategoryEndDate(acc.id, cat);
+                if (activeEndDate) {
+                    const slot = getRecommendedJobSlotFromDate(activeEndDate);
+                    store[acc.id][dateKey] = slot;
+                    store[acc.id][timeKey] = slot ? formatTimeHM(slot) : '';
+                } else {
+                    store[acc.id][dateKey] = null;
+                    store[acc.id][timeKey] = '';
+                }
+                changed = true;
+            }
+        });
+    });
+
+    return changed;
 }
 
 function normalizeAllJobsConsistency() {
@@ -395,6 +412,8 @@ function normalizeAllJobsConsistency() {
             }
         });
     });
+
+    unlockExpiredJobsIfNeeded(getAccurateNow());
 }
 
 // 主畫面 3 欄底部的職位預約狀態卡片（第二層防呆：⚠️ 相撞了）
@@ -406,7 +425,7 @@ function renderJobSummaryBox(accId) {
         const jDate = type === 'soldier' ? s.soldierJobDate : s.techJobDate;
         const jConf = type === 'soldier' ? s.soldierJobConfirmed : s.techJobConfirmed;
         const inCooldown = isJobInCooldown(accId, type, now);
-        const conflicts = jDate ? findJobConflicts(accId, type, jDate) : [];
+        const conflicts = jDate ? findSameJobCrossAccountConflicts(accId, type, jDate) : [];
         const hasConflict = conflicts.length > 0;
 
         let dueBorderClass = '';
@@ -424,18 +443,18 @@ function renderJobSummaryBox(accId) {
                 pillHtml = `<span class="status-pill cooldown">⏳ 冷卻剩 ${cdRemainMin} 分</span>`;
                 remainText = `同職位冷卻中（不可重申）`;
             } else if (diffMs > 0) {
-                if (hasConflict) {
-                    const otherNames = [...new Set(conflicts.map(c => c.accName))].join(' / ');
+                if (hasConflict && !jConf) {
+                    const whoText = formatConflictNamesChinese(conflicts);
                     pillHtml = `<button type="button" class="status-pill conflict clickable" title="點擊處理相撞時段" onclick="handleConflictPillClick('${accId}','${type}')">⚠️ 相撞了</button>`;
-                    remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span> · 與 ${otherNames} 重疊`;
+                    remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span> · 與 ${whoText} 相撞`;
                 } else {
                     pillHtml = jConf
-                        ? `<button type="button" class="status-pill confirmed clickable" title="點擊取消確認並對齊倒數" onclick="toggleJobConfirm('${accId}','${type}')">✔ 已確認</button>`
+                        ? `<button type="button" class="status-pill confirmed clickable" title="點擊解除鎖定並對齊倒數" onclick="toggleJobConfirm('${accId}','${type}')">✔ 已確認</button>`
                         : `<button type="button" class="status-pill pending clickable" title="點擊直接確認預約" onclick="toggleJobConfirm('${accId}','${type}')">⏳ 待確認</button>`;
                     remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span>`;
                 }
             } else {
-                pillHtml = `<span class="status-pill none">已過期</span>`;
+                pillHtml = `<span class="status-pill none">已解鎖</span>`;
             }
         }
 
