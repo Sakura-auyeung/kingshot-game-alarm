@@ -1,415 +1,459 @@
-/* ==========================================
-   RESOURCES.CSS：資源採集分頁（貼上目標、採集優先與 Excel 5 色階漸層卡片）
-   ========================================== */
+// ==========================================
+// 資源採集計算 + Tesseract.js OCR 辨識模組
+// ==========================================
 
-#resourcesView {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding-bottom: 28px;
+const RESOURCE_DEFS = [
+    { key: 'bread',  label: '糧食', iconFile: './assets/item_icon_bread.png', ratio: 20 },
+    { key: 'wood',   label: '木材', iconFile: './assets/item_icon_wood.png',  ratio: 20 },
+    { key: 'stone',  label: '石材', iconFile: './assets/item_icon_stone.png', ratio: 4  },
+    { key: 'iron',   label: '鐵',   iconFile: './assets/item_icon_icon.png',  ratio: 1  }
+];
+
+function renderResCardBigIconHtml(item) {
+    return `<span class="res-card-big-icon-wrap"><img class="res-card-big-png" src="${item.iconFile}" alt="${item.label}"></span>`;
 }
 
-/* 3 欄主網格（與主畫面 #gridView 保持一致對齊） */
-#resourcesGrid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
-    align-items: start;
+function renderPrioBigIconHtml(item) {
+    return `<span class="res-prio-big-icon-wrap"><img class="res-prio-big-png" src="${item.iconFile}" alt="${item.label}" title="${item.label}"></span>`;
 }
 
-/* 頂部操作列（若 HTML 有放置說明或上傳按鈕區） */
-/* 頂部操作說明橫幅 */
-.res-top-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    background: #FFFDFB;
-    border: 2px solid #D8C3AE;
-    border-radius: 20px;
-    padding: 11px 18px;
-    margin-bottom: 16px;
-    font-size: 13.5px;
-    font-weight: 700;
-    color: #5C3D2E;
-    box-shadow: 0 4px 12px rgba(92, 61, 46, 0.08);
+let resourcesStore = {
+    h: { bread: { val: '', unit: 'M' }, wood: { val: '', unit: 'M' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } },
+    z: { bread: { val: '', unit: 'B' }, wood: { val: '', unit: 'B' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } },
+    p: { bread: { val: '', unit: 'B' }, wood: { val: '', unit: 'B' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } }
+};
+
+let activePasteAccId = 'z';
+let pendingUploadAccId = 'z';
+let ocrStatusText = { h: '', z: '', p: '' };
+let tesseractWorker = null;
+let resSaveDebounceTimer = null;
+
+function scheduleResourceSave() {
+    if (resSaveDebounceTimer) clearTimeout(resSaveDebounceTimer);
+    resSaveDebounceTimer = setTimeout(() => {
+        saveState();
+    }, 350);
 }
 
-.res-top-banner strong {
-    color: #D6537C;
-    font-weight: 900;
+function unitMultiplier(unit) {
+    if (unit === 'B') return 1e9;
+    if (unit === 'K') return 1e3;
+    return 1e6;
 }
 
-.btn-res-upload {
-    background: #FFFDFB;
-    color: #5C3D2E;
-    border: 2px solid #D8C3AE;
-    border-radius: 999px;
-    padding: 6px 14px;
-    font-size: 13.5px;
-    font-weight: 800;
-    cursor: pointer;
-    box-shadow: 0 2px 0 #D8C3AE;
-    transition: transform 0.12s ease, background 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+// ==========================================
+// Excel / Google Sheets 原汁原味 5 色階斜向漸層（翡翠綠 -> 抹茶黃綠 -> 柔暖黃 -> 蜜桃橘 -> 珊瑚磚紅）
+// ==========================================
+const EXCEL_5_LEVELS = [
+    'linear-gradient(135deg, #63C796 0%, #4BA87A 100%)', // 第 1 階：最缺（Excel 翡翠綠 #57BB8A）
+    'linear-gradient(135deg, #AFD283 0%, #92B864 100%)', // 第 2 階：次缺（Excel 抹茶黃綠 #A3C876）
+    'linear-gradient(135deg, #FAD76B 0%, #E5BE48 100%)', // 第 3 階：中間（Excel 柔暖黃 #F8D05B）
+    'linear-gradient(135deg, #F5A973 0%, #DF894E 100%)', // 第 4 階：偏多（Excel 蜜桃橘 #F09D64）
+    'linear-gradient(135deg, #EC8980 0%, #D6675D 100%)'  // 第 5 階：最多（Excel 珊瑚磚紅 #E67C73）
+];
+
+function getExcel5LevelStyle(pos) {
+    if (pos === null || pos === undefined || isNaN(pos)) return '';
+    const clamped = Math.max(0, Math.min(1, pos));
+    const idx = Math.min(4, Math.floor(clamped * 5));
+    return `background: ${EXCEL_5_LEVELS[idx]};`;
 }
 
-.btn-res-upload:hover {
-    background: #FFF6EB;
-    transform: translateY(-1px);
+function getAccountResourceAnalysis(accId) {
+    const accRes = resourcesStore[accId] || {};
+    const items = RESOURCE_DEFS.map(def => {
+        const entry = accRes[def.key] || { val: '', unit: 'M' };
+        const rawNum = parseFloat(String(entry.val).replace(/,/g, ''));
+        const hasVal = !isNaN(rawNum) && entry.val !== '' && entry.val !== null;
+        const totalAmount = hasVal ? rawNum * unitMultiplier(entry.unit || 'M') : 0;
+        const scaledVal = hasVal ? totalAmount / def.ratio : 0;
+        return {
+            ...def,
+            valStr: entry.val ?? '',
+            unit: entry.unit || 'M',
+            hasVal,
+            totalAmount,
+            scaledVal
+        };
+    });
+
+    const validItems = items.filter(i => i.hasVal);
+    let minScaled = null;
+    let maxScaled = null;
+    let bestItem = null;
+    let gapM = null;
+
+    if (validItems.length > 0) {
+        minScaled = Math.min(...validItems.map(i => i.scaledVal));
+        maxScaled = Math.max(...validItems.map(i => i.scaledVal));
+        bestItem = validItems.reduce((prev, cur) => (cur.scaledVal < prev.scaledVal ? cur : prev), validItems[0]);
+        gapM = (maxScaled - minScaled) / 1e6;
+    }
+
+    const coloredItems = items.map(item => {
+        let ratioPos = null;
+        if (item.hasVal && validItems.length > 1 && maxScaled > minScaled) {
+            ratioPos = (item.scaledVal - minScaled) / (maxScaled - minScaled);
+        } else if (item.hasVal) {
+            ratioPos = 0;
+        }
+        return {
+            ...item,
+            ratioPos,
+            inlineGradientStyle: getExcel5LevelStyle(ratioPos)
+        };
+    });
+
+    return { items: coloredItems, bestItem, gapM, hasAny: validItems.length > 0 };
 }
 
-.btn-res-upload:active {
-    transform: translateY(1px);
-    box-shadow: 0 1px 0 #D8C3AE;
+function formatScaledMillions(scaledVal) {
+    if (!scaledVal && scaledVal !== 0) return '--';
+    const m = scaledVal / 1e6;
+    if (m >= 1000) return `${(m / 1000).toFixed(2)}B 基準`;
+    return `${m.toFixed(2)}M 基準`;
 }
 
-/* ==========================================
-   貼上目標 + 採集優先雙欄合併區塊
-   ========================================== */
-.res-merged-row {
-    display: grid;
-    grid-template-columns: 1fr 1.25fr;
-    gap: 10px;
-    background: #FFFDFB;
-    border: 2px solid #D8C3AE;
-    border-radius: 18px;
-    padding: 10px 12px;
-    margin-bottom: 12px;
-    box-shadow: 0 3px 8px rgba(92, 61, 46, 0.06);
-    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+function setPasteTarget(accId) {
+    activePasteAccId = accId;
+    pendingUploadAccId = accId;
+    renderResourcesGrid();
 }
 
-.res-merged-row.active-target {
-    border-color: #EB5A87;
-    background: #FFF5F8;
-    box-shadow: 0 4px 12px rgba(235, 90, 135, 0.16);
+function sanitizeResourceNumberInput(raw) {
+    let s = String(raw || '').replace(/[^\d.]/g, '');
+    const dotIndex = s.indexOf('.');
+    if (dotIndex !== -1) {
+        const intPart = s.slice(0, dotIndex);
+        const decPart = s.slice(dotIndex + 1).replace(/\./g, '').slice(0, 2);
+        s = `${intPart}.${decPart}`;
+    }
+    return s;
 }
 
-.account-column.z .res-merged-row.active-target {
-    border-color: #E69A15;
-    background: #FFFDF2;
-    box-shadow: 0 4px 12px rgba(230, 154, 21, 0.18);
+function renderPrioSplitInnerHtml(analysis) {
+    const gapText = (analysis.hasAny && analysis.gapM !== null)
+        ? `差距：<strong>${analysis.gapM.toFixed(1)}M</strong>`
+        : `差距：--`;
+    const bigIconHtml = (analysis.hasAny && analysis.bestItem)
+        ? renderPrioBigIconHtml(analysis.bestItem)
+        : `<span class="res-prio-empty">--</span>`;
+
+    return `
+        <div class="res-prio-split">
+            <div class="res-prio-left">
+                <div class="res-prio-title">採集優先</div>
+                <div class="res-gap-line">${gapText}</div>
+            </div>
+            <div class="res-prio-right">
+                ${bigIconHtml}
+            </div>
+        </div>
+    `;
 }
 
-.account-column.p .res-merged-row.active-target {
-    border-color: #38A866;
-    background: #F4FBF7;
-    box-shadow: 0 4px 12px rgba(56, 168, 102, 0.16);
+function renderResourcesGrid() {
+    const grid = document.getElementById('resourcesGrid');
+    if (!grid) return;
+
+    grid.innerHTML = accounts.map(acc => {
+        const analysis = getAccountResourceAnalysis(acc.id);
+        const isActiveTarget = (activePasteAccId === acc.id);
+        const statusMsg = ocrStatusText[acc.id] || '';
+
+        const rowsHtml = analysis.items.map(item => `
+            <div class="res-row-card ${item.hasVal ? 'has-candy' : ''}" id="res_card_${acc.id}_${item.key}" style="${item.inlineGradientStyle}">
+                <div class="res-card-left-icon">
+                    ${renderResCardBigIconHtml(item)}
+                </div>
+                <div class="res-card-right-body">
+                    <div class="res-row-top">
+                        <span class="res-name-title">${item.label}</span>
+                        <div class="res-input-group">
+                            <input type="text" inputmode="decimal" class="res-num-input"
+                                id="res_in_${acc.id}_${item.key}"
+                                value="${item.valStr}" placeholder="0.00"
+                                oninput="onResourceNumberTyping('${acc.id}', '${item.key}', this)"
+                                onblur="saveState()">
+                            <select class="res-unit-select"
+                                id="res_unit_${acc.id}_${item.key}"
+                                onchange="updateResourceUnit('${acc.id}', '${item.key}', this.value)">
+                                <option value="K" ${item.unit === 'K' ? 'selected' : ''}>K</option>
+                                <option value="M" ${item.unit === 'M' ? 'selected' : ''}>M</option>
+                                <option value="B" ${item.unit === 'B' ? 'selected' : ''}>B</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="res-row-bottom">
+                        <span class="res-ratio-tag">比例 ÷${item.ratio}</span>
+                        <span class="res-scaled-val" id="res_scaled_${acc.id}_${item.key}">${item.hasVal ? formatScaledMillions(item.scaledVal) : '--'}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        return `
+            <div class="account-column ${acc.id}">
+                ${renderProfileHeader(acc)}
+
+                <div class="res-merged-row ${isActiveTarget ? 'active-target' : ''}">
+                    <div class="res-merged-col paste-col">
+                        <button type="button" class="res-target-btn" onclick="setPasteTarget('${acc.id}')">
+                            ${isActiveTarget ? '✔ 貼上目標' : '📌 貼上目標'}
+                        </button>
+                        ${statusMsg ? `<div class="res-ocr-status">${statusMsg}</div>` : ''}
+                    </div>
+
+                    <div class="res-merged-col prio-col" id="res_prio_${acc.id}">
+                        ${renderPrioSplitInnerHtml(analysis)}
+                    </div>
+                </div>
+
+                ${rowsHtml}
+            </div>
+        `;
+    }).join('');
 }
 
-.res-merged-col {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+function refreshAccountResourceVisualsOnly(accId, skipInputId = null) {
+    const analysis = getAccountResourceAnalysis(accId);
+
+    const prioBox = document.getElementById(`res_prio_${accId}`);
+    if (prioBox) {
+        prioBox.innerHTML = renderPrioSplitInnerHtml(analysis);
+    }
+
+    analysis.items.forEach(item => {
+        const card = document.getElementById(`res_card_${accId}_${item.key}`);
+        if (card) {
+            card.setAttribute('style', item.inlineGradientStyle);
+            card.classList.toggle('has-candy', item.hasVal);
+        }
+        const inputId = `res_in_${accId}_${item.key}`;
+        if (inputId !== skipInputId) {
+            const inp = document.getElementById(inputId);
+            if (inp && inp.value !== String(item.valStr)) {
+                inp.value = item.valStr;
+            }
+        }
+        const unitSel = document.getElementById(`res_unit_${accId}_${item.key}`);
+        if (unitSel && unitSel.value !== item.unit) {
+            unitSel.value = item.unit;
+        }
+        const scaledEl = document.getElementById(`res_scaled_${accId}_${item.key}`);
+        if (scaledEl) {
+            scaledEl.innerText = item.hasVal ? formatScaledMillions(item.scaledVal) : '--';
+        }
+    });
 }
 
-.res-merged-col.paste-col {
-    align-items: flex-start;
-    gap: 5px;
-    padding-right: 8px;
-    border-right: 1.5px dashed #E5D4C3;
+function onResourceNumberTyping(accId, resKey, inputEl) {
+    const cleaned = sanitizeResourceNumberInput(inputEl.value);
+    if (inputEl.value !== cleaned) {
+        inputEl.value = cleaned;
+    }
+    if (!resourcesStore[accId]) resourcesStore[accId] = {};
+    if (!resourcesStore[accId][resKey]) resourcesStore[accId][resKey] = { val: '', unit: 'M' };
+    resourcesStore[accId][resKey].val = cleaned;
+
+    refreshAccountResourceVisualsOnly(accId, inputEl.id);
+    scheduleResourceSave();
 }
 
-.res-target-btn {
-    width: 100%;
-    background: #FFF8F0;
-    color: #5C3D2E;
-    border: 2px solid #D8C3AE;
-    border-radius: 999px;
-    padding: 6px 10px;
-    font-size: 13px;
-    font-weight: 800;
-    cursor: pointer;
-    box-shadow: 0 2px 0 #D8C3AE;
-    transition: all 0.14s ease;
-    white-space: nowrap;
+function updateResourceUnit(accId, resKey, unitVal) {
+    if (!resourcesStore[accId]) resourcesStore[accId] = {};
+    if (!resourcesStore[accId][resKey]) resourcesStore[accId][resKey] = { val: '', unit: 'M' };
+    resourcesStore[accId][resKey].unit = unitVal;
+    refreshAccountResourceVisualsOnly(accId);
+    saveState();
 }
 
-.res-target-btn:hover {
-    background: #FFF1E0;
-}
-
-.res-merged-row.active-target .res-target-btn {
-    background: #EB5A87;
-    color: #FFFFFF;
-    border-color: #D14370;
-    box-shadow: 0 2px 0 #B8355E;
-}
-
-.account-column.z .res-merged-row.active-target .res-target-btn {
-    background: #F5A623;
-    color: #FFFFFF;
-    border-color: #D4880D;
-    box-shadow: 0 2px 0 #B57208;
-}
-
-.account-column.p .res-merged-row.active-target .res-target-btn {
-    background: #48B876;
-    color: #FFFFFF;
-    border-color: #33995D;
-    box-shadow: 0 2px 0 #287D4B;
-}
-
-.res-ocr-status {
-    font-size: 11.5px;
-    font-weight: 800;
-    color: #9C7A63;
-    background: #F7EFE6;
-    padding: 2px 8px;
-    border-radius: 8px;
-    width: 100%;
-    text-align: center;
-    box-sizing: border-box;
-}
-
-/* 採集優先右側區塊 */
-.res-prio-split {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding-left: 2px;
-}
-
-.res-prio-left {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.res-prio-title {
-    font-size: 13px;
-    font-weight: 800;
-    color: #8C6A58;
-}
-
-.res-gap-line {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #5C3D2E;
-}
-
-.res-gap-line strong {
-    font-size: 14px;
-    font-weight: 900;
-    color: #D6537C;
-}
-
-.res-prio-right {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.res-prio-big-icon-wrap {
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
-    background: #FFF6EB;
-    border: 2px solid #E2CEBA;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 6px rgba(92, 61, 46, 0.1);
-}
-
-.res-prio-big-png {
-    width: 30px;
-    height: 30px;
-    object-fit: contain;
-}
-
-.res-prio-empty {
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
-    background: #F8F2EC;
-    border: 1.5px dashed #D8C3AE;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 800;
-    color: #B29A86;
-}
-
-/* ==========================================
-   4 種資源卡片（預設奶油白 + 填值後 Excel 5 色階漸層）
-   ========================================== */
-.res-row-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: #FFFDFB;
-    border: 2px solid #D8C3AE;
-    border-radius: 18px;
-    padding: 10px 12px;
-    margin-bottom: 10px;
-    box-shadow: 0 3px 0 #E6D5C3;
-    transition: transform 0.12s ease, box-shadow 0.15s ease, border-color 0.2s ease;
-}
-
-.res-row-card:last-child {
-    margin-bottom: 0;
-}
-
-/* 填入數值套用 Excel 5 色階漸層時，加白邊與清晰陰影 */
-.res-row-card.has-candy {
-    border-color: rgba(255, 255, 255, 0.85);
-    box-shadow: 0 4px 12px rgba(92, 61, 46, 0.16);
-}
-
-.res-card-left-icon {
-    flex-shrink: 0;
-}
-
-.res-card-big-icon-wrap {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
-    background: #FFF7EE;
-    border: 2px solid #E5D4C3;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 5px rgba(92, 61, 46, 0.08);
-}
-
-.res-row-card.has-candy .res-card-big-icon-wrap {
-    background: rgba(255, 255, 255, 0.88);
-    border-color: #FFFFFF;
-}
-
-.res-card-big-png {
-    width: 34px;
-    height: 34px;
-    object-fit: contain;
-}
-
-.res-card-right-body {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.res-row-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.res-name-title {
-    font-size: 15.5px;
-    font-weight: 900;
-    color: #5C3D2E;
-    white-space: nowrap;
-}
-
-.res-row-card.has-candy .res-name-title {
-    color: #FFFFFF;
-    text-shadow: 0 1px 2px rgba(92, 61, 46, 0.35);
-}
-
-.res-input-group {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.res-num-input {
-    width: 78px;
-    height: 32px;
-    padding: 0 8px;
-    border: 2px solid #D8C3AE;
-    border-radius: 10px;
-    background: #FFFFFF;
-    color: #5C3D2E;
-    font-size: 14.5px;
-    font-weight: 800;
-    text-align: right;
-    outline: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.res-num-input:focus {
-    border-color: #EB5A87;
-    box-shadow: 0 0 0 3px rgba(235, 90, 135, 0.18);
-}
-
-.res-row-card.has-candy .res-num-input {
-    border-color: rgba(255, 255, 255, 0.9);
-}
-
-.res-unit-select {
-    height: 32px;
-    padding: 0 6px;
-    border: 2px solid #D8C3AE;
-    border-radius: 10px;
-    background: #FFF9F2;
-    color: #5C3D2E;
-    font-size: 13.5px;
-    font-weight: 800;
-    cursor: pointer;
-    outline: none;
-}
-
-.res-row-card.has-candy .res-unit-select {
-    border-color: rgba(255, 255, 255, 0.9);
-    background: #FFFFFF;
-}
-
-.res-row-bottom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.res-ratio-tag {
-    color: #8C6A58;
-    background: #F6ECE1;
-    padding: 2px 8px;
-    border-radius: 999px;
-}
-
-.res-row-card.has-candy .res-ratio-tag {
-    color: #FFFFFF;
-    background: rgba(92, 61, 46, 0.22);
-}
-
-.res-scaled-val {
-    color: #7A5C48;
-}
-
-.res-row-card.has-candy .res-scaled-val {
-    color: #FFFFFF;
-    text-shadow: 0 1px 2px rgba(92, 61, 46, 0.3);
-}
-
-/* ==========================================
-   RWD 響應式斷點
-   ========================================== */
-@media (max-width: 1024px) {
-    #resourcesGrid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+function handleResFileChange(event) {
+    const file = event.target.files && event.target.files[0];
+    if (file) {
+        runOcrOnImageFile(file, pendingUploadAccId);
     }
 }
 
-@media (max-width: 680px) {
-    #resourcesGrid {
-        grid-template-columns: 1fr;
+document.addEventListener('paste', (event) => {
+    const resView = document.getElementById('resourcesView');
+    if (!resView || resView.style.display !== 'block') return;
+    const items = event.clipboardData && event.clipboardData.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type && items[i].type.indexOf('image') !== -1) {
+            const blob = items[i].getAsFile();
+            if (blob) {
+                event.preventDefault();
+                runOcrOnImageFile(blob, activePasteAccId);
+                break;
+            }
+        }
+    }
+});
+
+// ==========================================
+// 精準 4 格固定座標 OCR 辨識（雙通道高對比灰階 + 自動重試，精準辨識 B / M / K）
+// ==========================================
+const FIXED_IN_STOCK_BOXES = [
+    { key: 'bread', y0: 0.335, y1: 0.405 },
+    { key: 'wood',  y0: 0.405, y1: 0.475 },
+    { key: 'stone', y0: 0.475, y1: 0.545 },
+    { key: 'iron',  y0: 0.545, y1: 0.615 }
+];
+
+async function getOcrWorker() {
+    if (typeof Tesseract === 'undefined') {
+        throw new Error("Tesseract OCR 尚未載入");
+    }
+    if (tesseractWorker) return tesseractWorker;
+    tesseractWorker = await Tesseract.createWorker('eng');
+    await tesseractWorker.setParameters({
+        tessedit_char_whitelist: '0123456789.BMK',
+        tessedit_pageseg_mode: '7'
+    });
+    return tesseractWorker;
+}
+
+function loadImageFromBlob(file) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve(img);
+        };
+        img.onerror = (e) => {
+            URL.revokeObjectURL(url);
+            reject(e);
+        };
+        img.src = url;
+    });
+}
+
+// mode: 'soft' 保留字體筆畫圓孔灰階對比；'sharp' 高亮度閾值適合粗字體
+function cropFixedInStockCell(img, y0Ratio, y1Ratio, mode = 'soft') {
+    const isTwoPanel = (img.width / img.height) > 0.9;
+    const panelWidth = isTwoPanel ? img.width * 0.5 : img.width;
+
+    const sx = Math.round(panelWidth * 0.64);
+    const sw = Math.round(panelWidth * 0.27);
+    const sy = Math.round(img.height * y0Ratio);
+    const sh = Math.round(img.height * (y1Ratio - y0Ratio));
+
+    const scale = 3;
+    const pad = 20;
+    const canvas = document.createElement('canvas');
+    canvas.width = sw * scale + pad * 2;
+    canvas.height = sh * scale + pad * 2;
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, sx, sy, sw, sh, pad, pad, sw * scale, sh * scale);
+
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = imgData.data;
+
+    for (let i = 0; i < d.length; i += 4) {
+        const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        let val = 255;
+        if (mode === 'soft') {
+            // 柔和對比拉伸：背景漂白、保留字體筆畫邊緣抗鋸齒，避免 B 的圓洞糊掉
+            if (lum >= 175) {
+                val = 255;
+            } else if (lum <= 95) {
+                val = 0;
+            } else {
+                val = Math.round(((lum - 95) / 80) * 255);
+            }
+        } else {
+            // 備援清晰二值化（較高閾值，防筆畫斷裂）
+            val = lum < 138 ? 0 : 255;
+        }
+        d[i] = d[i + 1] = d[i + 2] = val;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return canvas;
+}
+
+function parseOcrCellText(rawText) {
+    const clean = String(rawText || '').replace(/\s+/g, '').toUpperCase();
+    if (!clean) return null;
+
+    // 1. 標準匹配：數字 + B/M/K（忽略單位後面可能黏到的雜點）
+    let match = clean.match(/(\d+(?:\.\d+)?)([BMK])/);
+
+    // 2. 容錯匹配：若字母 B 被誤認成 8 或 3（例如 1.558 -> 1.55B, 2.418 -> 2.41B）
+    if (!match) {
+        const bMisread = clean.match(/^(\d+\.\d{2})[83]$/);
+        if (bMisread) {
+            match = [clean, bMisread[1], 'B'];
+        }
     }
 
-    .res-num-input {
-        width: 72px;
+    if (!match) return null;
+
+    let numStr = match[1];
+    const unit = match[2];
+
+    // 若漏認小數點但為 3 位以上整數且單位為 B（例如 155B -> 1.55B）
+    if (unit === 'B' && !numStr.includes('.') && numStr.length >= 3) {
+        numStr = `${numStr[0]}.${numStr.slice(1, 3)}`;
+    }
+
+    // 淨化小數點後最多保留 2 位，避免雜點變成 20.495
+    if (numStr.includes('.')) {
+        const parts = numStr.split('.');
+        numStr = `${parts[0]}.${parts[1].slice(0, 2)}`;
+    }
+
+    const numVal = parseFloat(numStr);
+    if (isNaN(numVal) || numVal <= 0) return null;
+
+    return { num: numStr, unit };
+}
+
+async function runOcrOnImageFile(file, accId) {
+    ocrStatusText[accId] = 'OCR 辨識中...';
+    renderResourcesGrid();
+
+    try {
+        const img = await loadImageFromBlob(file);
+        const worker = await getOcrWorker();
+        let filledCount = 0;
+
+        for (const box of FIXED_IN_STOCK_BOXES) {
+            // 第一輪：柔和灰階對比（保留 B 內部圓孔細節）
+            const softCanvas = cropFixedInStockCell(img, box.y0, box.y1, 'soft');
+            const res1 = await worker.recognize(softCanvas);
+            let parsed = parseOcrCellText(res1 && res1.data && res1.data.text);
+
+            // 若第一輪未認出，自動用第二輪清晰二值化重試該格
+            if (!parsed) {
+                const sharpCanvas = cropFixedInStockCell(img, box.y0, box.y1, 'sharp');
+                const res2 = await worker.recognize(sharpCanvas);
+                parsed = parseOcrCellText(res2 && res2.data && res2.data.text);
+            }
+
+            if (parsed) {
+                resourcesStore[accId][box.key] = { val: parsed.num, unit: parsed.unit };
+                filledCount++;
+            }
+        }
+
+        ocrStatusText[accId] = filledCount > 0
+            ? `已填入 ${filledCount} 項`
+            : '未認出數值';
+        renderResourcesGrid();
+        saveState();
+    } catch (err) {
+        console.error('OCR Error:', err);
+        ocrStatusText[accId] = '辨識失敗';
+        renderResourcesGrid();
     }
 }
