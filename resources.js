@@ -174,6 +174,8 @@ function renderResourcesGrid() {
                             <input type="text" inputmode="decimal" class="res-num-input"
                                 id="res_in_${acc.id}_${item.key}"
                                 value="${item.valStr}" placeholder="0.00"
+                                onfocus="this.select()"
+                                onkeydown="handleResourceEnterKey(event, '${acc.id}', '${item.key}')"
                                 oninput="onResourceNumberTyping('${acc.id}', '${item.key}', this)"
                                 onblur="saveState()">
                             <select class="res-unit-select"
@@ -246,6 +248,36 @@ function refreshAccountResourceVisualsOnly(accId, skipInputId = null) {
             scaledEl.innerText = item.hasVal ? formatScaledMillions(item.scaledVal) : '--';
         }
     });
+}
+
+function handleResourceEnterKey(event, accId, resKey) {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    saveState();
+
+    const resIdx = RESOURCE_DEFS.findIndex(r => r.key === resKey);
+    if (resIdx >= 0 && resIdx < RESOURCE_DEFS.length - 1) {
+        const nextKey = RESOURCE_DEFS[resIdx + 1].key;
+        const nextEl = document.getElementById(`res_in_${accId}_${nextKey}`);
+        if (nextEl) {
+            nextEl.focus();
+            nextEl.select();
+        }
+        return;
+    }
+
+    // 同一帳號 4 格填完後，自動跳去下一個帳號的「糧食」
+    const accIdx = accounts.findIndex(a => a.id === accId);
+    if (accIdx >= 0 && accIdx < accounts.length - 1) {
+        const nextAccId = accounts[accIdx + 1].id;
+        const nextAccFirstEl = document.getElementById(`res_in_${nextAccId}_${RESOURCE_DEFS[0].key}`);
+        if (nextAccFirstEl) {
+            nextAccFirstEl.focus();
+            nextAccFirstEl.select();
+        }
+    } else {
+        event.target.blur();
+    }
 }
 
 function onResourceNumberTyping(accId, resKey, inputEl) {
