@@ -253,18 +253,29 @@ function refreshAccountResourceVisualsOnly(accId, skipInputId = null) {
 function handleResourceEnterKey(event, accId, resKey) {
     if (event.key !== 'Enter') return;
     event.preventDefault();
-    saveState();
 
+    let targetEl = null;
     const resIdx = RESOURCE_DEFS.findIndex(r => r.key === resKey);
     if (resIdx >= 0 && resIdx < RESOURCE_DEFS.length - 1) {
         const nextKey = RESOURCE_DEFS[resIdx + 1].key;
-        const nextEl = document.getElementById(`res_in_${accId}_${nextKey}`);
-        if (nextEl) {
-            nextEl.focus();
-            nextEl.select();
+        targetEl = document.getElementById(`res_in_${accId}_${nextKey}`);
+    } else {
+        const accIdx = accounts.findIndex(a => a.id === accId);
+        if (accIdx >= 0 && accIdx < accounts.length - 1) {
+            const nextAccId = accounts[accIdx + 1].id;
+            targetEl = document.getElementById(`res_in_${nextAccId}_${RESOURCE_DEFS[0].key}`);
         }
-        return;
     }
+
+    if (targetEl) {
+        targetEl.focus();
+        targetEl.select();
+    } else {
+        event.target.blur();
+    }
+
+    scheduleResourceSave();
+}
 
     // 同一帳號 4 格填完後，自動跳去下一個帳號的「糧食」
     const accIdx = accounts.findIndex(a => a.id === accId);
