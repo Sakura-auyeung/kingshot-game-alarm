@@ -175,7 +175,6 @@ function renderResourcesGrid() {
                                 id="res_in_${acc.id}_${item.key}"
                                 value="${item.valStr}" placeholder="0.00"
                                 onfocus="this.select()"
-                                onkeydown="handleResourceEnterKey(event, '${acc.id}', '${item.key}')"
                                 oninput="onResourceNumberTyping('${acc.id}', '${item.key}', this)"
                                 onblur="saveState()">
                             <select class="res-unit-select"
@@ -250,33 +249,6 @@ function refreshAccountResourceVisualsOnly(accId, skipInputId = null) {
     });
 }
 
-function handleResourceEnterKey(event, accId, resKey) {
-    if (event.key !== 'Enter') return;
-    event.preventDefault();
-
-    let targetEl = null;
-    const resIdx = RESOURCE_DEFS.findIndex(r => r.key === resKey);
-    if (resIdx >= 0 && resIdx < RESOURCE_DEFS.length - 1) {
-        const nextKey = RESOURCE_DEFS[resIdx + 1].key;
-        targetEl = document.getElementById(`res_in_${accId}_${nextKey}`);
-    } else {
-        const accIdx = accounts.findIndex(a => a.id === accId);
-        if (accIdx >= 0 && accIdx < accounts.length - 1) {
-            const nextAccId = accounts[accIdx + 1].id;
-            targetEl = document.getElementById(`res_in_${nextAccId}_${RESOURCE_DEFS[0].key}`);
-        }
-    }
-
-    if (targetEl) {
-        targetEl.focus();
-        targetEl.select();
-    } else {
-        event.target.blur();
-    }
-
-    scheduleResourceSave();
-}
-
 function onResourceNumberTyping(accId, resKey, inputEl) {
     const cleaned = sanitizeResourceNumberInput(inputEl.value);
     if (inputEl.value !== cleaned) {
@@ -297,6 +269,33 @@ function updateResourceUnit(accId, resKey, unitVal) {
     refreshAccountResourceVisualsOnly(accId);
     saveState();
 }
+
+// 全域監聽所有資源輸入框的 Enter 鍵（相容實體鍵盤、小鍵盤與中文輸入法）
+document.addEventListener('keydown', (event) => {
+    const target = event.target;
+    if (!target || !target.classList || !target.classList.contains('res-num-input')) return;
+    if (event.isComposing || event.keyCode === 229) return;
+
+    if (event.key === 'Enter' || event.keyCode === 13) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const allInputs = Array.from(document.querySelectorAll('#resourcesGrid .res-num-input'));
+        const curIdx = allInputs.indexOf(target);
+
+        if (curIdx >= 0 && curIdx < allInputs.length - 1) {
+            const nextInput = allInputs[curIdx + 1];
+            setTimeout(() => {
+                nextInput.focus();
+                nextInput.select();
+            }, 10);
+        } else {
+            target.blur();
+        }
+
+        scheduleResourceSave();
+    }
+}, true);
 
 function handleResFileChange(event) {
     const file = event.target.files && event.target.files[0];
