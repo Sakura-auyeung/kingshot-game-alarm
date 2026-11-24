@@ -5,141 +5,162 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>多帳戶鬧鐘與職位助手</title>
     <link rel="icon" type="image/png" href="./assets/chara_face_1-1.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <!-- Tesseract.js OCR 辨識引擎 -->
+    <link rel="apple-touch-icon" href="./assets/chara_face_1-1.png">
+    <!-- 引入 Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <!-- 引入 Tesseract.js 純前端 OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- 模組化樣式表 -->
+    <link rel="stylesheet" href="./base.css">
+    <link rel="stylesheet" href="./timers.css">
+    <link rel="stylesheet" href="./resources.css">
 </head>
 <body>
 
-<!-- 全屏載入動畫 -->
-<div id="loadingSplash" class="loading-splash">
-    <img src="./assets/chara_face_1-1.png" class="splash-bear" alt="Loading">
-    <div class="splash-text">載入小熊資料中...</div>
-</div>
+    <div class="header-frill"></div>
 
-<!-- 頂部導覽與控制列 -->
-<header class="top-bar">
-    <div class="top-bar-left">
-        <!-- 左上粉藍圓圈兩線漢堡選單 -->
-        <div class="nav-menu-wrapper" id="navMenuWrapper">
-            <button type="button" class="nav-circle-btn" id="navCircleBtn" title="切換分頁功能" onclick="toggleNavDropdown(event)">
-                <span class="nav-line"></span>
-                <span class="nav-line"></span>
-            </button>
-            <div class="nav-dropdown" id="navDropdown">
-                <div class="nav-dropdown-title">功能分頁</div>
-                <button type="button" class="nav-dropdown-item active" id="navItemAlarm" onclick="selectNavPage('grid')">
-                    <span>⏰</span>
-                    <span>多帳戶鬧鐘助手</span>
-                </button>
-                <button type="button" class="nav-dropdown-item" id="navItemResources" onclick="selectNavPage('resources')">
-                    <span>🌾</span>
-                    <span>多帳戶資源採集</span>
-                </button>
-            </div>
+    <div class="loading-splash" id="loadingSplash">
+        <div class="loading-stage">
+            <img class="loading-frame frame-1" src="./assets/img_op_1.png" alt="">
+            <img class="loading-frame frame-2" src="./assets/img_op_2.png" alt="SHAKI!!">
         </div>
-
-        <h1 class="main-title" id="pageMainTitle">多帳戶鬧鐘助手</h1>
-        <span id="syncBadge" class="sync-badge">連線中...</span>
+        <div class="loading-text">LOADING...</div>
     </div>
 
-    <div class="top-bar-right">
-        <!-- 鬧鐘頁專屬按鈕 -->
-        <div id="timerOnlyBtns" class="timer-only-btns">
-            <button type="button" class="btn-top btn-sunlight" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光：顯示</button>
-            <button type="button" class="btn-top btn-toggle" id="toggleBtn" onclick="toggleView()">
-                <img class="btn-icon-svg" src="./assets/btn_change.svg" alt=""> 切換時間線
-            </button>
+    <script>
+        setTimeout(function () {
+            var sp = document.getElementById('loadingSplash');
+            if (sp) {
+                sp.classList.add('shaki');
+                setTimeout(function () {
+                    sp.classList.add('hidden');
+                }, 250);
+            }
+        }, 950);
+    </script>
+
+    <div class="header">
+        <div class="title-group">
+            <img class="header-mascot-img" src="./assets/chara_face_1-1.png" alt="鬆弛熊">
+            <h1 id="pageMainTitle">多帳戶鬧鐘助手</h1>
+            <span class="sync-badge" id="syncBadge">⏳ 連線雲端中...</span>
+            <span class="notif-badge" id="notifBadge" onclick="requestDesktopNotificationPermission()">🔔 點擊開啟右下角桌面彈窗</span>
         </div>
 
-        <button type="button" class="btn-top btn-notif" id="notifBadge" onclick="requestDesktopNotificationPermission()">🔔 點擊開啟右下角桌面彈窗</button>
-        <button type="button" class="btn-top btn-test" onclick="testAlarm()">🔔 測試</button>
+        <div class="header-btns">
+            <!-- 計時頁面專屬按鈕區 -->
+            <div class="timer-only-btns" id="timerOnlyBtns">
+                <button class="pill-btn btn-event-toggle active" id="sunlightToggleBtn" onclick="toggleSunlightEvent()">☀️ 沐光：顯示</button>
+                <button class="pill-btn btn-test" onclick="testAlarm()">🔔 測試鈴聲</button>
+                <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">
+                    <img class="btn-icon-svg" src="./assets/btn_change.svg" alt=""> 切換時間線
+                </button>
+            </div>
 
-        <!-- 右上角待辦鈴鐺 -->
-        <div class="bell-wrapper" id="bellWrapper">
-            <button type="button" class="bell-btn" id="bellBtn" title="查看待辦與提醒紀錄" onclick="toggleBellDropdown(event)">
-                🔔
-                <span class="bell-count-badge" id="bellCountBadge" style="display:none;">0</span>
-            </button>
-            <div class="notif-dropdown" id="notifDropdown">
-                <div class="notif-dropdown-header">
-                    <span>📋 待辦與到期提醒</span>
-                    <div class="notif-header-actions">
-                        <button type="button" class="btn-notif-mini" onclick="markAllNotifsRead()">全部已完成</button>
-                        <button type="button" class="btn-notif-mini" onclick="clearAllNotifs()">清除已讀</button>
+            <!-- 全局保留：鈴鐺待辦清單 -->
+            <div class="bell-wrapper" id="bellWrapper">
+                <button class="btn-bell" id="bellBtn" title="待辦清單與提醒紀錄" onclick="toggleBellDropdown(event)">
+                    🔔
+                    <span class="bell-count-badge" id="bellCountBadge">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown" onclick="event.stopPropagation()">
+                    <div class="notif-dropdown-header">
+                        <span>📋 待辦清單 & 提醒紀錄</span>
+                        <div class="notif-header-actions">
+                            <button class="btn-notif-mini" onclick="markAllNotifsRead()">全部完成</button>
+                            <button class="btn-notif-mini" onclick="clearAllNotifs()">清空已處理</button>
+                        </div>
                     </div>
+                    <div class="notif-dropdown-list" id="notifDropdownList"></div>
                 </div>
-                <div class="notif-dropdown-list" id="notifDropdownList"></div>
+            </div>
+
+            <!-- 全局保留：粉藍圓圈兩橫線功能選單 -->
+            <div class="nav-menu-wrapper" id="navMenuWrapper">
+                <button class="btn-nav-circle" id="navMenuBtn" title="切換功能分頁" onclick="toggleNavDropdown(event)" aria-label="功能選單">
+                    <span class="nav-two-lines"></span>
+                </button>
+                <div class="nav-dropdown" id="navDropdown" onclick="event.stopPropagation()">
+                    <button type="button" class="nav-dropdown-item active" id="navItemAlarm" onclick="selectNavPage('grid')">
+                        ⏰ 鬧鐘
+                    </button>
+                    <button type="button" class="nav-dropdown-item" id="navItemResources" onclick="selectNavPage('resources')">
+                        🌾 資源採集
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</header>
 
-<!-- 主畫面：3 欄帳號視圖 -->
-<main id="gridView" class="accounts-grid"></main>
+    <div class="grid-view" id="gridView"></div>
 
-<!-- 時間線與職位管理視圖 -->
-<section id="timelineView" class="timeline-view" style="display:none;">
-    <div class="timeline-columns">
-        <div class="timeline-col">
-            <h2 class="tl-col-title">⏳ 倒數完成時間線</h2>
-            <div id="timeline_tasks"></div>
-        </div>
-        <div class="timeline-col">
-            <h2 class="tl-col-title">⚔️ 士兵職位預約管理</h2>
-            <div id="timeline_soldier_jobs"></div>
-        </div>
-        <div class="timeline-col">
-            <h2 class="tl-col-title">🔬 科技職位預約管理</h2>
-            <div id="timeline_tech_jobs"></div>
-        </div>
-    </div>
-</section>
+    <div class="timeline-view" id="timelineView">
+        <div class="timeline-grid">
+            <div class="timeline-column">
+                <h3>⏱️ 訓練 / 研究 / 技能 / 活動完結</h3>
+                <div class="timeline-list-body" id="timeline_tasks"></div>
+            </div>
 
-<!-- 資源採集視圖 -->
-<section id="resourcesView" class="resources-view" style="display:none;">
-    <div id="resourcesGrid" class="accounts-grid"></div>
-</section>
+            <div class="timeline-column">
+                <h3>🏛️ 士兵職位預約管理</h3>
+                <div class="timeline-list-body" id="timeline_soldier_jobs"></div>
+            </div>
 
-<!-- 編輯角色資料彈窗 -->
-<div id="profileEditModal" class="modal-backdrop">
-    <div class="modal-box">
-        <h3 class="modal-title">✏️ 編輯遊戲角色資料</h3>
-        <div class="modal-field">
-            <label for="modalProfileName">角色名稱（區分大小寫）</label>
-            <input type="text" id="modalProfileName" placeholder="例如：Zoey">
-        </div>
-        <div class="modal-field">
-            <label for="modalProfileAlliance">所屬聯盟簡稱（選填）</label>
-            <input type="text" id="modalProfileAlliance" placeholder="例如：TER" maxlength="10">
-        </div>
-        <div class="modal-actions">
-            <button type="button" class="btn-modal-cancel" onclick="closeProfileEditModal()">取消</button>
-            <button type="button" class="btn-modal-save" onclick="saveProfileEditModal()">儲存並同步</button>
+            <div class="timeline-column">
+                <h3>🏛️ 科技職位預約管理</h3>
+                <div class="timeline-list-body" id="timeline_tech_jobs"></div>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- 職位撞期防呆紅框彈窗（第一層：手動選擇/調整時段後確認撞期） -->
-<div id="jobConflictModal" class="modal-backdrop">
-    <div class="modal-box conflict-modal-box">
-        <h3 class="modal-title conflict-modal-title" id="jobConflictModalTitle">⚠️ 職位時段撞期提醒</h3>
-        <div class="conflict-modal-body" id="jobConflictModalBody"></div>
-        <div class="modal-actions" id="jobConflictModalActions"></div>
+    <div class="resources-view" id="resourcesView">
+        <div class="res-top-banner">
+            <div>
+                <strong>Ctrl+V 貼上截圖</strong>或<strong>手動輸入數值</strong>（自動對齊 In Stock）
+            </div>
+            <div>
+                比例：<strong>糧 20 : 木 20 : 石 4 : 鐵 1</strong>（綠＝最缺 ｜ 紅＝最唔缺）
+            </div>
+        </div>
+        <div class="res-grid" id="resourcesGrid"></div>
     </div>
-</div>
 
-<!-- 模組化拆分腳本（按相依順序載入） -->
-<script src="core.js"></script>
-<script src="notifications.js"></script>
-<script src="jobs.js"></script>
-<script src="resources.js"></script>
-<script src="app.js"></script>
+    <!-- 奶油風雙欄位角色編輯彈窗 -->
+    <div class="profile-modal-backdrop" id="profileEditModal" onclick="closeProfileEditModal()">
+        <div class="profile-modal-card" onclick="event.stopPropagation()">
+            <div class="profile-modal-title">✏️ 編輯角色查詢資料</div>
+            <div class="profile-modal-field">
+                <label for="modalProfileName">遊戲角色名稱</label>
+                <input type="text" id="modalProfileName" placeholder="例如：Zoey">
+            </div>
+            <div class="profile-modal-field">
+                <label for="modalProfileAlliance">所屬聯盟標籤</label>
+                <input type="text" id="modalProfileAlliance" placeholder="例如：TER 或 777">
+            </div>
+            <div class="profile-modal-actions">
+                <button type="button" class="btn-modal-cancel" onclick="closeProfileEditModal()">取消</button>
+                <button type="button" class="btn-modal-save" onclick="saveProfileEditModal()">儲存並更新</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 紅框職位撞期防呆彈窗（第一層手動確認保護） -->
+    <div class="profile-modal-backdrop" id="jobConflictModal" onclick="closeJobConflictModal()">
+        <div class="profile-modal-card conflict-modal" onclick="event.stopPropagation()">
+            <div class="profile-modal-title" id="jobConflictModalTitle">⚠️ 職位時段相撞提醒</div>
+            <div class="conflict-modal-body" id="jobConflictModalBody"></div>
+            <div class="profile-modal-actions" id="jobConflictModalActions"></div>
+        </div>
+    </div>
+
+    <input type="file" id="resFileInput" accept="image/*" style="display:none" onchange="handleResFileChange(event)">
+
+    <!-- 模組化 JS（按相依順序載入） -->
+    <script src="./core.js"></script>
+    <script src="./notifications.js"></script>
+    <script src="./jobs.js"></script>
+    <script src="./timers.js"></script>
+    <script src="./resources.js"></script>
 </body>
 </html>
