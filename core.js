@@ -1,12 +1,8 @@
 // ==========================================
-// 【核心不變條款清單 - core.js】
-// 1. 所有倒數與職位時間計算一律使用 getAccurateNow()（Firebase 雲端伺服器網路標準時間），絕不使用本機 Windows 時間。
-// 2. Firebase 雲端即時同步時，若使用者正在輸入倒數框或資源框，絕對禁止重繪搶走游標焦點。
+// CORE.JS：Firebase 設定、全域狀態、格式化工具、角色同步與資料庫讀寫
 // ==========================================
 
-// ==========================================
 // 1. Firebase 雲端即時資料庫設定
-// ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyDjQS9NNkUwZ8bTeNb75WFp3at2jjKzWac",
     authDomain: "kingshot-game-alarm.firebaseapp.com",
@@ -34,9 +30,7 @@ try {
     console.warn("Firebase 初始化略過，改用本地儲存模式", e);
 }
 
-// ==========================================
 // 2. 全域常數與狀態變數
-// ==========================================
 const STORAGE_KEY = "multi_account_alarm_local_backup";
 const PROFILE_STORAGE_KEY = "multi_account_profiles_backup";
 const NOTIF_HISTORY_KEY = "multi_account_notif_history_v2";
@@ -123,7 +117,12 @@ let store = {
     }
 };
 
+let notifHistory = [];
+let triggeredEventKeys = new Set();
 let nextId = 300;
+let audioCtx = null;
+let ringInterval = null;
+let activeSystemNotifications = [];
 let isInitialLoadDone = false;
 let serverTimeOffsetMs = 0;
 
@@ -131,9 +130,7 @@ let splashStartTime = 0;
 let isFirebaseFirstLoaded = false;
 let isSplashHidden = false;
 
-// ==========================================
-// 3. 載入動畫 & 網路伺服器時間校準
-// ==========================================
+// 3. 載入動畫 & 伺服器時間校準
 function startSplashLoader() {
     const splash = document.getElementById('loadingSplash');
     if (!splash) return;
@@ -187,9 +184,7 @@ function setupAutoTimeSync() {
     }
 }
 
-// ==========================================
 // 4. 格式化工具函式
-// ==========================================
 function formatPad(n) {
     return String(Math.max(0, parseInt(n, 10) || 0)).padStart(2, '0');
 }
@@ -201,4 +196,357 @@ function formatTimeHM(date) {
 
 function formatFullDateTime(date) {
     if (!date || isNaN(date.getTime())) return '';
-    const m = formatPad(date
+    const m = formatPad(date.getMonth() + 1);
+    const d = formatPad(date.getDate());
+    const hm = formatTimeHM(date);
+    return `${m}/${d} ${hm}`;
+}
+
+function formatCountdown(ms) {
+    if (ms <= 0) return "00:00:00";
+    const totalSec = Math.floor(ms / 1000);
+    const d = Math.floor(totalSec / 86400);
+    const h = Math.floor((totalSec % 86400) / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (d > 0) return `${d}天 ${formatPad(h)}:${formatPad(m)}:${formatPad(s)}`;
+    return `${formatPad(h)}:${formatPad(m)}:${formatPad(s)}`;
+}
+
+function formatPower(num) {
+    if (!num || isNaN(num)) return '0';
+    const n = Number(num);
+    if (n >= 1e8) return (n / 1e8).toFixed(2) + ' 億';
+    if (n >= 1e4) return (n / 1e4).toFixed(1) + ' 萬';
+    return n.toLocaleString();
+}
+
+function getDayTagHtml(targetDate) {
+    if (!targetDate || isNaN(targetDate.getTime())) return '';
+    const now = getAccurateNow();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startTarget = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    const diffDays = Math.round((startTarget - startToday) / 86400000);
+
+    if (diffDays === 0) return `<span class="day-hl today">今日</span>`;
+    if (diffDays === 1) return `<span class="day-hl tomorrow">明日</span>`;
+    return '';
+}
+
+function getDueBorderClass(targetDate) {
+    if (!targetDate || isNaN(targetDate.getTime())) return '';
+    const now = getAccurateNow();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startTarget = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    const diffDays = Math.round((startTarget - startToday) / 86400000);
+
+    if (diffDays === 0) return 'due-today';
+    if (diffDays === 1) return 'due-tomorrow';
+    return '';
+}
+
+function getDisplayAccountName(accId) {
+    const p = profiles[accId];
+    if (p && p.name) return p.name;
+    return accId.toUpperCase();
+}
+
+function escapeAttr(str) {
+    return String(str).replace(/'/g, "\\'").replace(/"/g, "&quot;");
+}
+
+// 5. 外部角色戰力與頭像 API 同步 & 雙欄位編輯彈窗
+async function fetchSingleProfile(accId) {
+    const p = profiles[accId];
+    if (!p || !p.queryName) return false;
+
+    const rawUrl = `https://kingdom-1177.vercel.app/api/governor-profile?name=${encodeURIComponent(p.queryName)}&alliance=${encodeURIComponent(p.queryAlliance || '')}`;
+    const candidateUrls = [
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rawUrl)}`
+    ];
+
+    for (const targetUrl of candidateUrls) {
+        try {
+            const res = await fetch(targetUrl, { cache: 'no-store' });
+            if (!res.ok) continue;
+            const text = await res.text();
+            const data = JSON.parse(text);
+            if (data && data.ok && data.governor) {
+                const gov = data.governor;
+                profiles[accId] = {
+                    ...profiles[accId],
+                    name: gov.name || p.queryName,
+                    alliance: gov.alliance || p.queryAlliance,
+                    levelLabel: gov.levelLabel || (gov.tg ? `TG${gov.tg}` : `Lv.${gov.townCenter || ''}`),
+                    power: gov.power || 0,
+                    powerRank: gov.powerRank || null,
+                    avatar: gov.avatar || profiles[accId].avatar,
+                    lastFetched: new Date().toISOString()
+                };
+                return true;
+            }
+        } catch (e) {}
+    }
+    return false;
+}
+
+async function fetchAllProfiles() {
+    let anyUpdated = false;
+    for (const acc of accounts) {
+        const ok = await fetchSingleProfile(acc.id);
+        if (ok) anyUpdated = true;
+    }
+    if (anyUpdated) {
+        saveProfiles();
+        if (!isTimerInputEditing && typeof renderGrid === 'function') renderGrid();
+        if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+        if (typeof updateTimeline === 'function') updateTimeline(true);
+    }
+}
+
+let editingProfileAccId = null;
+
+function editAccountQuery(accId) {
+    const current = profiles[accId];
+    if (!current) return;
+    editingProfileAccId = accId;
+
+    const nameInput = document.getElementById('modalProfileName');
+    const allianceInput = document.getElementById('modalProfileAlliance');
+    const modal = document.getElementById('profileEditModal');
+
+    if (nameInput) nameInput.value = current.queryName || current.name || '';
+    if (allianceInput) allianceInput.value = current.queryAlliance || current.alliance || '';
+    if (modal) modal.classList.add('open');
+    if (nameInput) setTimeout(() => nameInput.focus(), 50);
+}
+
+function closeProfileEditModal() {
+    editingProfileAccId = null;
+    const modal = document.getElementById('profileEditModal');
+    if (modal) modal.classList.remove('open');
+}
+
+async function saveProfileEditModal() {
+    if (!editingProfileAccId) return;
+    const accId = editingProfileAccId;
+    const current = profiles[accId];
+    const nameInput = document.getElementById('modalProfileName');
+    const allianceInput = document.getElementById('modalProfileAlliance');
+
+    const newName = (nameInput ? nameInput.value : '').trim();
+    const newAlliance = (allianceInput ? allianceInput.value : '').trim().toUpperCase();
+
+    if (!newName) {
+        alert('請輸入遊戲角色名稱！');
+        return;
+    }
+
+    current.queryName = newName;
+    current.name = newName;
+    current.queryAlliance = newAlliance;
+    current.alliance = newAlliance;
+
+    closeProfileEditModal();
+    saveProfiles();
+    if (typeof renderGrid === 'function') renderGrid();
+    if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+    if (typeof updateTimeline === 'function') updateTimeline(true);
+
+    const ok = await fetchSingleProfile(accId);
+    if (ok) {
+        saveProfiles();
+        if (typeof renderGrid === 'function') renderGrid();
+        if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+        if (typeof updateTimeline === 'function') updateTimeline(true);
+    }
+}
+
+// 6. Firebase 與本地儲存資料序列化
+function serializeStore() {
+    const out = {
+        showSunlightEvent: showSunlightEvent,
+        resources: typeof resourcesStore !== 'undefined' ? resourcesStore : {},
+        updatedAt: Date.now()
+    };
+    accounts.forEach(acc => {
+        const s = store[acc.id];
+        out[acc.id] = {
+            soldiers: (s.soldiers || []).map(it => ({ ...it, endTime: it.endTime ? it.endTime.getTime() : null })),
+            tech: (s.tech || []).map(it => ({ ...it, endTime: it.endTime ? it.endTime.getTime() : null })),
+            master: (s.master || []).map(it => ({ ...it, endTime: it.endTime ? it.endTime.getTime() : null })),
+            sunlight: (s.sunlight || []).map(it => ({ ...it, endTime: it.endTime ? it.endTime.getTime() : null })),
+            soldierJobTime: s.soldierJobTime || '',
+            soldierJobDate: s.soldierJobDate ? s.soldierJobDate.getTime() : null,
+            soldierJobConfirmed: !!s.soldierJobConfirmed,
+            soldierJobManual: !!s.soldierJobManual,
+            techJobTime: s.techJobTime || '',
+            techJobDate: s.techJobDate ? s.techJobDate.getTime() : null,
+            techJobConfirmed: !!s.techJobConfirmed,
+            techJobManual: !!s.techJobManual
+        };
+    });
+    return out;
+}
+
+function applySerializedData(data) {
+    if (!data || typeof data !== 'object') return;
+    if (typeof data.showSunlightEvent === 'boolean') {
+        showSunlightEvent = data.showSunlightEvent;
+        if (typeof updateSunlightToggleBtnUI === 'function') updateSunlightToggleBtnUI();
+    }
+    if (data.resources && typeof resourcesStore !== 'undefined') {
+        accounts.forEach(acc => {
+            if (data.resources[acc.id]) {
+                resourcesStore[acc.id] = {
+                    ...resourcesStore[acc.id],
+                    ...data.resources[acc.id]
+                };
+            }
+        });
+    }
+
+    accounts.forEach(acc => {
+        const d = data[acc.id];
+        if (!d) return;
+        ['soldiers', 'tech', 'master', 'sunlight'].forEach(cat => {
+            if (Array.isArray(d[cat]) && d[cat].length > 0) {
+                store[acc.id][cat] = d[cat].map(it => {
+                    if (it.id >= nextId) nextId = it.id + 1;
+                    return {
+                        id: it.id,
+                        d: Number(it.d) || 0,
+                        h: Number(it.h) || 0,
+                        m: Number(it.m) || 0,
+                        endTime: it.endTime ? new Date(it.endTime) : null
+                    };
+                });
+            }
+        });
+        store[acc.id].soldierJobTime = d.soldierJobTime || '';
+        store[acc.id].soldierJobDate = d.soldierJobDate ? new Date(d.soldierJobDate) : null;
+        store[acc.id].soldierJobConfirmed = !!d.soldierJobConfirmed;
+        store[acc.id].soldierJobManual = !!d.soldierJobManual;
+
+        store[acc.id].techJobTime = d.techJobTime || '';
+        store[acc.id].techJobDate = d.techJobDate ? new Date(d.techJobDate) : null;
+        store[acc.id].techJobConfirmed = !!d.techJobConfirmed;
+        store[acc.id].techJobManual = !!d.techJobManual;
+    });
+
+    if (typeof normalizeAllJobsConsistency === 'function') {
+        normalizeAllJobsConsistency();
+    }
+}
+
+function saveState() {
+    const payload = serializeStore();
+    latestStateUpdatedAt = payload.updatedAt;
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {}
+
+    if (hasFirebase && dbRef) {
+        dbRef.set(payload).catch(err => console.warn("Firebase 寫入失敗:", err));
+    }
+}
+
+function saveProfiles() {
+    try {
+        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
+    } catch (e) {}
+
+    if (hasFirebase && profileDbRef) {
+        profileDbRef.set(profiles).catch(err => console.warn("Profiles 寫入失敗:", err));
+    }
+}
+
+function loadLocalBackups() {
+    try {
+        const rawP = localStorage.getItem(PROFILE_STORAGE_KEY);
+        if (rawP) {
+            const parsedP = JSON.parse(rawP);
+            accounts.forEach(acc => {
+                if (parsedP && parsedP[acc.id]) {
+                    profiles[acc.id] = { ...profiles[acc.id], ...parsedP[acc.id] };
+                }
+            });
+        }
+    } catch (e) {}
+
+    try {
+        const rawS = localStorage.getItem(STORAGE_KEY);
+        if (rawS) applySerializedData(JSON.parse(rawS));
+    } catch (e) {}
+}
+
+function setupFirebaseListeners() {
+    const syncBadge = document.getElementById('syncBadge');
+    if (!hasFirebase || !dbRef) {
+        if (syncBadge) {
+            syncBadge.className = 'sync-badge error';
+            syncBadge.innerText = '💾 本地儲存模式';
+        }
+        notifyDataReadyForSplash();
+        return;
+    }
+
+    dbRef.on("value", (snap) => {
+        const val = snap.val();
+        if (val) {
+            applySerializedData(val);
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(val)); } catch (e) {}
+        }
+        if (syncBadge) {
+            syncBadge.className = 'sync-badge connected';
+            syncBadge.innerText = '🟢 雲端已同步';
+        }
+
+        const activeEl = document.activeElement;
+        const isTypingResource = activeEl && activeEl.classList && activeEl.classList.contains('res-num-input');
+        const isTypingTimer = isTimerInputEditing || (activeEl && activeEl.classList && activeEl.classList.contains('time-input'));
+
+        if (!isTypingTimer && typeof renderGrid === 'function') {
+            renderGrid();
+        }
+        if (typeof renderResourcesGrid === 'function') {
+            if (isTypingResource) {
+                accounts.forEach(acc => {
+                    if (typeof refreshAccountResourceVisualsOnly === 'function') {
+                        refreshAccountResourceVisualsOnly(acc.id, activeEl.id);
+                    }
+                });
+            } else {
+                renderResourcesGrid();
+            }
+        }
+        if (typeof updateTimeline === 'function') updateTimeline(true);
+        if (typeof tickTimers === 'function') tickTimers();
+        notifyDataReadyForSplash();
+        isInitialLoadDone = true;
+    }, (err) => {
+        if (syncBadge) {
+            syncBadge.className = 'sync-badge error';
+            syncBadge.innerText = '⚠️ 雲端連線異常';
+        }
+        notifyDataReadyForSplash();
+    });
+
+    if (profileDbRef) {
+        profileDbRef.on("value", (snap) => {
+            const val = snap.val();
+            if (val) {
+                accounts.forEach(acc => {
+                    if (val[acc.id]) {
+                        profiles[acc.id] = { ...profiles[acc.id], ...val[acc.id] };
+                    }
+                });
+                try { localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles)); } catch (e) {}
+                if (!isTimerInputEditing && typeof renderGrid === 'function') renderGrid();
+                if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+                if (typeof updateTimeline === 'function') updateTimeline(true);
+            }
+        });
+    }
+}
