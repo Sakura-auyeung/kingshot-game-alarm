@@ -156,11 +156,11 @@
 
     <input type="file" id="resFileInput" accept="image/*" style="display:none" onchange="handleResFileChange(event)">
 
-    <!-- 模組化 JS（按相依順序載入） -->
-    <script src="./core.js"></script>
-    <script src="./notifications.js"></script>
-    <script src="./jobs.js"></script>
-    <script src="./timers.js"></script>
-    <script src="./resources.js"></script>
+<!-- 模組化 JS（按相依順序載入：timers.js 必須放最後一個！） -->
+    <script src="./core.js?v=2"></script>
+    <script src="./notifications.js?v=2"></script>
+    <script src="./jobs.js?v=2"></script>
+    <script src="./resources.js?v=2"></script>
+    <script src="./timers.js?v=2"></script>
 </body>
 </html>
