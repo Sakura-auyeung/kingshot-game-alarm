@@ -477,10 +477,19 @@ function renderBellUI() {
             `;
         } else if (item.unread && accId && (item.category === 'cooldown_soldier' || item.category === 'cooldown_tech')) {
             const jType = item.category === 'cooldown_soldier' ? 'soldier' : 'tech';
+            const cat = jType === 'soldier' ? 'soldiers' : 'tech';
             const timeKey = jType === 'soldier' ? 'soldierJobTime' : 'techJobTime';
-            const selectedTime = item.recommendedTime || (store[accId] ? store[accId][timeKey] : '') || '';
+
+            let liveRecTime = '';
+            if (typeof getLatestActiveCategoryEndDate === 'function' && typeof getRecommendedJobSlotFromDate === 'function') {
+                const latestEnd = getLatestActiveCategoryEndDate(accId, cat);
+                const latestSlot = latestEnd ? getRecommendedJobSlotFromDate(latestEnd) : null;
+                if (latestSlot) liveRecTime = formatTimeHM(latestSlot);
+            }
+
+            const selectedTime = liveRecTime || (store[accId] ? store[accId][timeKey] : '') || item.recommendedTime || '';
             const optionsHtml = typeof generateJobOptions === 'function'
-                ? generateJobOptions(selectedTime, '選擇時段')
+                ? generateJobOptions(selectedTime, '選擇時段', accId, jType)
                 : `<option value="">選擇時段</option>`;
             renewControlHtml = `
                 <div class="todo-renew-box" id="todo_box_${idx}">
