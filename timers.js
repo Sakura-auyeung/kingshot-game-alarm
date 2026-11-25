@@ -659,6 +659,7 @@ function switchMainTab(tabName, updateUrlHash = true) {
     const timeline = document.getElementById('timelineView');
     const resView = document.getElementById('resourcesView');
     const timerOnlyBtns = document.getElementById('timerOnlyBtns');
+    const resOnlyBtns = document.getElementById('resOnlyBtns');
     const btn = document.getElementById('toggleBtn');
     const pageTitle = document.getElementById('pageMainTitle');
     const navItemAlarm = document.getElementById('navItemAlarm');
@@ -669,6 +670,9 @@ function switchMainTab(tabName, updateUrlHash = true) {
     const isAlarmSection = (tabName === 'grid' || tabName === 'timeline');
     if (timerOnlyBtns) {
         timerOnlyBtns.style.display = isAlarmSection ? 'inline-flex' : 'none';
+    }
+    if (resOnlyBtns) {
+        resOnlyBtns.style.display = (tabName === 'resources') ? 'inline-flex' : 'none';
     }
     if (navItemAlarm) navItemAlarm.classList.toggle('active', isAlarmSection);
     if (navItemResources) navItemResources.classList.toggle('active', tabName === 'resources');
@@ -682,6 +686,7 @@ function switchMainTab(tabName, updateUrlHash = true) {
         if (resView) resView.style.display = 'block';
         if (pageTitle) pageTitle.innerText = '多帳戶資源採集';
         if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+        if (typeof renderMobilizationSection === 'function') renderMobilizationSection();
     } else {
         tabName = 'grid';
         if (grid) grid.style.display = 'grid';
@@ -749,6 +754,7 @@ function init() {
     restoreTabFromHash();
 
     setupFirebaseListeners();
+    if (typeof initNotifCloudSync === 'function') initNotifCloudSync();
     setupAutoTimeSync();
     fetchAllProfiles();
 
@@ -758,3 +764,4 @@ function init() {
 }
 
 init();
+
