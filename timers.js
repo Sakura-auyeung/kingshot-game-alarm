@@ -504,7 +504,7 @@ function updateTimeline(force = false) {
                             onmousedown="isJobSelectActive=true"
                             onblur="isJobSelectActive=false"
                             onchange="setJobTime('${acc.id}','${type}',this.value,false)">
-                            ${generateJobOptions(jTime, '無預約')}
+                            ${generateJobOptions(jTime, '無預約', acc.id, type)}
                         </select>
                         <button class="btn-shift" onclick="shiftJobTime('${acc.id}','${type}',-30)">-30分</button>
                         <button class="btn-shift" onclick="shiftJobTime('${acc.id}','${type}',30)">+30分</button>
@@ -615,8 +615,11 @@ function tickTimers() {
         anyStateChanged = true;
     }
 
+    const activeEl = document.activeElement;
+    const isFrontSelectFocused = activeEl && activeEl.classList && activeEl.classList.contains('job-front-select');
+
     if (anyStateChanged) {
-        if (!isTimerInputEditing) renderGrid();
+        if (!isTimerInputEditing && !isJobSelectActive && !isFrontSelectFocused) renderGrid();
         saveState();
     }
 
@@ -764,4 +767,3 @@ function init() {
 }
 
 init();
-
