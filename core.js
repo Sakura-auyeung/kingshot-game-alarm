@@ -368,6 +368,7 @@ function serializeStore() {
     const out = {
         showSunlightEvent: showSunlightEvent,
         resources: typeof resourcesStore !== 'undefined' ? resourcesStore : {},
+        mobilization: typeof serializeMobilizationStore === 'function' ? serializeMobilizationStore() : {},
         updatedAt: Date.now()
     };
     accounts.forEach(acc => {
@@ -405,6 +406,9 @@ function applySerializedData(data) {
                 };
             }
         });
+    }
+    if (data.mobilization && typeof applyMobilizationSerialized === 'function') {
+        applyMobilizationSerialized(data.mobilization);
     }
 
     accounts.forEach(acc => {
@@ -505,6 +509,7 @@ function setupFirebaseListeners() {
 
         const activeEl = document.activeElement;
         const isTypingResource = activeEl && activeEl.classList && activeEl.classList.contains('res-num-input');
+        const isTypingMob = activeEl && activeEl.classList && activeEl.classList.contains('mob-march-input');
         const isTypingTimer = isTimerInputEditing || (activeEl && activeEl.classList && activeEl.classList.contains('time-input'));
 
         if (!isTypingTimer && typeof renderGrid === 'function') {
@@ -520,6 +525,9 @@ function setupFirebaseListeners() {
             } else {
                 renderResourcesGrid();
             }
+        }
+        if (typeof renderMobilizationSection === 'function' && !isTypingMob) {
+            renderMobilizationSection();
         }
         if (typeof updateTimeline === 'function') updateTimeline(true);
         if (typeof tickTimers === 'function') tickTimers();
@@ -545,6 +553,7 @@ function setupFirebaseListeners() {
                 try { localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles)); } catch (e) {}
                 if (!isTimerInputEditing && typeof renderGrid === 'function') renderGrid();
                 if (typeof renderResourcesGrid === 'function') renderResourcesGrid();
+                if (typeof renderMobilizationSection === 'function') renderMobilizationSection();
                 if (typeof updateTimeline === 'function') updateTimeline(true);
             }
         });
