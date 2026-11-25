@@ -486,35 +486,21 @@ function normalizeAllJobsConsistency() {
     unlockExpiredJobsIfNeeded(getAccurateNow());
 }
 
-function buildFrontQueueHintText(accId, type, jTime, jManual) {
+// 圖 1 精簡佇列提示：直接顯示「#1 20:40完結 ｜ #2 21:26完結」
+function buildFrontQueueHintText(accId, type, jTime) {
     const hints = getActiveJobQueueHints(accId, type);
     if (hints.length === 0) {
-        return jTime ? (jManual ? '手動自訂時段' : '已排程時段') : '請選擇預約時段';
+        return jTime ? '手動預約時段' : '尚未有進行中佇列';
     }
-
-    const matched = hints.find(h => h.slotHM === jTime);
-    const latestHint = hints[hints.length - 1];
-
-    if (hints.length === 1) {
-        const h1 = hints[0];
-        if (!jTime || matched) {
-            return `依 ${h1.queueNum}號(${h1.endHM}完)`;
-        }
-        return `手動自訂（${h1.queueNum}號 ${h1.endHM}完）`;
-    }
-
-    if (matched) {
-        if (!jManual && matched.queueNum === latestHint.queueNum) {
-            const firstHint = hints[0];
-            return `依 ${latestHint.queueNum}號(${latestHint.endHM}完) ｜ ${firstHint.queueNum}號可選 ${firstHint.slotHM}`;
-        }
-        return `已選 ${matched.queueNum}號時段(${matched.endHM}完)`;
-    }
-
-    return `手動自訂時段`;
+    return hints.map(h => `#${h.queueNum} ${h.endHM}完結`).join(' ｜ ');
 }
 
-// 主畫面 3 欄底部的職位預約狀態卡片（還原時間下拉選單 + 佇列標記 + 第二層撞期防呆）
+function formatMonthDayOnly(dateObj) {
+    if (!dateObj || isNaN(dateObj.getTime())) return '';
+    return `${formatPad(dateObj.getMonth() + 1)}/${formatPad(dateObj.getDate())}`;
+}
+
+// 主畫面 3 欄底部的職位預約狀態卡片（圖 1 精簡零重複佈局）
 function renderJobSummaryBox(accId) {
     const s = store[accId];
     const now = getAccurateNow();
@@ -523,20 +509,19 @@ function renderJobSummaryBox(accId) {
         const jTime = (type === 'soldier' ? s.soldierJobTime : s.techJobTime) || '';
         const jDate = type === 'soldier' ? s.soldierJobDate : s.techJobDate;
         const jConf = type === 'soldier' ? s.soldierJobConfirmed : s.techJobConfirmed;
-        const jManual = type === 'soldier' ? s.soldierJobManual : s.techJobManual;
         const inCooldown = isJobInCooldown(accId, type, now);
         const conflicts = jDate ? findSameJobCrossAccountConflicts(accId, type, jDate) : [];
         const hasConflict = conflicts.length > 0;
 
         let dueBorderClass = '';
         let pillHtml = `<span class="status-pill none">未預約</span>`;
-        let timeText = '尚未設定時段';
-        let hintText = buildFrontQueueHintText(accId, type, jTime, jManual);
+        let dateBadgeText = '尚未設定';
+        let hintText = buildFrontQueueHintText(accId, type, jTime);
         let hintConflictClass = '';
 
         if (jDate && !isNaN(jDate.getTime())) {
             dueBorderClass = getDueBorderClass(jDate);
-            timeText = `${getDayTagHtml(jDate)}${formatFullDateTime(jDate)}`;
+            dateBadgeText = `${getDayTagHtml(jDate)}${formatMonthDayOnly(jDate)}`;
             const diffMs = jDate.getTime() - now.getTime();
 
             if (inCooldown) {
@@ -571,17 +556,15 @@ function renderJobSummaryBox(accId) {
 
         return `
             <div class="job-status-card ${dueBorderClass} ${hasConflict ? 'job-conflict-border' : ''}">
-                <div class="job-status-row-split">
-                    <div class="job-status-left">
-                        <div class="job-status-title-line">${label}：${timeText}</div>
-                    </div>
+                <div class="job-status-top-row">
+                    <div class="job-status-title-line">${label}：${dateBadgeText}</div>
+                    ${selectHtml}
+                </div>
+                <div class="job-status-bottom-row">
+                    <span class="job-front-hint ${hintConflictClass}">${hintText}</span>
                     <div class="job-status-right">
                         ${pillHtml}
                     </div>
-                </div>
-                <div class="job-front-controls-row">
-                    ${selectHtml}
-                    <span class="job-front-hint ${hintConflictClass}">${hintText}</span>
                 </div>
             </div>
         `;
