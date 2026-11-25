@@ -12,9 +12,9 @@
     <!-- 引入 Tesseract.js 純前端 OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <!-- 模組化樣式表 -->
-    <link rel="stylesheet" href="./base.css">
-    <link rel="stylesheet" href="./timers.css">
-    <link rel="stylesheet" href="./resources.css">
+    <link rel="stylesheet" href="./base.css?v=4">
+    <link rel="stylesheet" href="./timers.css?v=4">
+    <link rel="stylesheet" href="./resources.css?v=4">
 </head>
 <body>
 
@@ -56,6 +56,11 @@
                 <button class="pill-btn btn-toggle" onclick="toggleView()" id="toggleBtn">
                     <img class="btn-icon-svg" src="./assets/btn_change.svg" alt=""> 切換時間線
                 </button>
+            </div>
+
+            <!-- 資源頁面專屬按鈕區 -->
+            <div class="res-only-btns" id="resOnlyBtns" style="display:none;">
+                <button class="pill-btn btn-event-toggle active" id="mobilizationToggleBtn" onclick="toggleMobilizationPanel()">🏆 總動員採集：顯示</button>
             </div>
 
             <!-- 全局保留：鈴鐺待辦清單 -->
@@ -124,6 +129,9 @@
             </div>
         </div>
         <div class="res-grid" id="resourcesGrid"></div>
+
+        <!-- 3 個角色正下方：聯盟總動員採集計算器獨立區域 -->
+        <div class="mob-calc-section" id="guildMobilizationSection"></div>
     </div>
 
     <!-- 奶油風雙欄位角色編輯彈窗 -->
@@ -156,11 +164,11 @@
 
     <input type="file" id="resFileInput" accept="image/*" style="display:none" onchange="handleResFileChange(event)">
 
-<!-- 模組化 JS（按相依順序載入：timers.js 必須放最後一個！） -->
-    <script src="./core.js?v=3"></script>
-    <script src="./notifications.js?v=3"></script>
-    <script src="./jobs.js?v=3"></script>
-    <script src="./resources.js?v=3"></script>
-    <script src="./timers.js?v=3"></script>
+    <!-- 模組化 JS（按相依順序載入：timers.js 必須放最後一個！） -->
+    <script src="./core.js?v=4"></script>
+    <script src="./notifications.js?v=4"></script>
+    <script src="./jobs.js?v=4"></script>
+    <script src="./resources.js?v=4"></script>
+    <script src="./timers.js?v=4"></script>
 </body>
 </html>
