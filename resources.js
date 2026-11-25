@@ -1,13 +1,17 @@
 // ==========================================
-// 資源採集計算 + Tesseract.js OCR 辨識模組
+// 資源採集計算 + Tesseract.js OCR 辨識 + 聯盟總動員採集子集計算器
 // ==========================================
 
 const RESOURCE_DEFS = [
-    { key: 'bread',  label: '糧食', iconFile: './assets/item_icon_bread.png', ratio: 20 },
-    { key: 'wood',   label: '木材', iconFile: './assets/item_icon_wood.png',  ratio: 20 },
-    { key: 'stone',  label: '石材', iconFile: './assets/item_icon_stone.png', ratio: 4  },
-    { key: 'iron',   label: '鐵',   iconFile: './assets/item_icon_icon.png',  ratio: 1  }
+    { key: 'bread',  label: '糧食', iconFile: './assets/item_icon_bread.png', ratio: 20, mobMult: 1,  maxRawK: 14000 },
+    { key: 'wood',   label: '木材', iconFile: './assets/item_icon_wood.png',  ratio: 20, mobMult: 1,  maxRawK: 14000 },
+    { key: 'stone',  label: '石材', iconFile: './assets/item_icon_stone.png', ratio: 4,  mobMult: 5,  maxRawK: 2800  },
+    { key: 'iron',   label: '鐵',   iconFile: './assets/item_icon_icon.png',  ratio: 1,  mobMult: 20, maxRawK: 700   }
 ];
+
+function getResDef(key) {
+    return RESOURCE_DEFS.find(d => d.key === key) || RESOURCE_DEFS[0];
+}
 
 function renderResCardBigIconHtml(item) {
     return `<span class="res-card-big-icon-wrap"><img class="res-card-big-png" src="${item.iconFile}" alt="${item.label}"></span>`;
@@ -43,14 +47,14 @@ function unitMultiplier(unit) {
 }
 
 // ==========================================
-// Excel / Google Sheets 原汁原味 5 色階斜向漸層（翡翠綠 -> 抹茶黃綠 -> 柔暖黃 -> 蜜桃橘 -> 珊瑚磚紅）
+// Excel / Google Sheets 原汁原味 5 色階斜向漸層
 // ==========================================
 const EXCEL_5_LEVELS = [
-    'linear-gradient(135deg, #63C796 0%, #4BA87A 100%)', // 第 1 階：最缺（Excel 翡翠綠 #57BB8A）
-    'linear-gradient(135deg, #AFD283 0%, #92B864 100%)', // 第 2 階：次缺（Excel 抹茶黃綠 #A3C876）
-    'linear-gradient(135deg, #FAD76B 0%, #E5BE48 100%)', // 第 3 階：中間（Excel 柔暖黃 #F8D05B）
-    'linear-gradient(135deg, #F5A973 0%, #DF894E 100%)', // 第 4 階：偏多（Excel 蜜桃橘 #F09D64）
-    'linear-gradient(135deg, #EC8980 0%, #D6675D 100%)'  // 第 5 階：最多（Excel 珊瑚磚紅 #E67C73）
+    'linear-gradient(135deg, #63C796 0%, #4BA87A 100%)', // 第 1 階：最缺
+    'linear-gradient(135deg, #AFD283 0%, #92B864 100%)', // 第 2 階：次缺
+    'linear-gradient(135deg, #FAD76B 0%, #E5BE48 100%)', // 第 3 階：中間
+    'linear-gradient(135deg, #F5A973 0%, #DF894E 100%)', // 第 4 階：偏多
+    'linear-gradient(135deg, #EC8980 0%, #D6675D 100%)'  // 第 5 階：最多
 ];
 
 function getExcel5LevelStyle(pos) {
@@ -270,17 +274,21 @@ function updateResourceUnit(accId, resKey, unitVal) {
     saveState();
 }
 
-// 全域監聽所有資源輸入框的 Enter 鍵（唯一一份，避免重複觸發跳過頭）
+// 全域監聽所有資源輸入框（含總動員輸入框）的 Enter 鍵（唯一一份）
 document.addEventListener('keydown', (event) => {
     const target = event.target;
-    if (!target || !target.classList || !target.classList.contains('res-num-input')) return;
+    if (!target || !target.classList) return;
+    const isResInput = target.classList.contains('res-num-input');
+    const isMobInput = target.classList.contains('mob-march-input');
+    if (!isResInput && !isMobInput) return;
     if (event.isComposing || event.keyCode === 229) return;
 
     if (event.key === 'Enter' || event.keyCode === 13) {
         event.preventDefault();
         event.stopPropagation();
 
-        const allInputs = Array.from(document.querySelectorAll('#resourcesGrid .res-num-input'));
+        const selector = isResInput ? '#resourcesGrid .res-num-input' : '#guildMobilizationSection .mob-march-input';
+        const allInputs = Array.from(document.querySelectorAll(selector));
         const curIdx = allInputs.indexOf(target);
 
         if (curIdx >= 0 && curIdx < allInputs.length - 1) {
@@ -290,7 +298,7 @@ document.addEventListener('keydown', (event) => {
         } else {
             target.blur();
         }
-        scheduleResourceSave();
+        if (isResInput) scheduleResourceSave();
     }
 }, true);
 
@@ -319,7 +327,7 @@ document.addEventListener('paste', (event) => {
 });
 
 // ==========================================
-// 精準 4 格固定座標 OCR 辨識（雙通道高對比灰階 + 自動重試，精準辨識 B / M / K）
+// 精準 4 格固定座標 OCR 辨識
 // ==========================================
 const FIXED_IN_STOCK_BOXES = [
     { key: 'bread', y0: 0.335, y1: 0.405 },
@@ -357,7 +365,6 @@ function loadImageFromBlob(file) {
     });
 }
 
-// mode: 'soft' 保留字體筆畫圓孔灰階對比；'sharp' 高亮度閾值適合粗字體
 function cropFixedInStockCell(img, y0Ratio, y1Ratio, mode = 'soft') {
     const isTwoPanel = (img.width / img.height) > 0.9;
     const panelWidth = isTwoPanel ? img.width * 0.5 : img.width;
@@ -474,3 +481,421 @@ async function runOcrOnImageFile(file, accId) {
         renderResourcesGrid();
     }
 }
+
+// ==========================================
+// 🏆 聯盟總動員採集任務子集組合計算器
+// 反比例計分：糧×1 / 木×1 / 石×5 / 鐵×20（各礦上限 14,000K 基準分）
+// ==========================================
+const MOB_PANEL_VISIBLE_KEY = 'kingshot_mob_panel_visible_v1';
+const MOB_CALC_STATE_KEY = 'kingshot_mob_calc_state_v1';
+const MOB_TARGETS_M = [30, 25, 20, 15, 10];
+const MOB_MAX_SCORE_K = 14000; // 單隊採滿上限 = 14M = 14,000K
+const MOB_WAIT_TOLERANCE_K = 500; // 差 <= 0.5M (500K) 列入「等多一會」
+
+let mobPanelVisible = true;
+let mobState = {
+    targetM: 25,
+    hasPetSkill: false,
+    marches: [
+        { slot: 1, resKey: 'bread', rawK: '' },
+        { slot: 2, resKey: 'wood',  rawK: '' },
+        { slot: 3, resKey: 'stone', rawK: '' },
+        { slot: 4, resKey: 'iron',  rawK: '' },
+        { slot: 5, resKey: 'bread', rawK: '' },
+        { slot: 6, resKey: 'wood',  rawK: '' }
+    ]
+};
+
+function loadMobState() {
+    try {
+        const vis = localStorage.getItem(MOB_PANEL_VISIBLE_KEY);
+        if (vis !== null) mobPanelVisible = (vis === '1');
+        const raw = localStorage.getItem(MOB_CALC_STATE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+                if (MOB_TARGETS_M.includes(Number(parsed.targetM))) {
+                    mobState.targetM = Number(parsed.targetM);
+                }
+                mobState.hasPetSkill = Boolean(parsed.hasPetSkill);
+                if (Array.isArray(parsed.marches) && parsed.marches.length === 6) {
+                    mobState.marches = parsed.marches.map((m, i) => ({
+                        slot: i + 1,
+                        resKey: ['bread', 'wood', 'stone', 'iron'].includes(m.resKey) ? m.resKey : 'bread',
+                        rawK: m.rawK !== undefined && m.rawK !== null ? String(m.rawK) : ''
+                    }));
+                }
+            }
+        }
+    } catch (e) {}
+}
+
+function saveMobState() {
+    try {
+        localStorage.setItem(MOB_PANEL_VISIBLE_KEY, mobPanelVisible ? '1' : '0');
+        localStorage.setItem(MOB_CALC_STATE_KEY, JSON.stringify(mobState));
+    } catch (e) {}
+}
+
+function updateMobilizationToggleBtn() {
+    const btn = document.getElementById('mobilizationToggleBtn');
+    const sec = document.getElementById('guildMobilizationSection');
+    if (btn) {
+        btn.innerText = mobPanelVisible ? '🏆 總動員採集：顯示' : '🏆 總動員採集：隱藏';
+        btn.classList.toggle('active', mobPanelVisible);
+    }
+    if (sec) {
+        sec.style.display = mobPanelVisible ? 'block' : 'none';
+    }
+}
+
+function toggleMobilizationPanel() {
+    mobPanelVisible = !mobPanelVisible;
+    saveMobState();
+    updateMobilizationToggleBtn();
+    if (mobPanelVisible) renderMobilizationSection();
+}
+
+function setMobTargetM(valM) {
+    mobState.targetM = Number(valM);
+    saveMobState();
+    renderMobilizationSection();
+}
+
+function toggleMobPetSkill() {
+    mobState.hasPetSkill = !mobState.hasPetSkill;
+    saveMobState();
+    renderMobilizationSection();
+}
+
+function updateMobMarchRes(slotIdx, resKey) {
+    if (!mobState.marches[slotIdx]) return;
+    mobState.marches[slotIdx].resKey = resKey;
+    saveMobState();
+    renderMobilizationSection();
+}
+
+function onMobMarchInput(slotIdx, inputEl) {
+    let cleaned = String(inputEl.value || '').replace(/[^\d.]/g, '');
+    const dotIdx = cleaned.indexOf('.');
+    if (dotIdx !== -1) {
+        cleaned = cleaned.slice(0, dotIdx) + '.' + cleaned.slice(dotIdx + 1).replace(/\./g, '').slice(0, 1);
+    }
+    if (inputEl.value !== cleaned) inputEl.value = cleaned;
+    if (!mobState.marches[slotIdx]) return;
+    mobState.marches[slotIdx].rawK = cleaned;
+    saveMobState();
+
+    // 只局部更新該格分數與結果區，不重繪輸入框以免打字中斷焦點
+    updateMobSingleCardInfo(slotIdx);
+    updateMobPlansOnly();
+}
+
+function clearAllMobMarches() {
+    mobState.marches.forEach(m => { m.rawK = ''; });
+    saveMobState();
+    renderMobilizationSection();
+}
+
+function computeMobPlans(usePetSkill) {
+    const targetK = mobState.targetM * 1000;
+    const activeItems = [];
+
+    mobState.marches.forEach((m, idx) => {
+        const valK = parseFloat(m.rawK);
+        if (!isNaN(valK) && valK > 0) {
+            const def = getResDef(m.resKey);
+            const curScoreK = Math.min(MOB_MAX_SCORE_K, valK * def.mobMult);
+            const maxScoreK = MOB_MAX_SCORE_K;
+            activeItems.push({
+                slot: m.slot,
+                idx,
+                resKey: m.resKey,
+                def,
+                rawK: valK,
+                curScoreK,
+                maxScoreK,
+                isFull: curScoreK >= MOB_MAX_SCORE_K - 0.1
+            });
+        }
+    });
+
+    // 若啟用寵物技且目前填寫不足 6 隊，可額外派出 1 隊空閒行軍用寵物技秒滿 14,000K
+    const hasFreeSlotForPet = usePetSkill && activeItems.length < 6;
+    if (hasFreeSlotForPet) {
+        activeItems.push({
+            slot: '空閒隊',
+            idx: 99,
+            resKey: 'bread',
+            def: getResDef('bread'),
+            rawK: 14000,
+            curScoreK: 0,
+            maxScoreK: MOB_MAX_SCORE_K,
+            isVirtualPetSlot: true,
+            isFull: false
+        });
+    }
+
+    const n = activeItems.length;
+    const instantPlans = [];
+    const waitPlans = [];
+
+    if (n === 0) return { instantPlans, waitPlans };
+
+    const totalMasks = 1 << n;
+    for (let mask = 1; mask < totalMasks; mask++) {
+        const subset = [];
+        for (let i = 0; i < n; i++) {
+            if (mask & (1 << i)) subset.push(activeItems[i]);
+        }
+
+        // 若包含虛擬空閒寵物隊，必須啟用寵物技才算
+        const containsVirtualPet = subset.some(it => it.isVirtualPetSlot);
+        if (containsVirtualPet && !usePetSkill) continue;
+
+        let baseCurK = 0;
+        let baseMaxK = 0;
+        subset.forEach(it => {
+            baseCurK += it.curScoreK;
+            baseMaxK += it.maxScoreK;
+        });
+
+        let finalCurK = baseCurK;
+        let finalMaxK = baseMaxK;
+        let petBoostSlot = null;
+
+        if (usePetSkill) {
+            if (containsVirtualPet) {
+                const vItem = subset.find(it => it.isVirtualPetSlot);
+                finalCurK += MOB_MAX_SCORE_K;
+                petBoostSlot = vItem.slot;
+            } else {
+                // 在此組合中挑一隊「目前積分最低（剛進礦/未滿礦）」套用寵物技秒滿 14,000K
+                let bestGain = 0;
+                let chosen = null;
+                subset.forEach(it => {
+                    const gain = MOB_MAX_SCORE_K - it.curScoreK;
+                    if (gain > bestGain) {
+                        bestGain = gain;
+                        chosen = it;
+                    }
+                });
+                if (chosen && bestGain > 0) {
+                    finalCurK += bestGain;
+                    petBoostSlot = chosen.slot;
+                } else {
+                    // 若該組合裡每隊都已經滿 14,000K，寵物技無增益，略過避免與不用技重複
+                    continue;
+                }
+            }
+        }
+
+        const diffK = finalCurK - targetK; // >= 0 代表立刻達標；< 0 代表還差多少 K
+
+        if (diffK >= 0) {
+            instantPlans.push({
+                subset,
+                curK: finalCurK,
+                overK: diffK,
+                count: subset.length,
+                petBoostSlot
+            });
+        } else {
+            const lackK = Math.abs(diffK);
+            // 差 <= 0.5M (500K) 且該組合上限總和 >= 目標，才能等多一會達標
+            if (lackK <= MOB_WAIT_TOLERANCE_K && finalMaxK >= targetK) {
+                waitPlans.push({
+                    subset,
+                    curK: finalCurK,
+                    lackK,
+                    maxK: finalMaxK,
+                    count: subset.length,
+                    petBoostSlot
+                });
+            }
+        }
+    }
+
+    // 排序：優先召回最少隊伍、其次溢出最少（最貼近任務目標不浪費）
+    instantPlans.sort((a, b) => (a.count - b.count) || (a.overK - b.overK));
+    // 等待方案：優先差距最小（最快採到）、其次召回隊數最少
+    waitPlans.sort((a, b) => (a.lackK - b.lackK) || (a.count - b.count));
+
+    return {
+        instantPlans: instantPlans.slice(0, 4),
+        waitPlans: waitPlans.slice(0, 4)
+    };
+}
+
+function formatKAndM(valK) {
+    const m = (valK / 1000).toFixed(2);
+    return `${Math.round(valK).toLocaleString()}K (${m}M)`;
+}
+
+function renderPlanCardsHtml(plans, mode, usePet) {
+    if (!plans || plans.length === 0) {
+        return `<div class="mob-plan-empty">無符合此條件的組合</div>`;
+    }
+
+    return plans.map((p, idx) => {
+        const chipsHtml = p.subset.map(it => {
+            const isPetTarget = usePet && p.petBoostSlot === it.slot;
+            if (it.isVirtualPetSlot) {
+                return `<span class="mob-chip is-pet">🐾 新派空閒隊 (秒滿 14M)</span>`;
+            }
+            return `
+                <span class="mob-chip ${isPetTarget ? 'is-pet' : ''}">
+                    <img src="${it.def.iconFile}" alt="${it.def.label}">
+                    第${it.slot}隊 ${it.def.label} ${it.rawK}K${isPetTarget ? ' 🐾秒滿' : ''}
+                </span>
+            `;
+        }).join('');
+
+        const badgeHtml = mode === 'instant'
+            ? `<span class="mob-badge-ok">✅ 溢出 +${Math.round(p.overK)}K (${(p.overK / 1000).toFixed(2)}M)</span>`
+            : `<span class="mob-badge-wait">⏳ 再等 +${Math.round(p.lackK)}K (${(p.lackK / 1000).toFixed(2)}M)</span>`;
+
+        return `
+            <div class="mob-plan-card ${mode === 'instant' ? 'plan-instant' : 'plan-wait'}">
+                <div class="mob-plan-top">
+                    <span class="mob-plan-rank">方案 ${idx + 1}（召回 ${p.count} 隊）</span>
+                    ${badgeHtml}
+                </div>
+                <div class="mob-plan-chips">${chipsHtml}</div>
+                <div class="mob-plan-foot">
+                    組合總分：<strong>${formatKAndM(p.curK)}</strong> ／ 目標 ${mobState.targetM}M
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateMobSingleCardInfo(slotIdx) {
+    const m = mobState.marches[slotIdx];
+    const infoEl = document.getElementById(`mob_slot_info_${slotIdx}`);
+    if (!m || !infoEl) return;
+    const def = getResDef(m.resKey);
+    const valK = parseFloat(m.rawK);
+    if (isNaN(valK) || valK <= 0) {
+        infoEl.innerHTML = `<span class="mob-slot-muted">留空不計（上限 ${def.maxRawK.toLocaleString()}K）</span>`;
+        return;
+    }
+    const scoreK = Math.min(MOB_MAX_SCORE_K, valK * def.mobMult);
+    const remainRawK = Math.max(0, def.maxRawK - valK);
+    infoEl.innerHTML = `
+        <span>積分 <strong>${Math.round(scoreK).toLocaleString()}K</strong> (${(scoreK / 1000).toFixed(2)}M)</span>
+        <span>${remainRawK <= 0 ? '✅ 已滿礦' : `距滿礦差 ${Math.round(remainRawK).toLocaleString()}K`}</span>
+    `;
+}
+
+function updateMobPlansOnly() {
+    const resContainer = document.getElementById('mobResultsContainer');
+    if (!resContainer) return;
+
+    const noPetRes = computeMobPlans(false);
+    const withPetRes = mobState.hasPetSkill ? computeMobPlans(true) : null;
+
+    resContainer.innerHTML = `
+        <div class="mob-results-grid ${mobState.hasPetSkill ? 'two-cols' : 'one-col'}">
+            <div class="mob-result-col">
+                <div class="mob-col-header">🚶 不用寵物技 — 推薦召回組合</div>
+                <div class="mob-sub-title">✅ 立刻召回即達標（保留其餘隊伍給下次任務）</div>
+                ${renderPlanCardsHtml(noPetRes.instantPlans, 'instant', false)}
+                <div class="mob-sub-title" style="margin-top:10px;">⏳ 等多一會（差距 ≤ 0.5M，未超 14M 上限）</div>
+                ${renderPlanCardsHtml(noPetRes.waitPlans, 'wait', false)}
+            </div>
+
+            ${mobState.hasPetSkill ? `
+                <div class="mob-result-col pet-col">
+                    <div class="mob-col-header">🐾 使用寵物技（1 隊秒滿 14M）— 推薦組合</div>
+                    <div class="mob-sub-title">✅ 立刻召回即達標</div>
+                    ${renderPlanCardsHtml(withPetRes.instantPlans, 'instant', true)}
+                    <div class="mob-sub-title" style="margin-top:10px;">⏳ 等多一會（差距 ≤ 0.5M）</div>
+                    ${renderPlanCardsHtml(withPetRes.waitPlans, 'wait', true)}
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function renderMobilizationSection() {
+    const sec = document.getElementById('guildMobilizationSection');
+    if (!sec) return;
+    updateMobilizationToggleBtn();
+    if (!mobPanelVisible) return;
+
+    const targetBtnsHtml = MOB_TARGETS_M.map(t => `
+        <button type="button" class="mob-target-pill ${mobState.targetM === t ? 'active' : ''}" onclick="setMobTargetM(${t})">
+            ${t}M
+        </button>
+    `).join('');
+
+    const marchesHtml = mobState.marches.map((m, idx) => {
+        const def = getResDef(m.resKey);
+        const isPreset = idx < 4;
+        return `
+            <div class="mob-march-card">
+                <div class="mob-march-head">
+                    <span class="mob-slot-badge">第 ${m.slot} 隊${isPreset ? '' : '（自選）'}</span>
+                    <select class="mob-res-select" onchange="updateMobMarchRes(${idx}, this.value)">
+                        ${RESOURCE_DEFS.map(r => `
+                            <option value="${r.key}" ${m.resKey === r.key ? 'selected' : ''}>${r.label} (×${r.mobMult})</option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div class="mob-march-input-row">
+                    <img class="mob-march-icon" src="${def.iconFile}" alt="${def.label}">
+                    <input type="text" inputmode="decimal" class="mob-march-input"
+                        id="mob_in_${idx}"
+                        value="${m.rawK}"
+                        placeholder="輸入 K（如 3527）"
+                        onfocus="this.select()"
+                        oninput="onMobMarchInput(${idx}, this)">
+                    <span class="mob-unit-k">K</span>
+                </div>
+                <div class="mob-march-foot" id="mob_slot_info_${idx}"></div>
+            </div>
+        `;
+    }).join('');
+
+    sec.innerHTML = `
+        <div class="mob-panel-card">
+            <div class="mob-panel-header">
+                <div class="mob-title-box">
+                    <span class="mob-main-title">🏆 聯盟總動員 — 採集召回組合計算器</span>
+                    <span class="mob-formula-note">任務計分：<strong>糧 ×1 ｜ 木 ×1 ｜ 石 ×5 ｜ 鐵 ×20</strong>（單礦上限 14M 基準）</span>
+                </div>
+                <button type="button" class="mob-clear-btn" onclick="clearAllMobMarches()">🧹 清空隊列數值</button>
+            </div>
+
+            <div class="mob-controls-bar">
+                <div class="mob-control-group">
+                    <span class="mob-control-label">🎯 任務目標：</span>
+                    <div class="mob-target-group">${targetBtnsHtml}</div>
+                </div>
+
+                <div class="mob-control-group">
+                    <button type="button" class="mob-pet-toggle ${mobState.hasPetSkill ? 'active' : ''}" onclick="toggleMobPetSkill()">
+                        <img class="mob-pet-icon" src="./assets/pet_skill.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                        <span class="mob-pet-fallback" style="display:none;">🐾</span>
+                        <span>寵物技（下一次秒滿 14M）：<strong>${mobState.hasPetSkill ? '✔ 可用（同時算入）' : '未啟用'}</strong></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mob-marches-grid">
+                ${marchesHtml}
+            </div>
+
+            <div id="mobResultsContainer"></div>
+        </div>
+    `;
+
+    mobState.marches.forEach((_, idx) => updateMobSingleCardInfo(idx));
+    updateMobPlansOnly();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadMobState();
+    renderMobilizationSection();
+});
