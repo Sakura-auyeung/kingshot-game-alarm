@@ -1,5 +1,5 @@
 /* ==========================================
-   TIMERS.CSS：主畫面 3 欄計時器、職位狀態卡片（圖 1 零重複佈局）、相撞提示與時間線管理頁
+   TIMERS.CSS：主畫面 3 欄計時器、職位狀態卡片（同列等高 + 鎖定禁用）、相撞提示與時間線管理頁
    ========================================== */
 .grid-view {
     display: grid;
@@ -220,7 +220,7 @@
 }
 .btn-preset:hover { background: rgba(255, 255, 255, 0.38); }
 
-/* 主畫面底部職位預約狀態區（圖 1 零重複佈局） */
+/* 主畫面底部職位預約狀態區（同列等高 + 鎖定禁用） */
 .job-section {
     background: rgba(255, 255, 255, 0.96);
     border-radius: 17px;
@@ -269,7 +269,10 @@
     padding: 7px 10px;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     gap: 6px;
+    min-height: 68px;
+    box-sizing: border-box;
 }
 
 .job-status-top-row {
@@ -277,6 +280,7 @@
     justify-content: space-between;
     align-items: center;
     gap: 8px;
+    min-height: 26px;
 }
 
 .job-status-title-line {
@@ -285,7 +289,8 @@
     color: var(--cocoa);
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    white-space: nowrap;
     gap: 2px;
     min-width: 0;
 }
@@ -295,6 +300,7 @@
     justify-content: space-between;
     align-items: center;
     gap: 8px;
+    min-height: 22px;
 }
 
 .job-status-right {
@@ -302,7 +308,8 @@
 }
 
 .job-front-select {
-    padding: 3px 9px;
+    height: 26px;
+    padding: 2px 9px;
     border-radius: 999px;
     border: 1.5px solid #DFCBB5;
     background: #FFFDF9;
@@ -312,6 +319,31 @@
     cursor: pointer;
     flex-shrink: 0;
     max-width: 155px;
+    box-sizing: border-box;
+}
+
+.job-front-select:disabled {
+    background: #F4EFE8;
+    border-color: #E3D7C8;
+    color: #9A8879;
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+.job-front-slot-placeholder {
+    height: 26px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1.5px dashed #E5CFCB;
+    background: #FDF4F3;
+    font-size: 12px;
+    font-weight: 700;
+    color: #A62626;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .job-front-hint {
@@ -320,6 +352,9 @@
     color: var(--cocoa-light);
     line-height: 1.25;
     padding-left: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .job-front-hint.conflict-warn {
@@ -563,6 +598,14 @@ select {
     color: var(--cocoa);
 }
 
+select:disabled {
+    background: #F4EFE8;
+    border-color: #E3D7C8;
+    color: #9A8879;
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
 .btn-shift {
     background: #FFA24C;
     color: white;
@@ -573,7 +616,13 @@ select {
     font-weight: 700;
     cursor: pointer;
 }
-.btn-shift:hover { background: #EB8931; }
+.btn-shift:hover:not(:disabled) { background: #EB8931; }
+.btn-shift:disabled {
+    background: #D9CFC4;
+    color: #F7F3EE;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
 
 .btn-confirm-job {
     padding: 4px 10px;
