@@ -1,5 +1,5 @@
 /* ==========================================
-   TIMERS.CSS：主畫面 3 欄計時器、職位狀態卡片、相撞提示與時間線管理頁
+   TIMERS.CSS：主畫面 3 欄計時器、職位狀態卡片（含下拉選單）、相撞提示與時間線管理頁
    ========================================== */
 .grid-view {
     display: grid;
@@ -106,7 +106,6 @@
 .z .timer-card { background: var(--card-z); }
 .p .timer-card { background: var(--card-p); }
 
-.timer-card.master-card { border-left: 6px solid #FFF3A1; }
 .timer-card.sunlight-card {
     background: linear-gradient(135deg, #FFA24C 0%, #FF6F61 100%) !important;
     border-left: 6px solid #FFF6D6;
@@ -221,7 +220,7 @@
 }
 .btn-preset:hover { background: rgba(255, 255, 255, 0.38); }
 
-/* 主畫面底部職位預約狀態區 */
+/* 主畫面底部職位預約狀態區（還原下拉選單 + 佇列提示） */
 .job-section {
     background: rgba(255, 255, 255, 0.96);
     border-radius: 17px;
@@ -267,10 +266,10 @@
     background: #FFFDF9;
     border: 1.5px solid #EFE4D4;
     border-radius: 11px;
-    padding: 6px 9px;
+    padding: 7px 9px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 6px;
 }
 
 .job-status-row-split {
@@ -297,13 +296,39 @@
     gap: 2px;
 }
 
-.job-status-sub-line {
-    font-size: 11.5px;
-    color: var(--cocoa-light);
-}
-
 .job-status-right {
     flex-shrink: 0;
+}
+
+.job-front-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.job-front-select {
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1.5px solid #DFCBB5;
+    background: #FFFDF9;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--cocoa);
+    cursor: pointer;
+    max-width: 100%;
+}
+
+.job-front-hint {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--cocoa-light);
+    line-height: 1.25;
+}
+
+.job-front-hint.conflict-warn {
+    color: #B42318;
 }
 
 .job-conflict-border {
@@ -348,11 +373,6 @@
 .status-pill.none {
     background: #F3EFEA;
     color: #8C7B6E;
-}
-
-.dist-text {
-    font-weight: 700;
-    color: #5C3D2E;
 }
 
 /* 時間線管理視圖 */
