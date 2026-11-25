@@ -1,5 +1,5 @@
 // ==========================================
-// 資源採集計算 + Tesseract.js OCR 辨識 + 聯盟總動員採集子集計算器
+// 資源採集計算 + Tesseract.js OCR 辨識 + 聯盟總動員採集子集計算器（分帳號獨立分頁儲存）
 // ==========================================
 
 const RESOURCE_DEFS = [
@@ -489,59 +489,125 @@ async function runOcrOnImageFile(file, accId) {
 }
 
 // ==========================================
-// 🏆 聯盟總動員採集任務子集組合計算器
+// 🏆 聯盟總動員採集任務子集組合計算器（每位帳號獨立儲存）
 // ==========================================
 const MOB_PANEL_VISIBLE_KEY = 'kingshot_mob_panel_visible_v1';
-const MOB_CALC_STATE_KEY = 'kingshot_mob_calc_state_v1';
+const MOB_CALC_STATE_KEY = 'kingshot_mob_calc_state_v2';
+const MOB_LEGACY_CALC_KEY = 'kingshot_mob_calc_state_v1';
 const MOB_TARGETS_M = [30, 25, 20, 15, 10];
 const MOB_MAX_SCORE_K = 14000;
 const MOB_WAIT_TOLERANCE_K = 500;
 
+function createDefaultMobAccountData() {
+    return {
+        targetM: 25,
+        hasPetSkill: false,
+        marches: [
+            { id: 'm1', resKey: 'bread', fixed: true,  rawK: '' },
+            { id: 'm2', resKey: 'wood',  fixed: true,  rawK: '' },
+            { id: 'm3', resKey: 'stone', fixed: true,  rawK: '' },
+            { id: 'm4', resKey: 'iron',  fixed: true,  rawK: '' },
+            { id: 'm5', resKey: 'bread', fixed: false, rawK: '' },
+            { id: 'm6', resKey: 'wood',  fixed: false, rawK: '' }
+        ]
+    };
+}
+
+function normalizeMobAccountData(rawObj) {
+    const base = createDefaultMobAccountData();
+    if (!rawObj || typeof rawObj !== 'object') return base;
+    if (MOB_TARGETS_M.includes(Number(rawObj.targetM))) {
+        base.targetM = Number(rawObj.targetM);
+    }
+    base.hasPetSkill = Boolean(rawObj.hasPetSkill);
+    if (Array.isArray(rawObj.marches) && rawObj.marches.length === 6) {
+        base.marches = rawObj.marches.map((m, i) => ({
+            id: m.id || `m${i + 1}`,
+            resKey: ['bread', 'wood', 'stone', 'iron'].includes(m.resKey) ? m.resKey : base.marches[i].resKey,
+            fixed: typeof m.fixed === 'boolean' ? m.fixed : (i < 4),
+            rawK: m.rawK !== undefined && m.rawK !== null ? String(m.rawK) : ''
+        }));
+    }
+    return base;
+}
+
 let mobPanelVisible = true;
 let mobDragSrcIdx = null;
-let mobState = {
-    targetM: 25,
-    hasPetSkill: false,
-    marches: [
-        { id: 'm1', resKey: 'bread', fixed: true,  rawK: '' },
-        { id: 'm2', resKey: 'wood',  fixed: true,  rawK: '' },
-        { id: 'm3', resKey: 'stone', fixed: true,  rawK: '' },
-        { id: 'm4', resKey: 'iron',  fixed: true,  rawK: '' },
-        { id: 'm5', resKey: 'bread', fixed: false, rawK: '' },
-        { id: 'm6', resKey: 'wood',  fixed: false, rawK: '' }
-    ]
+let activeMobAccId = 'z';
+let mobByAccount = {
+    h: createDefaultMobAccountData(),
+    z: createDefaultMobAccountData(),
+    p: createDefaultMobAccountData()
 };
+
+function getCurrentMobData() {
+    if (!mobByAccount[activeMobAccId]) {
+        mobByAccount[activeMobAccId] = createDefaultMobAccountData();
+    }
+    return mobByAccount[activeMobAccId];
+}
+
+function serializeMobilizationStore() {
+    return {
+        activeAccId: activeMobAccId,
+        accounts: {
+            h: normalizeMobAccountData(mobByAccount.h),
+            z: normalizeMobAccountData(mobByAccount.z),
+            p: normalizeMobAccountData(mobByAccount.p)
+        }
+    };
+}
+
+function applyMobilizationSerialized(mobPayload) {
+    if (!mobPayload || typeof mobPayload !== 'object') return;
+    if (mobPayload.activeAccId && ['h', 'z', 'p'].includes(mobPayload.activeAccId)) {
+        activeMobAccId = mobPayload.activeAccId;
+    }
+    if (mobPayload.accounts && typeof mobPayload.accounts === 'object') {
+        ['h', 'z', 'p'].forEach(accId => {
+            if (mobPayload.accounts[accId]) {
+                mobByAccount[accId] = normalizeMobAccountData(mobPayload.accounts[accId]);
+            }
+        });
+    } else if (Array.isArray(mobPayload.marches) || mobPayload.targetM !== undefined) {
+        // 相容舊版單一總動員結構
+        const legacy = normalizeMobAccountData(mobPayload);
+        mobByAccount[activeMobAccId] = legacy;
+    }
+}
 
 function loadMobState() {
     try {
         const vis = localStorage.getItem(MOB_PANEL_VISIBLE_KEY);
         if (vis !== null) mobPanelVisible = (vis === '1');
-        const raw = localStorage.getItem(MOB_CALC_STATE_KEY);
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === 'object') {
-                if (MOB_TARGETS_M.includes(Number(parsed.targetM))) {
-                    mobState.targetM = Number(parsed.targetM);
-                }
-                mobState.hasPetSkill = Boolean(parsed.hasPetSkill);
-                if (Array.isArray(parsed.marches) && parsed.marches.length === 6) {
-                    mobState.marches = parsed.marches.map((m, i) => ({
-                        id: m.id || `m${i + 1}`,
-                        resKey: ['bread', 'wood', 'stone', 'iron'].includes(m.resKey) ? m.resKey : 'bread',
-                        fixed: typeof m.fixed === 'boolean' ? m.fixed : (i < 4),
-                        rawK: m.rawK !== undefined && m.rawK !== null ? String(m.rawK) : ''
-                    }));
-                }
-            }
+
+        const rawV2 = localStorage.getItem(MOB_CALC_STATE_KEY);
+        if (rawV2) {
+            applyMobilizationSerialized(JSON.parse(rawV2));
+            return;
+        }
+
+        const rawV1 = localStorage.getItem(MOB_LEGACY_CALC_KEY);
+        if (rawV1) {
+            applyMobilizationSerialized(JSON.parse(rawV1));
         }
     } catch (e) {}
 }
 
 function saveMobState() {
+    const payload = serializeMobilizationStore();
     try {
         localStorage.setItem(MOB_PANEL_VISIBLE_KEY, mobPanelVisible ? '1' : '0');
-        localStorage.setItem(MOB_CALC_STATE_KEY, JSON.stringify(mobState));
+        localStorage.setItem(MOB_CALC_STATE_KEY, JSON.stringify(payload));
     } catch (e) {}
+    scheduleResourceSave();
+}
+
+function setMobAccountTab(accId) {
+    if (!['h', 'z', 'p'].includes(accId)) return;
+    activeMobAccId = accId;
+    saveMobState();
+    renderMobilizationSection();
 }
 
 function updateMobilizationToggleBtn() {
@@ -564,39 +630,44 @@ function toggleMobilizationPanel() {
 }
 
 function setMobTargetM(valM) {
-    mobState.targetM = Number(valM);
+    const cur = getCurrentMobData();
+    cur.targetM = Number(valM);
     saveMobState();
     renderMobilizationSection();
 }
 
 function toggleMobPetSkill() {
-    mobState.hasPetSkill = !mobState.hasPetSkill;
+    const cur = getCurrentMobData();
+    cur.hasPetSkill = !cur.hasPetSkill;
     saveMobState();
     renderMobilizationSection();
 }
 
 function updateMobMarchRes(slotIdx, resKey) {
-    if (!mobState.marches[slotIdx]) return;
-    mobState.marches[slotIdx].resKey = resKey;
+    const cur = getCurrentMobData();
+    if (!cur.marches[slotIdx]) return;
+    cur.marches[slotIdx].resKey = resKey;
     saveMobState();
     renderMobilizationSection();
 }
 
 function onMobMarchInput(slotIdx, inputEl) {
+    const cur = getCurrentMobData();
     let cleaned = String(inputEl.value || '').replace(/[^\d.]/g, '');
     const dotIdx = cleaned.indexOf('.');
     if (dotIdx !== -1) {
         cleaned = cleaned.slice(0, dotIdx) + '.' + cleaned.slice(dotIdx + 1).replace(/\./g, '').slice(0, 1);
     }
     if (inputEl.value !== cleaned) inputEl.value = cleaned;
-    if (!mobState.marches[slotIdx]) return;
-    mobState.marches[slotIdx].rawK = cleaned;
+    if (!cur.marches[slotIdx]) return;
+    cur.marches[slotIdx].rawK = cleaned;
     saveMobState();
     updateMobPlansOnly();
 }
 
 function clearAllMobMarches() {
-    mobState.marches.forEach(m => { m.rawK = ''; });
+    const cur = getCurrentMobData();
+    cur.marches.forEach(m => { m.rawK = ''; });
     saveMobState();
     renderMobilizationSection();
 }
@@ -634,8 +705,9 @@ function onMobDrop(event, targetIdx) {
     if (row) row.classList.remove('drag-over');
     if (mobDragSrcIdx === null || mobDragSrcIdx === targetIdx) return;
 
-    const moved = mobState.marches.splice(mobDragSrcIdx, 1)[0];
-    mobState.marches.splice(targetIdx, 0, moved);
+    const cur = getCurrentMobData();
+    const moved = cur.marches.splice(mobDragSrcIdx, 1)[0];
+    cur.marches.splice(targetIdx, 0, moved);
     mobDragSrcIdx = null;
     saveMobState();
     renderMobilizationSection();
@@ -701,10 +773,11 @@ function computeTargetRawKForWaitSubset(subset, lackK) {
 }
 
 function computeMobPlans(usePetSkill) {
-    const targetK = mobState.targetM * 1000;
+    const cur = getCurrentMobData();
+    const targetK = cur.targetM * 1000;
     const activeItems = [];
 
-    mobState.marches.forEach((m, idx) => {
+    cur.marches.forEach((m, idx) => {
         const valK = parseFloat(m.rawK);
         if (!isNaN(valK) && valK > 0) {
             const def = getResDef(m.resKey);
@@ -798,6 +871,7 @@ function formatKAndM(valK) {
 }
 
 function renderPlanCardsHtml(plans, mode) {
+    const cur = getCurrentMobData();
     if (!plans || plans.length === 0) {
         return `<div class="mob-plan-empty">無符合此條件的組合</div>`;
     }
@@ -845,7 +919,7 @@ function renderPlanCardsHtml(plans, mode) {
                 </div>
                 <div class="mob-plan-chips-grid">${chipsHtml}</div>
                 <div class="mob-plan-foot">
-                    總分：<strong>${formatKAndM(p.curK)}</strong> ／ 目標 ${mobState.targetM}M
+                    總分：<strong>${formatKAndM(p.curK)}</strong> ／ 目標 ${cur.targetM}M
                 </div>
             </div>
         `;
@@ -856,11 +930,12 @@ function updateMobPlansOnly() {
     const resContainer = document.getElementById('mobResultsContainer');
     if (!resContainer) return;
 
+    const cur = getCurrentMobData();
     const noPetRes = computeMobPlans(false);
-    const withPetRes = mobState.hasPetSkill ? computeMobPlans(true) : null;
+    const withPetRes = cur.hasPetSkill ? computeMobPlans(true) : null;
 
     resContainer.innerHTML = `
-        <div class="mob-results-inner ${mobState.hasPetSkill ? 'two-cols' : 'one-col'}">
+        <div class="mob-results-inner ${cur.hasPetSkill ? 'two-cols' : 'one-col'}">
             <div class="mob-result-col">
                 <div class="mob-col-header">🚶 不用寵物技 — 推薦召回組合</div>
                 <div class="mob-scroll-body">
@@ -871,7 +946,7 @@ function updateMobPlansOnly() {
                 </div>
             </div>
 
-            ${mobState.hasPetSkill ? `
+            ${cur.hasPetSkill ? `
                 <div class="mob-result-col pet-col">
                     <div class="mob-col-header">🐾 使用寵物技 — 推薦組合</div>
                     <div class="mob-scroll-body">
@@ -886,19 +961,41 @@ function updateMobPlansOnly() {
     `;
 }
 
+function renderMobAccountTabsHtml() {
+    return `
+        <div class="mob-chrome-tabs" role="tablist" aria-label="帳號總動員分頁">
+            ${accounts.map(acc => {
+                const isActive = (activeMobAccId === acc.id);
+                const faceSrc = getBearFaceFile(acc.id);
+                return `
+                    <button type="button"
+                        role="tab"
+                        aria-selected="${isActive ? 'true' : 'false'}"
+                        class="mob-chrome-tab tab-${acc.id} ${isActive ? 'is-active' : ''}"
+                        onclick="setMobAccountTab('${acc.id}')">
+                        <img class="mob-tab-bear-face" src="${faceSrc}" alt="">
+                    </button>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
 function renderMobilizationSection() {
     const sec = document.getElementById('guildMobilizationSection');
     if (!sec) return;
     updateMobilizationToggleBtn();
     if (!mobPanelVisible) return;
 
+    const cur = getCurrentMobData();
+
     const targetBtnsHtml = MOB_TARGETS_M.map(t => `
-        <button type="button" class="mob-target-pill ${mobState.targetM === t ? 'active' : ''}" onclick="setMobTargetM(${t})">
+        <button type="button" class="mob-target-pill ${cur.targetM === t ? 'active' : ''}" onclick="setMobTargetM(${t})">
             ${t}M
         </button>
     `).join('');
 
-    const compactRowsHtml = mobState.marches.map((m, idx) => {
+    const compactRowsHtml = cur.marches.map((m, idx) => {
         const def = getResDef(m.resKey);
 
         const leftVisualHtml = m.fixed
@@ -927,7 +1024,7 @@ function renderMobilizationSection() {
                 </span>
                 ${leftVisualHtml}
                 <input type="text" inputmode="decimal" class="mob-march-input"
-                    id="mob_in_${idx}"
+                    id="mob_in_${activeMobAccId}_${idx}"
                     value="${m.rawK}"
                     placeholder="輸入 K"
                     onfocus="this.select()"
@@ -938,15 +1035,15 @@ function renderMobilizationSection() {
     }).join('');
 
     sec.innerHTML = `
-        <div class="mob-panel-card">
+        <div class="mob-panel-card mob-theme-${activeMobAccId}">
             <div class="mob-panel-header">
                 <div class="mob-title-box">
                     <span class="mob-main-title">🏆 聯盟總動員採集計算器</span>
-                    <span class="mob-formula-note">糧 ×1 ｜ 木 ×1 ｜ 石 ×5 ｜ 鐵 ×20（上限 14M）</span>
+                    ${renderMobAccountTabsHtml()}
                 </div>
                 <div class="mob-header-actions">
                     <div class="mob-target-group">${targetBtnsHtml}</div>
-                    <button type="button" class="mob-pet-btn ${mobState.hasPetSkill ? 'active' : ''}" onclick="toggleMobPetSkill()">
+                    <button type="button" class="mob-pet-btn ${cur.hasPetSkill ? 'active' : ''}" onclick="toggleMobPetSkill()">
                         <img class="mob-pet-icon" src="./assets/pet_skill.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
                         <span class="mob-pet-fallback" style="display:none;">🐾</span>
                         <span>寵物技</span>
@@ -955,7 +1052,7 @@ function renderMobilizationSection() {
                 </div>
             </div>
 
-            <div class="mob-three-col-layout ${mobState.hasPetSkill ? 'has-pet' : 'no-pet'}">
+            <div class="mob-three-col-layout ${cur.hasPetSkill ? 'has-pet' : 'no-pet'}">
                 <div class="mob-left-inputs-col">
                     <div class="mob-left-hint">🌼 按住花花可上下拖拉對齊遊戲順序</div>
                     ${compactRowsHtml}
