@@ -1,5 +1,5 @@
 // ==========================================
-// JOBS.JS：全帳號職位自動排程、過期解鎖、兩層撞期防呆與狀態卡片渲染（含佇列標記下拉選單）
+// JOBS.JS：全帳號職位自動排程、過期解鎖、兩層撞期防呆與狀態卡片渲染（含佇列標記與鎖定防護）
 // ==========================================
 
 function getActiveJobQueueHints(accId, type) {
@@ -265,6 +265,13 @@ function setJobTime(accId, type, timeStr, confirmed = false) {
     const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
     const manualKey = type === 'soldier' ? 'soldierJobManual' : 'techJobManual';
 
+    // 已確認鎖定狀態下，必須先解除鎖定才能修改時段（除非來自待辦直接確認）
+    if (store[accId] && store[accId][confKey] && !confirmed) {
+        if (typeof renderGrid === 'function') renderGrid();
+        if (typeof updateTimeline === 'function') updateTimeline(true);
+        return;
+    }
+
     if (!timeStr) {
         store[accId][timeKey] = '';
         store[accId][dateKey] = null;
@@ -283,7 +290,7 @@ function setJobTime(accId, type, timeStr, confirmed = false) {
         d.setDate(d.getDate() + 1);
     }
 
-    // 手動改時間先解除鎖定，並檢查是否與他號同職位撞期（第一層防呆）
+    // 檢查是否與他號同職位撞期（第一層防呆）
     const conflicts = findSameJobCrossAccountConflicts(accId, type, d);
     if (conflicts.length > 0) {
         openJobConflictModal({
@@ -301,6 +308,12 @@ function setJobTime(accId, type, timeStr, confirmed = false) {
 
 function shiftJobTime(accId, type, deltaMinutes) {
     const dateKey = type === 'soldier' ? 'soldierJobDate' : 'techJobDate';
+    const confKey = type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed';
+
+    // 已確認鎖定狀態下，必須先解除鎖定才能微調時段
+    if (store[accId] && store[accId][confKey]) {
+        return;
+    }
 
     let base = store[accId][dateKey];
     if (!base || isNaN(base.getTime())) {
@@ -500,7 +513,7 @@ function formatMonthDayOnly(dateObj) {
     return `${formatPad(dateObj.getMonth() + 1)}/${formatPad(dateObj.getDate())}`;
 }
 
-// 主畫面 3 欄底部的職位預約狀態卡片（圖 1 精簡零重複佈局）
+// 主畫面 3 欄底部的職位預約狀態卡片（等高對齊 + 已確認鎖定禁止下拉）
 function renderJobSummaryBox(accId) {
     const s = store[accId];
     const now = getAccurateNow();
@@ -510,6 +523,7 @@ function renderJobSummaryBox(accId) {
         const jDate = type === 'soldier' ? s.soldierJobDate : s.techJobDate;
         const jConf = type === 'soldier' ? s.soldierJobConfirmed : s.techJobConfirmed;
         const inCooldown = isJobInCooldown(accId, type, now);
+        const isLocked = !!jConf && !inCooldown;
         const conflicts = jDate ? findSameJobCrossAccountConflicts(accId, type, jDate) : [];
         const hasConflict = conflicts.length > 0;
 
@@ -536,17 +550,19 @@ function renderJobSummaryBox(accId) {
                     hintConflictClass = 'conflict-warn';
                 } else {
                     pillHtml = jConf
-                        ? `<button type="button" class="status-pill confirmed clickable" title="點擊解除鎖定並對齊倒數" onclick="toggleJobConfirm('${accId}','${type}')">✔ 已確認</button>`
-                        : `<button type="button" class="status-pill pending clickable" title="點擊直接確認預約" onclick="toggleJobConfirm('${accId}','${type}')">⏳ 待確認</button>`;
+                        ? `<button type="button" class="status-pill confirmed clickable" title="點擊解除鎖定後才能修改時間" onclick="toggleJobConfirm('${accId}','${type}')">✔ 已確認</button>`
+                        : `<button type="button" class="status-pill pending clickable" title="點擊直接確認並鎖定預約" onclick="toggleJobConfirm('${accId}','${type}')">⏳ 待確認</button>`;
                 }
             } else {
                 pillHtml = `<span class="status-pill none">已解鎖</span>`;
             }
         }
 
-        const selectHtml = inCooldown
-            ? ''
+        // 冷卻中顯示等高時段佔位膠囊，保持三欄卡片上下完全同高；已確認則禁用下拉選單
+        const rightSlotHtml = inCooldown
+            ? `<span class="job-front-slot-placeholder">🔒 ${jTime || '--:--'}</span>`
             : `<select class="job-front-select"
+                    ${isLocked ? 'disabled title="已確認鎖定中，請先點擊下方「✔ 已確認」解除鎖定後再修改"' : ''}
                     onfocus="isJobSelectActive=true"
                     onmousedown="isJobSelectActive=true"
                     onblur="isJobSelectActive=false"
@@ -558,7 +574,7 @@ function renderJobSummaryBox(accId) {
             <div class="job-status-card ${dueBorderClass} ${hasConflict ? 'job-conflict-border' : ''}">
                 <div class="job-status-top-row">
                     <div class="job-status-title-line">${label}：${dateBadgeText}</div>
-                    ${selectHtml}
+                    ${rightSlotHtml}
                 </div>
                 <div class="job-status-bottom-row">
                     <span class="job-front-hint ${hintConflictClass}">${hintText}</span>
