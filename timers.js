@@ -469,6 +469,7 @@ function updateTimeline(force = false) {
             const jConf = !!s[confKey];
             const accName = getDisplayAccountName(acc.id);
             const inCooldown = isJobInCooldown(acc.id, type, now);
+            const isLocked = !!jConf || inCooldown;
             const conflicts = jDate ? findSameJobCrossAccountConflicts(acc.id, type, jDate) : [];
             const hasConflict = conflicts.length > 0;
             const dueBorderClass = jDate ? getDueBorderClass(jDate) : '';
@@ -489,6 +490,8 @@ function updateTimeline(force = false) {
                 warningHtml = `<div class="job-warning-box">⚠️ 與 ${whoText} 同時段相撞</div>`;
             }
 
+            const lockTip = isLocked ? '已確認鎖定中，請先點擊上方「✔ 已確認預約」解除鎖定後再修改' : '';
+
             return `
                 <div class="job-manage-card ${acc.id} ${dueBorderClass} ${hasConflict ? 'job-conflict-border' : ''}">
                     <img class="job-bear-sticker" src="${getBearFaceFile(acc.id)}" alt="">
@@ -500,14 +503,15 @@ function updateTimeline(force = false) {
                     </div>
                     <div class="job-manage-controls">
                         <select class="job-time-select"
+                            ${isLocked ? `disabled title="${lockTip}"` : ''}
                             onfocus="isJobSelectActive=true"
                             onmousedown="isJobSelectActive=true"
                             onblur="isJobSelectActive=false"
                             onchange="setJobTime('${acc.id}','${type}',this.value,false)">
                             ${generateJobOptions(jTime, '無預約', acc.id, type)}
                         </select>
-                        <button class="btn-shift" onclick="shiftJobTime('${acc.id}','${type}',-30)">-30分</button>
-                        <button class="btn-shift" onclick="shiftJobTime('${acc.id}','${type}',30)">+30分</button>
+                        <button class="btn-shift" ${isLocked ? `disabled title="${lockTip}"` : ''} onclick="shiftJobTime('${acc.id}','${type}',-30)">-30分</button>
+                        <button class="btn-shift" ${isLocked ? `disabled title="${lockTip}"` : ''} onclick="shiftJobTime('${acc.id}','${type}',30)">+30分</button>
                     </div>
                     <div class="job-manage-meta">
                         <span id="tl_job_meta_${acc.id}_${type}">${metaText}</span>
