@@ -1,5 +1,5 @@
 /* ==========================================
-   RESOURCES.CSS：資源採集分頁（含聯盟總動員採集計算器）
+   RESOURCES.CSS：資源採集分頁（含 Chrome 分頁風格聯盟總動員採集計算器）
    ========================================== */
 
 .resources-view {
@@ -375,41 +375,57 @@
 }
 
 /* ==========================================
-   🏆 聯盟總動員採集組合計算器（對齊職位預約風格 + bg_epi_num.svg + 貓啃什錦黑 + 兩欄整齊晶片）
+   🏆 聯盟總動員採集組合計算器（Chrome 分頁造型 + 三色主題 + 兩欄整齊晶片）
    ========================================== */
 .mob-calc-section {
     margin-top: 16px;
     padding-bottom: 24px;
 }
 
-/* 對齊 timers.css .job-section 風格 */
+/* 對齊 timers.css .job-section 風格，並隨目前分頁切換三色底色 */
 .mob-panel-card {
     background: rgba(255, 255, 255, 0.96);
     border: 2px solid rgba(92, 61, 46, 0.08);
     border-radius: 17px;
     padding: 13px 16px 15px 16px;
     box-shadow: 0 2px 6px rgba(92, 61, 46, 0.04);
+    transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.mob-panel-card.mob-theme-h {
+    background-color: var(--bg-h);
+    border-color: rgba(235, 90, 135, 0.22);
+}
+
+.mob-panel-card.mob-theme-z {
+    background-color: var(--bg-z);
+    border-color: rgba(230, 154, 21, 0.26);
+}
+
+.mob-panel-card.mob-theme-p {
+    background-color: var(--bg-p);
+    border-color: rgba(56, 168, 102, 0.24);
 }
 
 .mob-panel-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-end;
     flex-wrap: wrap;
     gap: 10px;
-    padding-bottom: 8px;
+    padding-bottom: 0;
     border-bottom: 1.5px dashed #E6D7C3;
     margin-bottom: 12px;
 }
 
 .mob-title-box {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     flex-wrap: wrap;
-    gap: 9px;
+    gap: 12px;
 }
 
-/* 貓啃什錦黑標題（對齊 .job-section-title） */
+/* 貓啃什錦黑標題 */
 .mob-main-title {
     font-family: var(--font-title);
     font-weight: normal;
@@ -417,16 +433,89 @@
     letter-spacing: 0.6px;
     color: var(--cocoa);
     line-height: 1.15;
+    padding-bottom: 9px;
 }
 
-.mob-formula-note {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--cocoa-light);
-    background: #FAF3E8;
-    border: 1px solid #DFCBB5;
-    padding: 2px 10px;
-    border-radius: 999px;
+/* Chrome 瀏覽器造型分頁列（無名字、僅熊仔頭像 + 三色底色） */
+.mob-chrome-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    position: relative;
+    top: 1.5px;
+}
+
+.mob-chrome-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 34px;
+    padding: 0;
+    border: 1.5px solid #DFCBB5;
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    cursor: pointer;
+    outline: none;
+    opacity: 0.72;
+    transform: translateY(2px);
+    transition: transform 0.14s ease, opacity 0.14s ease, height 0.14s ease, box-shadow 0.14s ease;
+    box-shadow: inset 0 -2px 4px rgba(92, 61, 46, 0.06);
+}
+
+.mob-chrome-tab.tab-h {
+    background-color: var(--bg-h);
+}
+
+.mob-chrome-tab.tab-z {
+    background-color: var(--bg-z);
+}
+
+.mob-chrome-tab.tab-p {
+    background-color: var(--bg-p);
+}
+
+.mob-chrome-tab:hover:not(.is-active) {
+    opacity: 0.94;
+    transform: translateY(0px);
+}
+
+/* 選中分頁：Chrome 風格向下延伸融入下方區塊 */
+.mob-chrome-tab.is-active {
+    height: 39px;
+    opacity: 1;
+    transform: translateY(0);
+    z-index: 3;
+    box-shadow: 0 -2px 6px rgba(92, 61, 46, 0.08);
+}
+
+.mob-chrome-tab.tab-h.is-active {
+    border-color: rgba(235, 90, 135, 0.35);
+    box-shadow: 0 1.5px 0 var(--bg-h), 0 -2px 6px rgba(92, 61, 46, 0.08);
+}
+
+.mob-chrome-tab.tab-z.is-active {
+    border-color: rgba(230, 154, 21, 0.42);
+    box-shadow: 0 1.5px 0 var(--bg-z), 0 -2px 6px rgba(92, 61, 46, 0.08);
+}
+
+.mob-chrome-tab.tab-p.is-active {
+    border-color: rgba(56, 168, 102, 0.38);
+    box-shadow: 0 1.5px 0 var(--bg-p), 0 -2px 6px rgba(92, 61, 46, 0.08);
+}
+
+.mob-tab-bear-face {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 1.5px rgba(92, 61, 46, 0.22));
+    transition: transform 0.14s ease;
+}
+
+.mob-chrome-tab.is-active .mob-tab-bear-face {
+    transform: scale(1.1);
 }
 
 .mob-header-actions {
@@ -434,6 +523,7 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 7px;
+    padding-bottom: 8px;
 }
 
 .mob-target-group {
@@ -540,7 +630,7 @@
     font-size: 10.5px;
 }
 
-/* 左中右三欄並排主結構（列高加高至 460px，善用上方空位） */
+/* 左中右三欄並排主結構 */
 .mob-three-col-layout {
     display: grid;
     grid-template-columns: 310px minmax(0, 1fr);
@@ -548,7 +638,7 @@
     align-items: stretch;
 }
 
-/* 左欄容器（對齊職位預約區塊的暖棕柔邊底） */
+/* 左欄容器 */
 .mob-left-inputs-col {
     display: flex;
     flex-direction: column;
@@ -572,7 +662,7 @@
     border-bottom: 1.5px dashed #E6D7C3;
 }
 
-/* 每隊獨立奶油白圓角外框（對齊 timers.css .job-status-card） */
+/* 每隊獨立奶油白圓角外框 */
 .mob-compact-row {
     display: flex;
     align-items: center;
@@ -693,7 +783,7 @@
     flex-shrink: 0;
 }
 
-/* 中欄與右欄：同步加高至 460px，對齊職位預約區風格 */
+/* 中欄與右欄 */
 .mob-results-inner {
     display: grid;
     gap: 14px;
@@ -768,7 +858,7 @@
     border-radius: 11px;
 }
 
-/* 方案卡片對齊職位預約小卡片（#FFFDF9 + 1.5px solid #EFE4D4） */
+/* 方案卡片 */
 .mob-plan-card {
     background: #FFFDF9;
     border-radius: 11px;
@@ -819,7 +909,7 @@
     border-radius: 999px;
 }
 
-/* 圖 3 方案晶片改為 2 欄等寬網格，所有花花、圖示與數字垂直對齊成直線 */
+/* 方案晶片 2 欄等寬網格 */
 .mob-plan-chips-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
