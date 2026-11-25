@@ -1,13 +1,52 @@
 // ==========================================
-// JOBS.JS：全帳號職位自動排程、過期解鎖、兩層撞期防呆與狀態卡片渲染
+// JOBS.JS：全帳號職位自動排程、過期解鎖、兩層撞期防呆與狀態卡片渲染（含佇列標記下拉選單）
 // ==========================================
 
-function generateJobOptions(selectedVal = '', emptyLabel = '無預約') {
+function getActiveJobQueueHints(accId, type) {
+    const nowMs = getAccurateNow().getTime();
+    const cat = type === 'soldier' ? 'soldiers' : 'tech';
+    const prefix = type === 'soldier' ? '士兵' : '科技';
+    const list = (store[accId] && Array.isArray(store[accId][cat])) ? store[accId][cat] : [];
+    const hints = [];
+
+    list.forEach((it, idx) => {
+        if (it.endTime && !isNaN(it.endTime.getTime()) && it.endTime.getTime() > nowMs) {
+            const slotDate = getRecommendedJobSlotFromDate(it.endTime);
+            if (slotDate) {
+                hints.push({
+                    queueNum: idx + 1,
+                    tagLabel: `${prefix}#${idx + 1}`,
+                    endTime: it.endTime,
+                    endHM: formatTimeHM(it.endTime),
+                    slotDate,
+                    slotHM: formatTimeHM(slotDate)
+                });
+            }
+        }
+    });
+
+    return hints;
+}
+
+function generateJobOptions(selectedVal = '', emptyLabel = '無預約', accId = null, type = null) {
+    const slotTagsMap = {};
+    if (accId && type) {
+        const hints = getActiveJobQueueHints(accId, type);
+        hints.forEach(h => {
+            if (!slotTagsMap[h.slotHM]) slotTagsMap[h.slotHM] = [];
+            slotTagsMap[h.slotHM].push(h.tagLabel);
+        });
+    }
+
     let html = `<option value="" ${!selectedVal ? 'selected' : ''}>${emptyLabel}</option>`;
     for (let h = 0; h < 24; h++) {
         for (let m = 0; m < 60; m += 30) {
             const val = `${formatPad(h)}:${formatPad(m)}`;
-            html += `<option value="${val}" ${selectedVal === val ? 'selected' : ''}>${val}</option>`;
+            const tags = slotTagsMap[val];
+            const displayText = tags && tags.length > 0
+                ? `${val} [${tags.join('、')}]`
+                : val;
+            html += `<option value="${val}" ${selectedVal === val ? 'selected' : ''}>${displayText}</option>`;
         }
     }
     return html;
@@ -49,6 +88,28 @@ function isJobInCooldown(accId, type, now = getAccurateNow()) {
     if (!jobDate || !isConf) return false;
     const diffMs = now.getTime() - jobDate.getTime();
     return diffMs >= 0 && diffMs < 10 * 60 * 1000;
+}
+
+// 當職位手動預約或確認後，自動把待辦清單中對應的冷卻提醒標記為已完成
+function autoResolveJobCooldownTodos(accId, type) {
+    if (typeof notifHistory === 'undefined' || !Array.isArray(notifHistory)) return;
+    const targetCat = type === 'soldier' ? 'cooldown_soldier' : 'cooldown_tech';
+    let changed = false;
+
+    notifHistory.forEach(n => {
+        if (n && n.unread && n.accId === accId && n.category === targetCat) {
+            n.unread = false;
+            changed = true;
+        }
+    });
+
+    if (changed) {
+        if (typeof saveNotifHistory === 'function') saveNotifHistory(false);
+        if (typeof renderBellUI === 'function') renderBellUI();
+        if (typeof stopRinging === 'function' && notifHistory.filter(n => n.unread).length === 0) {
+            stopRinging();
+        }
+    }
 }
 
 // 檢查跨帳號同職位撞期（20 分鐘內視為同時段相撞）
@@ -167,7 +228,9 @@ function autoSyncJobFromTimer(accId, type, endDate, forceSync = false) {
         return;
     }
 
-    const slot = getRecommendedJobSlotFromDate(endDate);
+    const cat = type === 'soldier' ? 'soldiers' : 'tech';
+    const latestEnd = getLatestActiveCategoryEndDate(accId, cat) || endDate;
+    const slot = getRecommendedJobSlotFromDate(latestEnd);
     if (!slot) return;
 
     store[accId][dateKey] = slot;
@@ -185,6 +248,10 @@ function applyJobTimeDirect(accId, type, targetDate, confirmed) {
     store[accId][dateKey] = targetDate;
     store[accId][confKey] = !!confirmed;
     store[accId][manualKey] = true;
+
+    if (confirmed) {
+        autoResolveJobCooldownTodos(accId, type);
+    }
 
     if (typeof renderGrid === 'function') renderGrid();
     if (typeof updateTimeline === 'function') updateTimeline(true);
@@ -297,6 +364,7 @@ function toggleJobConfirm(accId, type) {
             conflicts,
             onProceed: () => {
                 store[accId][confKey] = true;
+                autoResolveJobCooldownTodos(accId, type);
                 if (typeof renderGrid === 'function') renderGrid();
                 if (typeof updateTimeline === 'function') updateTimeline(true);
                 saveState();
@@ -306,6 +374,7 @@ function toggleJobConfirm(accId, type) {
     }
 
     store[accId][confKey] = true;
+    autoResolveJobCooldownTodos(accId, type);
     if (typeof renderGrid === 'function') renderGrid();
     if (typeof updateTimeline === 'function') updateTimeline(true);
     saveState();
@@ -329,6 +398,7 @@ function handleConflictPillClick(accId, type) {
         conflicts,
         onProceed: () => {
             store[accId][type === 'soldier' ? 'soldierJobConfirmed' : 'techJobConfirmed'] = true;
+            autoResolveJobCooldownTodos(accId, type);
             if (typeof renderGrid === 'function') renderGrid();
             if (typeof updateTimeline === 'function') updateTimeline(true);
             saveState();
@@ -416,14 +486,44 @@ function normalizeAllJobsConsistency() {
     unlockExpiredJobsIfNeeded(getAccurateNow());
 }
 
-// 主畫面 3 欄底部的職位預約狀態卡片（第二層防呆：⚠️ 相撞了）
+function buildFrontQueueHintText(accId, type, jTime, jManual) {
+    const hints = getActiveJobQueueHints(accId, type);
+    if (hints.length === 0) {
+        return jTime ? (jManual ? '手動自訂時段' : '已排程時段') : '請選擇預約時段';
+    }
+
+    const matched = hints.find(h => h.slotHM === jTime);
+    const latestHint = hints[hints.length - 1];
+
+    if (hints.length === 1) {
+        const h1 = hints[0];
+        if (!jTime || matched) {
+            return `依 ${h1.queueNum}號(${h1.endHM}完)`;
+        }
+        return `手動自訂（${h1.queueNum}號 ${h1.endHM}完）`;
+    }
+
+    if (matched) {
+        if (!jManual && matched.queueNum === latestHint.queueNum) {
+            const firstHint = hints[0];
+            return `依 ${latestHint.queueNum}號(${latestHint.endHM}完) ｜ ${firstHint.queueNum}號可選 ${firstHint.slotHM}`;
+        }
+        return `已選 ${matched.queueNum}號時段(${matched.endHM}完)`;
+    }
+
+    return `手動自訂時段`;
+}
+
+// 主畫面 3 欄底部的職位預約狀態卡片（還原時間下拉選單 + 佇列標記 + 第二層撞期防呆）
 function renderJobSummaryBox(accId) {
     const s = store[accId];
     const now = getAccurateNow();
 
     const buildCard = (label, type) => {
+        const jTime = (type === 'soldier' ? s.soldierJobTime : s.techJobTime) || '';
         const jDate = type === 'soldier' ? s.soldierJobDate : s.techJobDate;
         const jConf = type === 'soldier' ? s.soldierJobConfirmed : s.techJobConfirmed;
+        const jManual = type === 'soldier' ? s.soldierJobManual : s.techJobManual;
         const inCooldown = isJobInCooldown(accId, type, now);
         const conflicts = jDate ? findSameJobCrossAccountConflicts(accId, type, jDate) : [];
         const hasConflict = conflicts.length > 0;
@@ -431,7 +531,8 @@ function renderJobSummaryBox(accId) {
         let dueBorderClass = '';
         let pillHtml = `<span class="status-pill none">未預約</span>`;
         let timeText = '尚未設定時段';
-        let remainText = '';
+        let hintText = buildFrontQueueHintText(accId, type, jTime, jManual);
+        let hintConflictClass = '';
 
         if (jDate && !isNaN(jDate.getTime())) {
             dueBorderClass = getDueBorderClass(jDate);
@@ -441,33 +542,46 @@ function renderJobSummaryBox(accId) {
             if (inCooldown) {
                 const cdRemainMin = Math.max(1, Math.ceil((10 * 60 * 1000 - (now.getTime() - jDate.getTime())) / 60000));
                 pillHtml = `<span class="status-pill cooldown">⏳ 冷卻剩 ${cdRemainMin} 分</span>`;
-                remainText = `同職位冷卻中（不可重申）`;
+                hintText = `同職位冷卻中（不可重申）`;
             } else if (diffMs > 0) {
                 if (hasConflict && !jConf) {
                     const whoText = formatConflictNamesChinese(conflicts);
                     pillHtml = `<button type="button" class="status-pill conflict clickable" title="點擊處理相撞時段" onclick="handleConflictPillClick('${accId}','${type}')">⚠️ 相撞了</button>`;
-                    remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span> · 與 ${whoText} 相撞`;
+                    hintText = `⚠️ 與 ${whoText} 相撞`;
+                    hintConflictClass = 'conflict-warn';
                 } else {
                     pillHtml = jConf
                         ? `<button type="button" class="status-pill confirmed clickable" title="點擊解除鎖定並對齊倒數" onclick="toggleJobConfirm('${accId}','${type}')">✔ 已確認</button>`
                         : `<button type="button" class="status-pill pending clickable" title="點擊直接確認預約" onclick="toggleJobConfirm('${accId}','${type}')">⏳ 待確認</button>`;
-                    remainText = `還有 <span class="dist-text">${formatCountdown(diffMs)}</span>`;
                 }
             } else {
                 pillHtml = `<span class="status-pill none">已解鎖</span>`;
             }
         }
 
+        const selectHtml = inCooldown
+            ? ''
+            : `<select class="job-front-select"
+                    onfocus="isJobSelectActive=true"
+                    onmousedown="isJobSelectActive=true"
+                    onblur="isJobSelectActive=false"
+                    onchange="setJobTime('${accId}','${type}',this.value,false)">
+                    ${generateJobOptions(jTime, '無預約', accId, type)}
+               </select>`;
+
         return `
             <div class="job-status-card ${dueBorderClass} ${hasConflict ? 'job-conflict-border' : ''}">
                 <div class="job-status-row-split">
                     <div class="job-status-left">
                         <div class="job-status-title-line">${label}：${timeText}</div>
-                        <div class="job-status-sub-line">${remainText || '&nbsp;'}</div>
                     </div>
                     <div class="job-status-right">
                         ${pillHtml}
                     </div>
+                </div>
+                <div class="job-front-controls-row">
+                    ${selectHtml}
+                    <span class="job-front-hint ${hintConflictClass}">${hintText}</span>
                 </div>
             </div>
         `;
