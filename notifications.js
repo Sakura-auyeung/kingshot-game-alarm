@@ -1,6 +1,7 @@
 // ==========================================
-// NOTIFICATIONS.JS：鈴聲提示、靜音桌面通知與鈴鐺待辦清單
+// NOTIFICATIONS.JS：鈴聲提示、靜音桌面通知與鈴鐺待辦清單（支援 Firebase 跨電腦雲端同步）
 // ==========================================
+let lastNotifCloudJson = '';
 
 async function ensureAudioContextUnlocked() {
     try {
@@ -142,7 +143,7 @@ function testAlarm() {
     if (drop) drop.classList.add('open');
 }
 
-// 待辦清單 & 提醒紀錄系統
+// 待辦清單 & 提醒紀錄系統（本機 + Firebase 雲端即時雙向同步）
 function loadNotifHistory() {
     try {
         const raw = localStorage.getItem(NOTIF_HISTORY_KEY);
@@ -156,10 +157,49 @@ function loadNotifHistory() {
     renderBellUI();
 }
 
-function saveNotifHistory() {
+function saveNotifHistory(skipCloudSync = false) {
+    const trimmed = notifHistory.slice(0, 40);
     try {
-        localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(notifHistory.slice(0, 40)));
+        localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(trimmed));
     } catch (e) {}
+
+    if (!skipCloudSync && typeof dbRef !== 'undefined' && dbRef) {
+        const json = JSON.stringify(trimmed);
+        if (json !== lastNotifCloudJson) {
+            lastNotifCloudJson = json;
+            dbRef.child('notifHistory').set(trimmed).catch(err => {
+                console.warn('待辦雲端同步失敗:', err);
+            });
+        }
+    }
+}
+
+function initNotifCloudSync() {
+    if (typeof dbRef === 'undefined' || !dbRef) return;
+    dbRef.child('notifHistory').on('value', (snap) => {
+        const val = snap.val();
+        if (val === null || val === undefined) {
+            if (notifHistory.length > 0) {
+                saveNotifHistory(false);
+            }
+            return;
+        }
+        const arr = (Array.isArray(val) ? val : Object.values(val)).filter(Boolean);
+        const json = JSON.stringify(arr);
+        if (json === lastNotifCloudJson) return;
+        lastNotifCloudJson = json;
+        notifHistory = arr;
+        notifHistory.forEach(n => {
+            if (n && n.id) triggeredEventKeys.add(n.id);
+        });
+        try {
+            localStorage.setItem(NOTIF_HISTORY_KEY, json);
+        } catch (e) {}
+        renderBellUI();
+        if (notifHistory.filter(n => n.unread).length === 0) {
+            stopRinging();
+        }
+    });
 }
 
 function pushNotificationEvent(eventObj, shouldAlert = true) {
@@ -177,7 +217,7 @@ function pushNotificationEvent(eventObj, shouldAlert = true) {
         unread: true
     });
 
-    saveNotifHistory();
+    saveNotifHistory(false);
     renderBellUI();
 
     if (shouldAlert) {
@@ -206,21 +246,21 @@ function toggleTodoDone(notifId) {
     const item = notifHistory.find(n => n.id === notifId);
     if (!item) return;
     item.unread = !item.unread;
-    saveNotifHistory();
+    saveNotifHistory(false);
     renderBellUI();
     if (notifHistory.filter(n => n.unread).length === 0) stopRinging();
 }
 
 function markAllNotifsRead() {
     notifHistory.forEach(n => { n.unread = false; });
-    saveNotifHistory();
+    saveNotifHistory(false);
     renderBellUI();
     stopRinging();
 }
 
 function clearAllNotifs() {
     notifHistory = notifHistory.filter(n => n.unread);
-    saveNotifHistory();
+    saveNotifHistory(false);
     renderBellUI();
 }
 
@@ -316,7 +356,7 @@ function startNewRoundFromTodo(notifId, accId, category, itemId, d, h, m) {
     const notifItem = notifHistory.find(n => n.id === notifId);
     if (notifItem) notifItem.unread = false;
 
-    saveNotifHistory();
+    saveNotifHistory(false);
     renderBellUI();
     if (notifHistory.filter(n => n.unread).length === 0) stopRinging();
 
@@ -343,7 +383,7 @@ function confirmJobFromTodo(notifId, accId, jType, timeStr) {
     const notifItem = notifHistory.find(n => n.id === notifId);
     if (notifItem) notifItem.unread = false;
 
-    saveNotifHistory();
+    saveNotifHistory(false);
     renderBellUI();
     if (notifHistory.filter(n => n.unread).length === 0) stopRinging();
 }
