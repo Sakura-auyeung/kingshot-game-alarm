@@ -21,6 +21,24 @@ function renderPrioBigIconHtml(item) {
     return `<span class="res-prio-big-icon-wrap"><img class="res-prio-big-png" src="${item.iconFile}" alt="${item.label}" title="${item.label}"></span>`;
 }
 
+// 黃色花花序號徽章（中間疊加序號數字）
+function renderYellowFlowerBadgeHtml(num, isChip = false) {
+    const cls = isChip ? 'mob-flower-badge in-chip' : 'mob-flower-badge in-row';
+    return `
+        <span class="${cls}">
+            <svg viewBox="0 0 36 36" aria-hidden="true">
+                <circle cx="18" cy="7.5" r="6.2" fill="#FFD447" stroke="#E5A21A" stroke-width="1.6"/>
+                <circle cx="28" cy="14.8" r="6.2" fill="#FFD447" stroke="#E5A21A" stroke-width="1.6"/>
+                <circle cx="24.2" cy="26.5" r="6.2" fill="#FFD447" stroke="#E5A21A" stroke-width="1.6"/>
+                <circle cx="11.8" cy="26.5" r="6.2" fill="#FFD447" stroke="#E5A21A" stroke-width="1.6"/>
+                <circle cx="8" cy="14.8" r="6.2" fill="#FFD447" stroke="#E5A21A" stroke-width="1.6"/>
+                <circle cx="18" cy="18" r="8.2" fill="#FFE785"/>
+            </svg>
+            <span class="mob-flower-num">${num}</span>
+        </span>
+    `;
+}
+
 let resourcesStore = {
     h: { bread: { val: '', unit: 'M' }, wood: { val: '', unit: 'M' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } },
     z: { bread: { val: '', unit: 'B' }, wood: { val: '', unit: 'B' }, stone: { val: '', unit: 'M' }, iron: { val: '', unit: 'M' } },
@@ -484,7 +502,7 @@ async function runOcrOnImageFile(file, accId) {
 
 // ==========================================
 // 🏆 聯盟總動員採集任務子集組合計算器
-// 左欄 6 隊精簡輸入 + 中欄不用技 + 右欄用寵物技（獨立新開 1 隊秒滿 14M，不浪費已採礦點）
+// 黃色花花序號徽章 + 左欄上下拖拉排序 + 固定高度防跳動 + 等多一會紅字推算目標採集量
 // ==========================================
 const MOB_PANEL_VISIBLE_KEY = 'kingshot_mob_panel_visible_v1';
 const MOB_CALC_STATE_KEY = 'kingshot_mob_calc_state_v1';
@@ -493,16 +511,17 @@ const MOB_MAX_SCORE_K = 14000; // 單隊採滿上限 = 14M = 14,000K
 const MOB_WAIT_TOLERANCE_K = 500; // 差 <= 0.5M (500K) 列入「等多一會」
 
 let mobPanelVisible = true;
+let mobDragSrcIdx = null;
 let mobState = {
     targetM: 25,
     hasPetSkill: false,
     marches: [
-        { slot: 1, resKey: 'bread', rawK: '' },
-        { slot: 2, resKey: 'wood',  rawK: '' },
-        { slot: 3, resKey: 'stone', rawK: '' },
-        { slot: 4, resKey: 'iron',  rawK: '' },
-        { slot: 5, resKey: 'bread', rawK: '' },
-        { slot: 6, resKey: 'wood',  rawK: '' }
+        { id: 'm1', resKey: 'bread', fixed: true,  rawK: '' },
+        { id: 'm2', resKey: 'wood',  fixed: true,  rawK: '' },
+        { id: 'm3', resKey: 'stone', fixed: true,  rawK: '' },
+        { id: 'm4', resKey: 'iron',  fixed: true,  rawK: '' },
+        { id: 'm5', resKey: 'bread', fixed: false, rawK: '' },
+        { id: 'm6', resKey: 'wood',  fixed: false, rawK: '' }
     ]
 };
 
@@ -520,8 +539,9 @@ function loadMobState() {
                 mobState.hasPetSkill = Boolean(parsed.hasPetSkill);
                 if (Array.isArray(parsed.marches) && parsed.marches.length === 6) {
                     mobState.marches = parsed.marches.map((m, i) => ({
-                        slot: i + 1,
+                        id: m.id || `m${i + 1}`,
                         resKey: ['bread', 'wood', 'stone', 'iron'].includes(m.resKey) ? m.resKey : 'bread',
+                        fixed: typeof m.fixed === 'boolean' ? m.fixed : (i < 4),
                         rawK: m.rawK !== undefined && m.rawK !== null ? String(m.rawK) : ''
                     }));
                 }
@@ -585,8 +605,6 @@ function onMobMarchInput(slotIdx, inputEl) {
     if (!mobState.marches[slotIdx]) return;
     mobState.marches[slotIdx].rawK = cleaned;
     saveMobState();
-
-    // 僅更新中／右推薦結果區，絕不重繪左欄輸入框（保留焦點與 Enter 跳格）
     updateMobPlansOnly();
 }
 
@@ -594,6 +612,105 @@ function clearAllMobMarches() {
     mobState.marches.forEach(m => { m.rawK = ''; });
     saveMobState();
     renderMobilizationSection();
+}
+
+// ==========================================
+// 左欄上下拖拉搬動（對齊遊戲內行軍順序）
+// ==========================================
+function onMobDragStart(event, idx) {
+    mobDragSrcIdx = idx;
+    if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', String(idx));
+    }
+    const row = event.currentTarget;
+    if (row) row.classList.add('is-dragging');
+}
+
+function onMobDragOver(event, idx) {
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    const row = event.currentTarget;
+    if (row && mobDragSrcIdx !== idx) {
+        row.classList.add('drag-over');
+    }
+}
+
+function onMobDragLeave(event) {
+    const row = event.currentTarget;
+    if (row) row.classList.remove('drag-over');
+}
+
+function onMobDrop(event, targetIdx) {
+    event.preventDefault();
+    const row = event.currentTarget;
+    if (row) row.classList.remove('drag-over');
+    if (mobDragSrcIdx === null || mobDragSrcIdx === targetIdx) return;
+
+    const moved = mobState.marches.splice(mobDragSrcIdx, 1)[0];
+    mobState.marches.splice(targetIdx, 0, moved);
+    mobDragSrcIdx = null;
+    saveMobState();
+    renderMobilizationSection();
+}
+
+function onMobDragEnd() {
+    mobDragSrcIdx = null;
+    document.querySelectorAll('.mob-compact-row').forEach(r => {
+        r.classList.remove('is-dragging', 'drag-over');
+    });
+}
+
+// ==========================================
+// 計算「等多一會」各隊到達什麼數量才召回（紅字目標量）
+// ==========================================
+function computeTargetRawKForWaitSubset(subset, lackK) {
+    const targetsMap = new Map();
+    let remainingLack = lackK;
+    let unfullList = subset
+        .filter(it => !it.isPetSkillNode && it.curScoreK < MOB_MAX_SCORE_K - 0.1)
+        .map(it => ({
+            item: it,
+            curScore: it.curScoreK,
+            capScore: MOB_MAX_SCORE_K
+        }));
+
+    while (remainingLack > 0.05 && unfullList.length > 0) {
+        const share = remainingLack / unfullList.length;
+        let nextUnfull = [];
+        let consumed = 0;
+
+        for (const entry of unfullList) {
+            const room = entry.capScore - entry.curScore;
+            if (room <= share + 0.01) {
+                entry.curScore = entry.capScore;
+                consumed += room;
+            } else {
+                entry.curScore += share;
+                consumed += share;
+                nextUnfull.push(entry);
+            }
+        }
+
+        remainingLack -= consumed;
+        unfullList = nextUnfull;
+        if (consumed <= 0.001) break;
+    }
+
+    subset.forEach(it => {
+        if (it.isPetSkillNode) return;
+        const found = unfullList.find(u => u.item === it);
+        let finalScore = it.curScoreK;
+        if (found) {
+            finalScore = found.curScore;
+        } else if (it.curScoreK < MOB_MAX_SCORE_K - 0.1) {
+            finalScore = MOB_MAX_SCORE_K;
+        }
+        const targetRaw = Math.ceil(finalScore / it.def.mobMult);
+        targetsMap.set(it, Math.min(it.def.maxRawK, targetRaw));
+    });
+
+    return targetsMap;
 }
 
 function computeMobPlans(usePetSkill) {
@@ -606,7 +723,7 @@ function computeMobPlans(usePetSkill) {
             const def = getResDef(m.resKey);
             const curScoreK = Math.min(MOB_MAX_SCORE_K, valK * def.mobMult);
             activeItems.push({
-                slot: m.slot,
+                orderNum: idx + 1,
                 idx,
                 resKey: m.resKey,
                 def,
@@ -618,10 +735,10 @@ function computeMobPlans(usePetSkill) {
         }
     });
 
-    // 寵物技：不浪費已採集的礦點，直接當作獨立「+ 🐾 寵物技 (+14M)」新開一隊計算
+    // 寵物技：不浪費已採集的礦點，直接當作獨立「+ 寵物技 14M」新開一隊計算
     if (usePetSkill && activeItems.length < 6) {
         activeItems.push({
-            slot: 'pet',
+            orderNum: 'pet',
             idx: 99,
             resKey: 'pet',
             def: null,
@@ -645,7 +762,6 @@ function computeMobPlans(usePetSkill) {
             if (mask & (1 << i)) subset.push(activeItems[i]);
         }
 
-        // 在「使用寵物技」欄位中，只列出有實際用到寵物技的組合（避免與不用技欄位重複）
         const hasPetInSubset = subset.some(it => it.isPetSkillNode);
         if (usePetSkill && !hasPetInSubset) continue;
 
@@ -668,12 +784,14 @@ function computeMobPlans(usePetSkill) {
         } else {
             const lackK = Math.abs(diffK);
             if (lackK <= MOB_WAIT_TOLERANCE_K && maxK >= targetK) {
+                const targetRawMap = computeTargetRawKForWaitSubset(subset, lackK);
                 waitPlans.push({
                     subset,
                     curK,
                     lackK,
                     maxK,
-                    count: subset.length
+                    count: subset.length,
+                    targetRawMap
                 });
             }
         }
@@ -705,21 +823,34 @@ function renderPlanCardsHtml(plans, mode) {
                     <span class="mob-chip is-pet">
                         <img src="./assets/pet_skill.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
                         <span style="display:none;">🐾</span>
-                        🐾 寵物技 +14M
+                        寵物技 +14M
                     </span>
                 `;
             }
+
+            let targetHtml = '';
+            if (mode === 'wait' && p.targetRawMap && p.targetRawMap.has(it)) {
+                const goalK = p.targetRawMap.get(it);
+                if (goalK > Math.ceil(it.rawK)) {
+                    targetHtml = `<span class="mob-chip-target-red">→ ${goalK}K</span>`;
+                } else {
+                    targetHtml = `<span class="mob-chip-target-red">已滿</span>`;
+                }
+            }
+
             return `
                 <span class="mob-chip">
+                    ${renderYellowFlowerBadgeHtml(it.orderNum, true)}
                     <img src="${it.def.iconFile}" alt="${it.def.label}">
-                    第${it.slot}隊 ${it.rawK}K
+                    <span>${it.rawK}K</span>
+                    ${targetHtml}
                 </span>
             `;
         }).join('');
 
         const badgeHtml = mode === 'instant'
-            ? `<span class="mob-badge-ok">✅ 溢出 +${Math.round(p.overK)}K (${(p.overK / 1000).toFixed(2)}M)</span>`
-            : `<span class="mob-badge-wait">⏳ 再等 +${Math.round(p.lackK)}K (${(p.lackK / 1000).toFixed(2)}M)</span>`;
+            ? `<span class="mob-badge-ok">✅ 溢出 +${(p.overK / 1000).toFixed(2)}M</span>`
+            : `<span class="mob-badge-wait">⏳ 再等 +${(p.lackK / 1000).toFixed(2)}M</span>`;
 
         return `
             <div class="mob-plan-card ${mode === 'instant' ? 'plan-instant' : 'plan-wait'}">
@@ -747,19 +878,23 @@ function updateMobPlansOnly() {
         <div class="mob-results-inner ${mobState.hasPetSkill ? 'two-cols' : 'one-col'}">
             <div class="mob-result-col">
                 <div class="mob-col-header">🚶 不用寵物技 — 推薦召回組合</div>
-                <div class="mob-sub-title">✅ 立刻召回即達標（保留其餘隊伍給下次任務）</div>
-                ${renderPlanCardsHtml(noPetRes.instantPlans, 'instant')}
-                <div class="mob-sub-title" style="margin-top:10px;">⏳ 等多一會（差距 ≤ 0.5M，未超 14M 上限）</div>
-                ${renderPlanCardsHtml(noPetRes.waitPlans, 'wait')}
+                <div class="mob-scroll-body">
+                    <div class="mob-sub-title">✅ 立刻召回即達標（保留其餘隊伍給下次任務）</div>
+                    ${renderPlanCardsHtml(noPetRes.instantPlans, 'instant')}
+                    <div class="mob-sub-title" style="margin-top:10px;">⏳ 等多一會（差距 ≤ 0.5M，紅字為召回目標量）</div>
+                    ${renderPlanCardsHtml(noPetRes.waitPlans, 'wait')}
+                </div>
             </div>
 
             ${mobState.hasPetSkill ? `
                 <div class="mob-result-col pet-col">
-                    <div class="mob-col-header">🐾 使用寵物技（加開 1 隊 14M）— 推薦組合</div>
-                    <div class="mob-sub-title">✅ 立刻召回即達標</div>
-                    ${renderPlanCardsHtml(withPetRes.instantPlans, 'instant')}
-                    <div class="mob-sub-title" style="margin-top:10px;">⏳ 等多一會（差距 ≤ 0.5M）</div>
-                    ${renderPlanCardsHtml(withPetRes.waitPlans, 'wait')}
+                    <div class="mob-col-header">🐾 使用寵物技 — 推薦組合</div>
+                    <div class="mob-scroll-body">
+                        <div class="mob-sub-title">✅ 立刻召回即達標</div>
+                        ${renderPlanCardsHtml(withPetRes.instantPlans, 'instant')}
+                        <div class="mob-sub-title" style="margin-top:10px;">⏳ 等多一會（差距 ≤ 0.5M，紅字為召回目標量）</div>
+                        ${renderPlanCardsHtml(withPetRes.waitPlans, 'wait')}
+                    </div>
                 </div>
             ` : ''}
         </div>
@@ -780,14 +915,13 @@ function renderMobilizationSection() {
 
     const compactRowsHtml = mobState.marches.map((m, idx) => {
         const def = getResDef(m.resKey);
-        const isFixed = idx < 4;
 
-        const leftVisualHtml = isFixed
-            ? `<div class="mob-compact-fixed-icon" title="第 ${m.slot} 隊：${def.label} (×${def.mobMult})">
-                   <img src="${def.iconFile}" alt="${def.label}">
+        const leftVisualHtml = m.fixed
+            ? `<div class="mob-compact-left-slot" title="${def.label} (×${def.mobMult})">
+                   <img class="mob-big-res-png" src="${def.iconFile}" alt="${def.label}">
                </div>`
-            : `<div class="mob-compact-select-wrap" title="第 ${m.slot} 隊（自選資源）">
-                   <img src="${def.iconFile}" alt="${def.label}">
+            : `<div class="mob-compact-left-slot is-select" title="自選資源">
+                   <img class="mob-sel-res-png" src="${def.iconFile}" alt="${def.label}">
                    <select class="mob-compact-select" onchange="updateMobMarchRes(${idx}, this.value)">
                        ${RESOURCE_DEFS.map(r => `
                            <option value="${r.key}" ${m.resKey === r.key ? 'selected' : ''}>${r.label}</option>
@@ -796,12 +930,21 @@ function renderMobilizationSection() {
                </div>`;
 
         return `
-            <div class="mob-compact-row">
+            <div class="mob-compact-row"
+                draggable="true"
+                ondragstart="onMobDragStart(event, ${idx})"
+                ondragover="onMobDragOver(event, ${idx})"
+                ondragleave="onMobDragLeave(event)"
+                ondrop="onMobDrop(event, ${idx})"
+                ondragend="onMobDragEnd(event)">
+                <span class="mob-drag-handle" title="按住黃色花花上下拖拉對齊遊戲行軍順序">
+                    ${renderYellowFlowerBadgeHtml(idx + 1, false)}
+                </span>
                 ${leftVisualHtml}
                 <input type="text" inputmode="decimal" class="mob-march-input"
                     id="mob_in_${idx}"
                     value="${m.rawK}"
-                    placeholder="輸入 K（如 3527）"
+                    placeholder="輸入 K"
                     onfocus="this.select()"
                     oninput="onMobMarchInput(${idx}, this)">
                 <span class="mob-unit-k">K</span>
@@ -829,6 +972,7 @@ function renderMobilizationSection() {
 
             <div class="mob-three-col-layout ${mobState.hasPetSkill ? 'has-pet' : 'no-pet'}">
                 <div class="mob-left-inputs-col">
+                    <div class="mob-left-hint">🌼 按住花花可上下拖拉對齊遊戲順序</div>
                     ${compactRowsHtml}
                 </div>
                 <div class="mob-right-plans-wrap" id="mobResultsContainer"></div>
