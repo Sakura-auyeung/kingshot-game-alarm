@@ -375,7 +375,7 @@
 }
 
 /* ==========================================
-   🏆 聯盟總動員採集組合計算器（左精簡輸入 ｜ 中不用技 ｜ 右用技）
+   🏆 聯盟總動員採集組合計算器（固定高度防跳動 + 黃色花花拖拉排序 + 紅字目標量）
    ========================================== */
 .mob-calc-section {
     margin-top: 20px;
@@ -503,69 +503,158 @@
     background: #FFE8EF;
 }
 
-/* 左中右三欄並排主結構 */
+/* 黃色花花序號徽章 */
+.mob-flower-badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.mob-flower-badge.in-row {
+    width: 26px;
+    height: 26px;
+    filter: drop-shadow(0 1px 2px rgba(180, 120, 10, 0.25));
+}
+
+.mob-flower-badge.in-chip {
+    width: 20px;
+    height: 20px;
+}
+
+.mob-flower-badge svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.mob-flower-num {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    color: #5C3D2E;
+    line-height: 1;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.mob-flower-badge.in-row .mob-flower-num {
+    font-size: 12.5px;
+}
+
+.mob-flower-badge.in-chip .mob-flower-num {
+    font-size: 10.5px;
+}
+
+/* 左中右三欄並排主結構（固定高度不隨組合多寡跳動） */
 .mob-three-col-layout {
     display: grid;
+    grid-template-columns: 295px minmax(0, 1fr);
     gap: 16px;
-    align-items: start;
+    align-items: stretch;
 }
 
-.mob-three-col-layout.no-pet {
-    grid-template-columns: 265px minmax(0, 1fr);
-}
-
-.mob-three-col-layout.has-pet {
-    grid-template-columns: 265px minmax(0, 1fr);
-}
-
-/* 左欄：精簡 6 行輸入 */
+/* 左欄：可上下拖拉對齊的 6 行輸入 */
 .mob-left-inputs-col {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    justify-content: space-between;
+    gap: 7px;
     background: #FFF8F1;
     border: 1.8px solid #E2CEB8;
     border-radius: 16px;
     padding: 10px 12px;
+    height: 368px;
+    box-sizing: border-box;
+}
+
+.mob-left-hint {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #9C7A63;
+    text-align: center;
+    padding-bottom: 2px;
 }
 
 .mob-compact-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
+    padding: 2px 4px;
+    border-radius: 10px;
+    transition: background 0.12s ease, transform 0.12s ease;
 }
 
-.mob-compact-fixed-icon {
-    width: 34px;
-    height: 34px;
+.mob-compact-row.is-dragging {
+    opacity: 0.45;
+}
+
+.mob-compact-row.drag-over {
+    background: #FFEBF1;
+    outline: 1.5px dashed #EB5A87;
+}
+
+.mob-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    user-select: none;
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    transition: transform 0.14s ease;
+}
+
+.mob-drag-handle:hover {
+    transform: scale(1.1);
+}
+
+.mob-drag-handle:active {
+    cursor: grabbing;
+}
+
+/* 左側資源圖示固定同寬（84px），保證右側 6 個輸入框完全垂直對齊 */
+.mob-compact-left-slot {
+    width: 84px;
+    height: 42px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    overflow: visible;
 }
 
-.mob-compact-fixed-icon img {
-    width: 30px;
-    height: 30px;
-    object-fit: contain;
-}
-
-.mob-compact-select-wrap {
-    display: inline-flex;
-    align-items: center;
+.mob-compact-left-slot.is-select {
+    justify-content: space-between;
     gap: 3px;
+}
+
+.mob-big-res-png {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    transform: scale(1.22);
+    transform-origin: center;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 3px rgba(92, 61, 46, 0.22));
+}
+
+.mob-sel-res-png {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
     flex-shrink: 0;
 }
 
-.mob-compact-select-wrap img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-}
-
 .mob-compact-select {
+    width: 52px;
     height: 30px;
-    padding: 0 4px;
+    padding: 0 3px;
     border: 1.5px solid #D8C3AE;
     border-radius: 8px;
     background: #FFFFFF;
@@ -600,13 +689,16 @@
     font-size: 13.5px;
     font-weight: 900;
     color: #7A5C48;
+    width: 14px;
+    text-align: left;
     flex-shrink: 0;
 }
 
-/* 中欄與右欄：推薦組合結果區 */
+/* 中欄與右欄：鎖定總高 368px，內部超出時平滑捲動，頁面永不跳動 */
 .mob-results-inner {
     display: grid;
     gap: 14px;
+    height: 368px;
 }
 
 .mob-results-inner.two-cols {
@@ -621,7 +713,12 @@
     background: #FAF3EB;
     border: 1.8px solid #E5D3BC;
     border-radius: 16px;
-    padding: 12px 14px;
+    padding: 11px 13px;
+    display: flex;
+    flex-direction: column;
+    height: 368px;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .mob-result-col.pet-col {
@@ -634,6 +731,22 @@
     font-weight: 900;
     color: #5C3D2E;
     margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+.mob-scroll-body {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.mob-scroll-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.mob-scroll-body::-webkit-scrollbar-thumb {
+    background: #D8C3AE;
+    border-radius: 999px;
 }
 
 .mob-sub-title {
@@ -721,9 +834,15 @@
 }
 
 .mob-chip img {
-    width: 16px;
-    height: 16px;
+    width: 17px;
+    height: 17px;
     object-fit: contain;
+}
+
+.mob-chip-target-red {
+    color: #D92B2B;
+    font-weight: 900;
+    margin-left: 2px;
 }
 
 .mob-chip.is-pet {
@@ -741,10 +860,15 @@
 @media (max-width: 950px) {
     .res-grid,
     #resourcesGrid,
-    .mob-three-col-layout.no-pet,
-    .mob-three-col-layout.has-pet,
+    .mob-three-col-layout,
     .mob-results-inner.two-cols {
         grid-template-columns: 1fr;
         gap: 16px;
+        height: auto;
+    }
+
+    .mob-left-inputs-col,
+    .mob-result-col {
+        height: auto;
     }
 }
