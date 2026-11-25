@@ -375,19 +375,20 @@
 }
 
 /* ==========================================
-   🏆 聯盟總動員採集組合計算器（固定高度防跳動 + 黃色花花拖拉排序 + 紅字目標量）
+   🏆 聯盟總動員採集組合計算器（對齊職位預約風格 + bg_epi_num.svg + 貓啃什錦黑 + 兩欄整齊晶片）
    ========================================== */
 .mob-calc-section {
-    margin-top: 20px;
+    margin-top: 16px;
     padding-bottom: 24px;
 }
 
+/* 對齊 timers.css .job-section 風格 */
 .mob-panel-card {
-    background: #FFFDFB;
-    border: 2.5px solid #D8C3AE;
-    border-radius: 22px;
-    padding: 14px 18px;
-    box-shadow: 0 5px 16px rgba(92, 61, 46, 0.08);
+    background: rgba(255, 255, 255, 0.96);
+    border: 2px solid rgba(92, 61, 46, 0.08);
+    border-radius: 17px;
+    padding: 13px 16px 15px 16px;
+    box-shadow: 0 2px 6px rgba(92, 61, 46, 0.04);
 }
 
 .mob-panel-header {
@@ -396,30 +397,35 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 10px;
-    padding-bottom: 10px;
-    border-bottom: 2px dashed #E9D8C5;
-    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1.5px dashed #E6D7C3;
+    margin-bottom: 12px;
 }
 
 .mob-title-box {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 9px;
 }
 
+/* 貓啃什錦黑標題（對齊 .job-section-title） */
 .mob-main-title {
-    font-size: 17px;
-    font-weight: 900;
-    color: #5C3D2E;
+    font-family: var(--font-title);
+    font-weight: normal;
+    font-size: 19px;
+    letter-spacing: 0.6px;
+    color: var(--cocoa);
+    line-height: 1.15;
 }
 
 .mob-formula-note {
     font-size: 12px;
     font-weight: 700;
-    color: #8C6A58;
-    background: #F7EFE6;
-    padding: 3px 10px;
+    color: var(--cocoa-light);
+    background: #FAF3E8;
+    border: 1px solid #DFCBB5;
+    padding: 2px 10px;
     border-radius: 999px;
 }
 
@@ -427,7 +433,7 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 7px;
 }
 
 .mob-target-group {
@@ -436,15 +442,19 @@
 }
 
 .mob-target-pill {
-    background: #FFF8F0;
-    color: #5C3D2E;
-    border: 2px solid #D8C3AE;
+    background: #FAF3E8;
+    color: var(--cocoa);
+    border: 1.5px solid #DFCBB5;
     border-radius: 999px;
     padding: 4px 11px;
-    font-size: 13px;
-    font-weight: 800;
+    font-size: 12.5px;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.14s ease;
+}
+
+.mob-target-pill:hover {
+    background: #F3E4CE;
 }
 
 .mob-target-pill.active {
@@ -454,25 +464,23 @@
     box-shadow: 0 2px 0 #B8355E;
 }
 
-/* 精簡寵物技按鈕：點一下直接轉綠色 */
 .mob-pet-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #FFF8F0;
-    color: #5C3D2E;
-    border: 2px solid #D8C3AE;
+    background: #FAF3E8;
+    color: var(--cocoa);
+    border: 1.5px solid #DFCBB5;
     border-radius: 999px;
     padding: 4px 13px;
-    font-size: 13px;
-    font-weight: 800;
+    font-size: 12.5px;
+    font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 2px 0 #D8C3AE;
     transition: all 0.14s ease;
 }
 
 .mob-pet-btn:hover {
-    background: #FFF1E0;
+    background: #F3E4CE;
 }
 
 .mob-pet-btn.active {
@@ -483,8 +491,8 @@
 }
 
 .mob-pet-icon {
-    width: 20px;
-    height: 20px;
+    width: 19px;
+    height: 19px;
     object-fit: contain;
 }
 
@@ -495,7 +503,7 @@
     border-radius: 999px;
     padding: 4px 11px;
     font-size: 12.5px;
-    font-weight: 800;
+    font-weight: 700;
     cursor: pointer;
 }
 
@@ -503,90 +511,81 @@
     background: #FFE8EF;
 }
 
-/* 黃色花花序號徽章 */
+/* 黃色花花序號徽章（直接使用 ./assets/bg_epi_num.svg，對齊計時區 .flower-seq-badge） */
 .mob-flower-badge {
-    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    background-image: url('./assets/bg_epi_num.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    font-family: var(--font-body);
+    font-weight: 800;
+    color: #FFFFFF;
+    text-shadow: 0 1px 2px rgba(92, 61, 46, 0.45);
     flex-shrink: 0;
     user-select: none;
 }
 
 .mob-flower-badge.in-row {
-    width: 26px;
-    height: 26px;
-    filter: drop-shadow(0 1px 2px rgba(180, 120, 10, 0.25));
-}
-
-.mob-flower-badge.in-chip {
-    width: 20px;
-    height: 20px;
-}
-
-.mob-flower-badge svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
-.mob-flower-num {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 900;
-    color: #5C3D2E;
-    line-height: 1;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
-}
-
-.mob-flower-badge.in-row .mob-flower-num {
+    width: 28px;
+    height: 28px;
     font-size: 12.5px;
 }
 
-.mob-flower-badge.in-chip .mob-flower-num {
+.mob-flower-badge.in-chip {
+    width: 21px;
+    height: 21px;
     font-size: 10.5px;
 }
 
-/* 左中右三欄並排主結構（固定高度不隨組合多寡跳動） */
+/* 左中右三欄並排主結構（列高加高至 460px，善用上方空位） */
 .mob-three-col-layout {
     display: grid;
-    grid-template-columns: 295px minmax(0, 1fr);
-    gap: 16px;
+    grid-template-columns: 310px minmax(0, 1fr);
+    gap: 14px;
     align-items: stretch;
 }
 
-/* 左欄：可上下拖拉對齊的 6 行輸入 */
+/* 左欄容器（對齊職位預約區塊的暖棕柔邊底） */
 .mob-left-inputs-col {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 7px;
-    background: #FFF8F1;
-    border: 1.8px solid #E2CEB8;
-    border-radius: 16px;
-    padding: 10px 12px;
-    height: 368px;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 2px solid rgba(92, 61, 46, 0.08);
+    border-radius: 17px;
+    padding: 11px 12px;
+    height: 460px;
     box-sizing: border-box;
+    box-shadow: 0 2px 6px rgba(92, 61, 46, 0.04);
 }
 
 .mob-left-hint {
     font-size: 11.5px;
     font-weight: 700;
-    color: #9C7A63;
+    color: var(--cocoa-light);
     text-align: center;
-    padding-bottom: 2px;
+    padding-bottom: 4px;
+    border-bottom: 1.5px dashed #E6D7C3;
 }
 
+/* 每隊獨立奶油白圓角外框（對齊 timers.css .job-status-card） */
 .mob-compact-row {
     display: flex;
     align-items: center;
-    gap: 7px;
-    padding: 2px 4px;
-    border-radius: 10px;
-    transition: background 0.12s ease, transform 0.12s ease;
+    gap: 8px;
+    background: #FFFDF9;
+    border: 1.5px solid #EFE4D4;
+    border-radius: 11px;
+    padding: 6px 10px;
+    transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+}
+
+.mob-compact-row:hover {
+    border-color: #DFCBB5;
 }
 
 .mob-compact-row.is-dragging {
@@ -594,8 +593,8 @@
 }
 
 .mob-compact-row.drag-over {
-    background: #FFEBF1;
-    outline: 1.5px dashed #EB5A87;
+    background: #FFF5F8;
+    border: 1.5px dashed #EB5A87;
 }
 
 .mob-drag-handle {
@@ -604,8 +603,8 @@
     justify-content: center;
     cursor: grab;
     user-select: none;
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     flex-shrink: 0;
     transition: transform 0.14s ease;
 }
@@ -655,12 +654,12 @@
     width: 52px;
     height: 30px;
     padding: 0 3px;
-    border: 1.5px solid #D8C3AE;
+    border: 1.5px solid #DFCBB5;
     border-radius: 8px;
-    background: #FFFFFF;
-    color: #5C3D2E;
+    background: #FFFDF9;
+    color: var(--cocoa);
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 700;
     cursor: pointer;
     outline: none;
 }
@@ -668,15 +667,15 @@
 .mob-march-input {
     flex: 1;
     min-width: 0;
-    height: 32px;
-    border: 1.5px solid #D8C3AE;
+    height: 34px;
+    border: 1.5px solid #DFCBB5;
     border-radius: 9px;
     background: #FFFFFF;
-    color: #3E271C;
+    color: var(--cocoa);
     text-align: right;
     padding: 0 9px;
     font-size: 15px;
-    font-weight: 800;
+    font-weight: 700;
     outline: none;
 }
 
@@ -686,19 +685,19 @@
 }
 
 .mob-unit-k {
-    font-size: 13.5px;
-    font-weight: 900;
-    color: #7A5C48;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--cocoa-light);
     width: 14px;
     text-align: left;
     flex-shrink: 0;
 }
 
-/* 中欄與右欄：鎖定總高 368px，內部超出時平滑捲動，頁面永不跳動 */
+/* 中欄與右欄：同步加高至 460px，對齊職位預約區風格 */
 .mob-results-inner {
     display: grid;
     gap: 14px;
-    height: 368px;
+    height: 460px;
 }
 
 .mob-results-inner.two-cols {
@@ -710,26 +709,30 @@
 }
 
 .mob-result-col {
-    background: #FAF3EB;
-    border: 1.8px solid #E5D3BC;
-    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 2px solid rgba(92, 61, 46, 0.08);
+    border-radius: 17px;
     padding: 11px 13px;
     display: flex;
     flex-direction: column;
-    height: 368px;
+    height: 460px;
     box-sizing: border-box;
     overflow: hidden;
+    box-shadow: 0 2px 6px rgba(92, 61, 46, 0.04);
 }
 
 .mob-result-col.pet-col {
-    background: #F4FBF7;
-    border-color: #9ED8B5;
+    background: rgba(246, 253, 249, 0.96);
+    border-color: rgba(72, 184, 118, 0.25);
 }
 
 .mob-col-header {
-    font-size: 14.5px;
-    font-weight: 900;
-    color: #5C3D2E;
+    font-family: var(--font-title);
+    font-weight: normal;
+    font-size: 17.5px;
+    color: var(--cocoa);
+    padding-bottom: 6px;
+    border-bottom: 1.5px dashed #E6D7C3;
     margin-bottom: 8px;
     flex-shrink: 0;
 }
@@ -745,32 +748,33 @@
 }
 
 .mob-scroll-body::-webkit-scrollbar-thumb {
-    background: #D8C3AE;
+    background: #DFCBB5;
     border-radius: 999px;
 }
 
 .mob-sub-title {
     font-size: 12.5px;
-    font-weight: 800;
-    color: #7A5C48;
+    font-weight: 700;
+    color: var(--cocoa-light);
     margin-bottom: 6px;
 }
 
 .mob-plan-empty {
     font-size: 12.5px;
-    color: #9C8777;
-    background: rgba(255, 255, 255, 0.75);
+    color: #8C7B6E;
+    background: #FFFDF9;
+    border: 1.5px solid #EFE4D4;
     padding: 8px 12px;
-    border-radius: 10px;
+    border-radius: 11px;
 }
 
+/* 方案卡片對齊職位預約小卡片（#FFFDF9 + 1.5px solid #EFE4D4） */
 .mob-plan-card {
-    background: #FFFFFF;
-    border-radius: 12px;
+    background: #FFFDF9;
+    border-radius: 11px;
     padding: 8px 11px;
-    margin-bottom: 7px;
-    border: 1.5px solid #DFCCB7;
-    box-shadow: 0 2px 5px rgba(92, 61, 46, 0.05);
+    margin-bottom: 8px;
+    border: 1.5px solid #EFE4D4;
 }
 
 .mob-plan-card.plan-instant {
@@ -786,74 +790,87 @@
     justify-content: space-between;
     align-items: center;
     gap: 8px;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 }
 
 .mob-plan-rank {
-    font-size: 12.5px;
-    font-weight: 900;
-    color: #5C3D2E;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--cocoa);
 }
 
 .mob-badge-ok {
-    font-size: 11.5px;
-    font-weight: 800;
-    color: #267A49;
-    background: #E6F7ED;
+    font-size: 11px;
+    font-weight: 700;
+    color: #26733A;
+    background: #E8F8EC;
+    border: 1px solid #A3DFB3;
     padding: 2px 8px;
     border-radius: 999px;
 }
 
 .mob-badge-wait {
-    font-size: 11.5px;
-    font-weight: 800;
-    color: #A36200;
-    background: #FFF2D9;
+    font-size: 11px;
+    font-weight: 700;
+    color: #B26200;
+    background: #FFF4E0;
+    border: 1px solid #F7D774;
     padding: 2px 8px;
     border-radius: 999px;
 }
 
-.mob-plan-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-bottom: 5px;
+/* 圖 3 方案晶片改為 2 欄等寬網格，所有花花、圖示與數字垂直對齊成直線 */
+.mob-plan-chips-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 6px;
 }
 
 .mob-chip {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 4px;
-    background: #F8EFE5;
-    border: 1px solid #E2CEB8;
-    border-radius: 8px;
-    padding: 2px 7px;
-    font-size: 12px;
-    font-weight: 800;
-    color: #4E3326;
+    gap: 6px;
+    background: #FAF3E8;
+    border: 1px solid #DFCBB5;
+    border-radius: 9px;
+    padding: 4px 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--cocoa);
+    min-width: 0;
 }
 
-.mob-chip img {
-    width: 17px;
-    height: 17px;
+.mob-chip-res-icon,
+.mob-chip-pet-icon {
+    width: 19px;
+    height: 19px;
     object-fit: contain;
+    flex-shrink: 0;
+}
+
+.mob-chip-val {
+    flex: 1;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 .mob-chip-target-red {
     color: #D92B2B;
-    font-weight: 900;
+    font-weight: 800;
     margin-left: 2px;
 }
 
 .mob-chip.is-pet {
-    background: #E3F7EB;
-    border-color: #6CC792;
-    color: #1F6E40;
+    background: #E8F8EC;
+    border-color: #A3DFB3;
+    color: #26733A;
 }
 
 .mob-plan-foot {
-    font-size: 12px;
-    color: #7A5C48;
+    font-size: 11.5px;
+    color: var(--cocoa-light);
 }
 
 /* 手機或窄螢幕時自動排成 1 直欄 */
