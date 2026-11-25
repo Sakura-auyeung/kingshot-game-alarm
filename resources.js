@@ -21,22 +21,10 @@ function renderPrioBigIconHtml(item) {
     return `<span class="res-prio-big-icon-wrap"><img class="res-prio-big-png" src="${item.iconFile}" alt="${item.label}" title="${item.label}"></span>`;
 }
 
-// 黃色花花序號徽章（中間疊加序號數字）
+// 黃色花花序號徽章（對齊 timers.css 的 bg_epi_num.svg 樣式）
 function renderYellowFlowerBadgeHtml(num, isChip = false) {
     const cls = isChip ? 'mob-flower-badge in-chip' : 'mob-flower-badge in-row';
-    return `
-        <span class="${cls}">
-            <svg viewBox="0 0 36 36" aria-hidden="true">
-                <circle cx="18" cy="7.5" r="6.2" fill="#FFD447" stroke="#E5A21A" stroke-width="1.6"/>
-                <circle cx="28" cy="14.8" r="6.2" fill="#FFD447" stroke="#E5A21A" stroke-width="1.6"/>
-                <circle cx="24.2" cy="26.5" r="6.2" fill="#FFD447" stroke="#E5A21A" stroke-width="1.6"/>
-                <circle cx="11.8" cy="26.5" r="6.2" fill="#FFD447" stroke="#E5A21A" stroke-width="1.6"/>
-                <circle cx="8" cy="14.8" r="6.2" fill="#FFD447" stroke="#E5A21A" stroke-width="1.6"/>
-                <circle cx="18" cy="18" r="8.2" fill="#FFE785"/>
-            </svg>
-            <span class="mob-flower-num">${num}</span>
-        </span>
-    `;
+    return `<span class="${cls}">${num}</span>`;
 }
 
 let resourcesStore = {
@@ -502,13 +490,12 @@ async function runOcrOnImageFile(file, accId) {
 
 // ==========================================
 // 🏆 聯盟總動員採集任務子集組合計算器
-// 黃色花花序號徽章 + 左欄上下拖拉排序 + 固定高度防跳動 + 等多一會紅字推算目標採集量
 // ==========================================
 const MOB_PANEL_VISIBLE_KEY = 'kingshot_mob_panel_visible_v1';
 const MOB_CALC_STATE_KEY = 'kingshot_mob_calc_state_v1';
 const MOB_TARGETS_M = [30, 25, 20, 15, 10];
-const MOB_MAX_SCORE_K = 14000; // 單隊採滿上限 = 14M = 14,000K
-const MOB_WAIT_TOLERANCE_K = 500; // 差 <= 0.5M (500K) 列入「等多一會」
+const MOB_MAX_SCORE_K = 14000;
+const MOB_WAIT_TOLERANCE_K = 500;
 
 let mobPanelVisible = true;
 let mobDragSrcIdx = null;
@@ -735,7 +722,6 @@ function computeMobPlans(usePetSkill) {
         }
     });
 
-    // 寵物技：不浪費已採集的礦點，直接當作獨立「+ 寵物技 14M」新開一隊計算
     if (usePetSkill && activeItems.length < 6) {
         activeItems.push({
             orderNum: 'pet',
@@ -821,9 +807,9 @@ function renderPlanCardsHtml(plans, mode) {
             if (it.isPetSkillNode) {
                 return `
                     <span class="mob-chip is-pet">
-                        <img src="./assets/pet_skill.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                        <img class="mob-chip-pet-icon" src="./assets/pet_skill.png" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
                         <span style="display:none;">🐾</span>
-                        寵物技 +14M
+                        <span class="mob-chip-val">寵物技 +14M</span>
                     </span>
                 `;
             }
@@ -832,7 +818,7 @@ function renderPlanCardsHtml(plans, mode) {
             if (mode === 'wait' && p.targetRawMap && p.targetRawMap.has(it)) {
                 const goalK = p.targetRawMap.get(it);
                 if (goalK > Math.ceil(it.rawK)) {
-                    targetHtml = `<span class="mob-chip-target-red">→ ${goalK}K</span>`;
+                    targetHtml = `<span class="mob-chip-target-red">→${goalK}K</span>`;
                 } else {
                     targetHtml = `<span class="mob-chip-target-red">已滿</span>`;
                 }
@@ -841,9 +827,8 @@ function renderPlanCardsHtml(plans, mode) {
             return `
                 <span class="mob-chip">
                     ${renderYellowFlowerBadgeHtml(it.orderNum, true)}
-                    <img src="${it.def.iconFile}" alt="${it.def.label}">
-                    <span>${it.rawK}K</span>
-                    ${targetHtml}
+                    <img class="mob-chip-res-icon" src="${it.def.iconFile}" alt="${it.def.label}">
+                    <span class="mob-chip-val">${it.rawK}K${targetHtml}</span>
                 </span>
             `;
         }).join('');
@@ -858,7 +843,7 @@ function renderPlanCardsHtml(plans, mode) {
                     <span class="mob-plan-rank">方案 ${idx + 1}（共 ${p.count} 隊）</span>
                     ${badgeHtml}
                 </div>
-                <div class="mob-plan-chips">${chipsHtml}</div>
+                <div class="mob-plan-chips-grid">${chipsHtml}</div>
                 <div class="mob-plan-foot">
                     總分：<strong>${formatKAndM(p.curK)}</strong> ／ 目標 ${mobState.targetM}M
                 </div>
@@ -937,7 +922,7 @@ function renderMobilizationSection() {
                 ondragleave="onMobDragLeave(event)"
                 ondrop="onMobDrop(event, ${idx})"
                 ondragend="onMobDragEnd(event)">
-                <span class="mob-drag-handle" title="按住黃色花花上下拖拉對齊遊戲行軍順序">
+                <span class="mob-drag-handle" title="按住花花上下拖拉對齊遊戲行軍順序">
                     ${renderYellowFlowerBadgeHtml(idx + 1, false)}
                 </span>
                 ${leftVisualHtml}
