@@ -578,8 +578,8 @@ function tickTimers() {
             const jobMs = job.date.getTime();
             const diff = jobMs - nowMs;
 
-            // 預約時間到達提醒
-            if (diff <= 0 && diff > -10 * 60 * 1000) {
+            // 預約時間到達提醒（僅限「已確認預約」的職位才推送通知與響鈴）
+            if (job.conf && diff <= 0 && diff > -10 * 60 * 1000) {
                 const jKey = `job_${acc.id}_${job.type}_${jobMs}`;
                 if (!triggeredEventKeys.has(jKey)) {
                     triggeredEventKeys.add(jKey);
@@ -765,7 +765,10 @@ function init() {
     setupAutoTimeSync();
     fetchAllProfiles();
 
-    tickTimers();
+    // 若無 Firebase 才立即執行 tickTimers；有 Firebase 則等首次雲端資料抵達後由監聽器觸發，避免舊快取誤蓋雲端
+    if (!hasFirebase || !dbRef) {
+        tickTimers();
+    }
     setInterval(tickTimers, 1000);
     setInterval(renderBellUI, 30000);
 }
