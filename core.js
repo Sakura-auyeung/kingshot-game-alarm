@@ -393,6 +393,9 @@ function serializeStore() {
 
 function applySerializedData(data) {
     if (!data || typeof data !== 'object') return;
+    if (typeof data.updatedAt === 'number') {
+        latestStateUpdatedAt = data.updatedAt;
+    }
     if (typeof data.showSunlightEvent === 'boolean') {
         showSunlightEvent = data.showSunlightEvent;
         if (typeof updateSunlightToggleBtnUI === 'function') updateSunlightToggleBtnUI();
@@ -445,6 +448,12 @@ function applySerializedData(data) {
 }
 
 function saveState() {
+    // 重要防護：有連 Firebase 時，若尚未完成首次雲端載入，嚴禁拿本機舊快取覆蓋雲端
+    if (hasFirebase && dbRef && !isInitialLoadDone) {
+        console.warn("尚未完成首次雲端同步，已攔截寫入以防止舊資料覆蓋雲端");
+        return;
+    }
+
     const payload = serializeStore();
     latestStateUpdatedAt = payload.updatedAt;
     try {
@@ -488,6 +497,7 @@ function loadLocalBackups() {
 function setupFirebaseListeners() {
     const syncBadge = document.getElementById('syncBadge');
     if (!hasFirebase || !dbRef) {
+        isInitialLoadDone = true;
         if (syncBadge) {
             syncBadge.className = 'sync-badge error';
             syncBadge.innerText = '💾 本地儲存模式';
@@ -502,6 +512,7 @@ function setupFirebaseListeners() {
             applySerializedData(val);
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(val)); } catch (e) {}
         }
+        isInitialLoadDone = true;
         if (syncBadge) {
             syncBadge.className = 'sync-badge connected';
             syncBadge.innerText = '🟢 雲端已同步';
@@ -532,8 +543,8 @@ function setupFirebaseListeners() {
         if (typeof updateTimeline === 'function') updateTimeline(true);
         if (typeof tickTimers === 'function') tickTimers();
         notifyDataReadyForSplash();
-        isInitialLoadDone = true;
     }, (err) => {
+        isInitialLoadDone = true;
         if (syncBadge) {
             syncBadge.className = 'sync-badge error';
             syncBadge.innerText = '⚠️ 雲端連線異常';
