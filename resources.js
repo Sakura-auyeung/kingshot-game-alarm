@@ -570,7 +570,6 @@ function applyMobilizationSerialized(mobPayload) {
             }
         });
     } else if (Array.isArray(mobPayload.marches) || mobPayload.targetM !== undefined) {
-        // 相容舊版單一總動員結構
         const legacy = normalizeMobAccountData(mobPayload);
         mobByAccount[activeMobAccId] = legacy;
     }
@@ -1018,7 +1017,7 @@ function renderMobilizationSection() {
                 ondragover="onMobDragOver(event, ${idx})"
                 ondragleave="onMobDragLeave(event)"
                 ondrop="onMobDrop(event, ${idx})"
-                ondragend="onMobDragEnd(event)">
+                ondragend="onMobDragEnd()">
                 <span class="mob-drag-handle" title="按住花花上下拖拉對齊遊戲行軍順序">
                     ${renderYellowFlowerBadgeHtml(idx + 1, false)}
                 </span>
@@ -1035,7 +1034,7 @@ function renderMobilizationSection() {
     }).join('');
 
     sec.innerHTML = `
-        <div class="mob-panel-card mob-theme-${activeMobAccId}">
+        <div class="mob-panel-card">
             <div class="mob-panel-header">
                 <div class="mob-title-box">
                     <span class="mob-main-title">🏆 聯盟總動員採集計算器</span>
@@ -1066,6 +1065,8 @@ function renderMobilizationSection() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadMobState();
+    if (!isInitialLoadDone) {
+        loadMobState();
+    }
     renderMobilizationSection();
 });
