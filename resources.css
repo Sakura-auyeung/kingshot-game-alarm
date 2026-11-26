@@ -424,91 +424,96 @@
     padding-bottom: 9px;
 }
 
-/* Chrome 瀏覽器造型分頁列：極大頭熊仔坐滿頁籤內部、耳朵探出頁籤頂部（對齊 image_d4de07） */
+/* Chrome 瀏覽器造型分頁列：矮身粉彩頁籤 + 極大頭熊仔下巴貼底、頭頂探出（對齊圖 2） */
 .mob-chrome-tabs {
-    display: flex;
-    align-items: flex-end;
-    gap: 5px;
-    position: relative;
-    top: 1.5px;
-    overflow: visible;
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 6px !important;
+    position: relative !important;
+    top: 1.5px !important;
+    overflow: visible !important;
 }
 
 .mob-chrome-tab {
-    position: relative;
-    display: inline-flex;
-    align-items: flex-end;
-    justify-content: center;
-    width: 66px;
-    height: 30px;
-    padding: 0 0 2px 0;
-    border: 1.5px solid #DFCBB5;
-    border-bottom: none;
-    border-radius: 13px 13px 0 0;
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    width: 68px !important;
+    height: 31px !important;
+    padding: 0 !important;
+    border: 1.5px solid #DFCBB5 !important;
+    border-bottom: none !important;
+    border-radius: 13px 13px 0 0 !important;
     cursor: pointer;
     outline: none;
-    opacity: 1;
-    overflow: visible;
+    opacity: 1 !important;
+    overflow: visible !important;
     transition: height 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.14s ease, box-shadow 0.14s ease;
 }
 
 .mob-chrome-tab.tab-h {
-    background-color: #FDF2F5;
-    border-color: #EED5DC;
+    background-color: #FDF2F5 !important;
+    border-color: #EED5DC !important;
 }
 
 .mob-chrome-tab.tab-z {
-    background-color: #FDF9EB;
-    border-color: #EBE0BF;
+    background-color: #FDF9EB !important;
+    border-color: #EBE0BF !important;
 }
 
 .mob-chrome-tab.tab-p {
-    background-color: #F2FBF6;
-    border-color: #CBE7D6;
+    background-color: #F2FBF6 !important;
+    border-color: #CBE7D6 !important;
 }
 
 .mob-chrome-tab:hover:not(.is-active) {
-    height: 33px;
+    height: 34px !important;
 }
 
-/* 選中分頁：頁籤略高一點點，底部融入白底 */
+/* 選中分頁：頁籤高度略微增高到 37px，邊框亮色，底下不留空白 */
 .mob-chrome-tab.is-active {
-    height: 35px;
+    height: 37px !important;
     z-index: 3;
     box-shadow: 0 2px 0 #FFFFFF, 0 -2px 6px rgba(92, 61, 46, 0.06);
 }
 
 .mob-chrome-tab.tab-h.is-active {
-    border-color: #EB5A87;
+    border-color: #EB5A87 !important;
 }
 
 .mob-chrome-tab.tab-z.is-active {
-    border-color: #E69A15;
+    border-color: #E69A15 !important;
 }
 
 .mob-chrome-tab.tab-p.is-active {
-    border-color: #48B876;
+    border-color: #48B876 !important;
 }
 
-/* 未選中時：極大頭貼底坐滿頁籤、不留空白，上半部探出框外 */
+/* 未選中時：極大頭熊仔（56px），下巴貼近頁籤底部（僅離底 2px），耳朵與頭頂大面積衝出頁籤頂線 */
 .mob-tab-bear-face {
-    width: 48px;
-    height: 48px;
-    object-fit: contain;
+    width: 56px !important;
+    height: 56px !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: contain !important;
     pointer-events: none;
     flex-shrink: 0;
-    transform: translateY(0);
-    filter: drop-shadow(0 1px 1.5px rgba(92, 61, 46, 0.2));
+    transform: translateY(-2px) !important;
+    filter: drop-shadow(0 1.5px 2px rgba(92, 61, 46, 0.2));
     transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.18s ease, height 0.18s ease;
 }
 
-/* 選中時：極大頭再放大一圈（56px），貼底坐穩同時耳朵更往上突出 */
+/* 選中時：極大頭再放大到 66px 並向上浮高（下巴距離底部約 5px，耳朵高出頁籤一大截） */
 .mob-chrome-tab.is-active .mob-tab-bear-face {
-    width: 56px;
-    height: 56px;
-    transform: translateY(-2px);
-    filter: drop-shadow(0 2px 3px rgba(92, 61, 46, 0.24));
+    width: 66px !important;
+    height: 66px !important;
+    max-width: none !important;
+    max-height: none !important;
+    transform: translateY(-5px) !important;
+    filter: drop-shadow(0 2.5px 3.5px rgba(92, 61, 46, 0.25));
 }
+
 
 .mob-header-actions {
     display: flex;
