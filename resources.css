@@ -424,11 +424,11 @@
     padding-bottom: 9px;
 }
 
-/* Chrome 瀏覽器造型分頁列：矮身粉彩頁籤 + 極大頭熊仔整顆探出頁籤頂部 */
+/* Chrome 瀏覽器造型分頁列：極大頭熊仔坐滿頁籤內部、耳朵探出頁籤頂部（對齊 image_d4de07） */
 .mob-chrome-tabs {
     display: flex;
     align-items: flex-end;
-    gap: 6px;
+    gap: 5px;
     position: relative;
     top: 1.5px;
     overflow: visible;
@@ -439,9 +439,9 @@
     display: inline-flex;
     align-items: flex-end;
     justify-content: center;
-    width: 68px;
-    height: 27px;
-    padding: 0;
+    width: 66px;
+    height: 30px;
+    padding: 0 0 2px 0;
     border: 1.5px solid #DFCBB5;
     border-bottom: none;
     border-radius: 13px 13px 0 0;
@@ -468,12 +468,12 @@
 }
 
 .mob-chrome-tab:hover:not(.is-active) {
-    height: 30px;
+    height: 33px;
 }
 
-/* 選中分頁：頁籤略微增高、邊框亮色 */
+/* 選中分頁：頁籤略高一點點，底部融入白底 */
 .mob-chrome-tab.is-active {
-    height: 33px;
+    height: 35px;
     z-index: 3;
     box-shadow: 0 2px 0 #FFFFFF, 0 -2px 6px rgba(92, 61, 46, 0.06);
 }
@@ -490,24 +490,24 @@
     border-color: #48B876;
 }
 
-/* 未選中時：極大頭熊仔（52px）直接從矮頁籤往上探出 */
+/* 未選中時：極大頭貼底坐滿頁籤、不留空白，上半部探出框外 */
 .mob-tab-bear-face {
-    width: 52px;
-    height: 52px;
+    width: 48px;
+    height: 48px;
     object-fit: contain;
     pointer-events: none;
     flex-shrink: 0;
-    transform: translateY(-1px);
-    filter: drop-shadow(0 1.5px 2px rgba(92, 61, 46, 0.2));
+    transform: translateY(0);
+    filter: drop-shadow(0 1px 1.5px rgba(92, 61, 46, 0.2));
     transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.18s ease, height 0.18s ease;
 }
 
-/* 選中時：極大頭再往上浮出並放大（62px） */
+/* 選中時：極大頭再放大一圈（56px），貼底坐穩同時耳朵更往上突出 */
 .mob-chrome-tab.is-active .mob-tab-bear-face {
-    width: 62px;
-    height: 62px;
-    transform: translateY(-4px);
-    filter: drop-shadow(0 2.5px 3.5px rgba(92, 61, 46, 0.25));
+    width: 56px;
+    height: 56px;
+    transform: translateY(-2px);
+    filter: drop-shadow(0 2px 3px rgba(92, 61, 46, 0.24));
 }
 
 .mob-header-actions {
