@@ -492,25 +492,25 @@
 
 /* 未選中時：極大頭熊仔（56px），下巴貼近頁籤底部（僅離底 2px），耳朵與頭頂大面積衝出頁籤頂線 */
 .mob-tab-bear-face {
-    width: 56px !important;
-    height: 56px !important;
+    width: 85px !important;
+    height: 85px !important;
     max-width: none !important;
     max-height: none !important;
     object-fit: contain !important;
     pointer-events: none;
     flex-shrink: 0;
-    transform: translateY(-2px) !important;
+    transform: translateY(-22px) !important;
     filter: drop-shadow(0 1.5px 2px rgba(92, 61, 46, 0.2));
     transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.18s ease, height 0.18s ease;
 }
 
 /* 選中時：極大頭再放大到 66px 並向上浮高（下巴距離底部約 5px，耳朵高出頁籤一大截） */
 .mob-chrome-tab.is-active .mob-tab-bear-face {
-    width: 66px !important;
-    height: 66px !important;
+    width: 100px !important;
+    height: 100px !important;
     max-width: none !important;
     max-height: none !important;
-    transform: translateY(-5px) !important;
+    transform: translateY(-25px) !important;
     filter: drop-shadow(0 2.5px 3.5px rgba(92, 61, 46, 0.25));
 }
 
