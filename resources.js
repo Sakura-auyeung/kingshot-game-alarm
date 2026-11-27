@@ -495,7 +495,8 @@ const MOB_PANEL_VISIBLE_KEY = 'kingshot_mob_panel_visible_v1';
 const MOB_CALC_STATE_KEY = 'kingshot_mob_calc_state_v2';
 const MOB_LEGACY_CALC_KEY = 'kingshot_mob_calc_state_v1';
 const MOB_TARGETS_M = [30, 25, 20, 15, 10];
-const MOB_MAX_SCORE_K = 14000;
+const MOB_STD_TILE_MAX_K = 14000;
+const MOB_PET_SKILL_SCORE_K = 14000;
 const MOB_WAIT_TOLERANCE_K = 500;
 
 function createDefaultMobAccountData() {
@@ -722,23 +723,16 @@ function onMobDragEnd() {
 // ==========================================
 // 計算「等多一會」各隊到達什麼數量才召回（紅字目標量）
 // ==========================================
-function computeTargetRawKForWaitSubset(subset, lackK) {
-    const targetsMap = new Map();
-    let remainingLack = lackK;
-    let unfullList = subset
-        .filter(it => !it.isPetSkillNode && it.curScoreK < MOB_MAX_SCORE_K - 0.1)
-        .map(it => ({
-            item: it,
-            curScore: it.curScoreK,
-            capScore: MOB_MAX_SCORE_K
-        }));
+function distributeLackAcrossEntries(entries, initialLack) {
+    let remainingLack = initialLack;
+    let activeList = entries.filter(e => e.capScore - e.curScore > 0.05);
 
-    while (remainingLack > 0.05 && unfullList.length > 0) {
-        const share = remainingLack / unfullList.length;
-        let nextUnfull = [];
+    while (remainingLack > 0.05 && activeList.length > 0) {
+        const share = remainingLack / activeList.length;
+        const nextActive = [];
         let consumed = 0;
 
-        for (const entry of unfullList) {
+        for (const entry of activeList) {
             const room = entry.capScore - entry.curScore;
             if (room <= share + 0.01) {
                 entry.curScore = entry.capScore;
@@ -746,26 +740,42 @@ function computeTargetRawKForWaitSubset(subset, lackK) {
             } else {
                 entry.curScore += share;
                 consumed += share;
-                nextUnfull.push(entry);
+                nextActive.push(entry);
             }
         }
 
         remainingLack -= consumed;
-        unfullList = nextUnfull;
+        activeList = nextActive;
         if (consumed <= 0.001) break;
     }
+    return remainingLack;
+}
 
-    subset.forEach(it => {
-        if (it.isPetSkillNode) return;
-        const found = unfullList.find(u => u.item === it);
-        let finalScore = it.curScoreK;
-        if (found) {
-            finalScore = found.curScore;
-        } else if (it.curScoreK < MOB_MAX_SCORE_K - 0.1) {
-            finalScore = MOB_MAX_SCORE_K;
-        }
-        const targetRaw = Math.ceil(finalScore / it.def.mobMult);
-        targetsMap.set(it, Math.min(it.def.maxRawK, targetRaw));
+function computeTargetRawKForWaitSubset(subset, lackK) {
+    const targetsMap = new Map();
+    const entries = subset
+        .filter(it => !it.isPetSkillNode)
+        .map(it => ({
+            item: it,
+            curScore: it.curScoreK,
+            capScore: it.curScoreK < MOB_STD_TILE_MAX_K - 0.1
+                ? MOB_STD_TILE_MAX_K
+                : it.curScoreK + MOB_WAIT_TOLERANCE_K + 100
+        }));
+
+    // 優先分配給尚未滿標準 8 級礦（14,000K 積分）的隊伍
+    const stdEntries = entries.filter(e => e.item.curScoreK < MOB_STD_TILE_MAX_K - 0.1);
+    let remainingLack = distributeLackAcrossEntries(stdEntries, lackK);
+
+    // 若組合中沒有未滿標準礦的隊伍（例如單獨派聯盟礦），則直接加在該聯盟礦隊伍上
+    if (remainingLack > 0.05) {
+        const megaEntries = entries.filter(e => e.item.curScoreK >= MOB_STD_TILE_MAX_K - 0.1);
+        distributeLackAcrossEntries(megaEntries, remainingLack);
+    }
+
+    entries.forEach(entry => {
+        const targetRaw = Math.ceil(entry.curScore / entry.item.def.mobMult);
+        targetsMap.set(entry.item, targetRaw);
     });
 
     return targetsMap;
@@ -780,7 +790,8 @@ function computeMobPlans(usePetSkill) {
         const valK = parseFloat(m.rawK);
         if (!isNaN(valK) && valK > 0) {
             const def = getResDef(m.resKey);
-            const curScoreK = Math.min(MOB_MAX_SCORE_K, valK * def.mobMult);
+            const curScoreK = valK * def.mobMult;
+            const maxScoreK = Math.max(MOB_STD_TILE_MAX_K, curScoreK + MOB_WAIT_TOLERANCE_K);
             activeItems.push({
                 orderNum: idx + 1,
                 idx,
@@ -788,21 +799,25 @@ function computeMobPlans(usePetSkill) {
                 def,
                 rawK: valK,
                 curScoreK,
-                maxScoreK: MOB_MAX_SCORE_K,
+                maxScoreK,
                 isPetSkillNode: false
             });
         }
     });
 
-    if (usePetSkill && activeItems.length < 6) {
+    if (activeItems.length === 0) {
+        return { instantPlans: [], waitPlans: [] };
+    }
+
+    if (usePetSkill) {
         activeItems.push({
             orderNum: 'pet',
             idx: 99,
             resKey: 'pet',
             def: null,
-            rawK: 14000,
-            curScoreK: MOB_MAX_SCORE_K,
-            maxScoreK: MOB_MAX_SCORE_K,
+            rawK: MOB_PET_SKILL_SCORE_K,
+            curScoreK: MOB_PET_SKILL_SCORE_K,
+            maxScoreK: MOB_PET_SKILL_SCORE_K,
             isPetSkillNode: true
         });
     }
@@ -810,8 +825,6 @@ function computeMobPlans(usePetSkill) {
     const n = activeItems.length;
     const instantPlans = [];
     const waitPlans = [];
-
-    if (n === 0) return { instantPlans, waitPlans };
 
     const totalMasks = 1 << n;
     for (let mask = 1; mask < totalMasks; mask++) {
@@ -822,6 +835,9 @@ function computeMobPlans(usePetSkill) {
 
         const hasPetInSubset = subset.some(it => it.isPetSkillNode);
         if (usePetSkill && !hasPetInSubset) continue;
+
+        const marchCount = subset.filter(it => !it.isPetSkillNode).length;
+        if (marchCount === 0) continue;
 
         let curK = 0;
         let maxK = 0;
@@ -837,7 +853,8 @@ function computeMobPlans(usePetSkill) {
                 subset,
                 curK,
                 overK: diffK,
-                count: subset.length
+                marchCount,
+                hasPet: hasPetInSubset
             });
         } else {
             const lackK = Math.abs(diffK);
@@ -848,15 +865,16 @@ function computeMobPlans(usePetSkill) {
                     curK,
                     lackK,
                     maxK,
-                    count: subset.length,
+                    marchCount,
+                    hasPet: hasPetInSubset,
                     targetRawMap
                 });
             }
         }
     }
 
-    instantPlans.sort((a, b) => (a.count - b.count) || (a.overK - b.overK));
-    waitPlans.sort((a, b) => (a.lackK - b.lackK) || (a.count - b.count));
+    instantPlans.sort((a, b) => (a.marchCount - b.marchCount) || (a.overK - b.overK));
+    waitPlans.sort((a, b) => (a.lackK - b.lackK) || (a.marchCount - b.marchCount));
 
     return {
         instantPlans: instantPlans.slice(0, 4),
@@ -892,8 +910,6 @@ function renderPlanCardsHtml(plans, mode) {
                 const goalK = p.targetRawMap.get(it);
                 if (goalK > Math.ceil(it.rawK)) {
                     targetHtml = `<span class="mob-chip-target-red">→${goalK}K</span>`;
-                } else {
-                    targetHtml = `<span class="mob-chip-target-red">已滿</span>`;
                 }
             }
 
@@ -910,10 +926,12 @@ function renderPlanCardsHtml(plans, mode) {
             ? `<span class="mob-badge-ok">✅ 溢出 +${(p.overK / 1000).toFixed(2)}M</span>`
             : `<span class="mob-badge-wait">⏳ 再等 +${(p.lackK / 1000).toFixed(2)}M</span>`;
 
+        const countLabel = p.hasPet ? `召回 ${p.marchCount} 隊 + 寵物技` : `共 ${p.marchCount} 隊`;
+
         return `
             <div class="mob-plan-card ${mode === 'instant' ? 'plan-instant' : 'plan-wait'}">
                 <div class="mob-plan-top">
-                    <span class="mob-plan-rank">方案 ${idx + 1}（共 ${p.count} 隊）</span>
+                    <span class="mob-plan-rank">方案 ${idx + 1}（${countLabel}）</span>
                     ${badgeHtml}
                 </div>
                 <div class="mob-plan-chips-grid">${chipsHtml}</div>
