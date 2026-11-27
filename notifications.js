@@ -100,6 +100,10 @@ function sendDesktopNotification(title, body, tagId = '') {
                 silent: true
             });
             activeSystemNotifications.push(n);
+            n.onclose = () => {
+                const idx = activeSystemNotifications.indexOf(n);
+                if (idx !== -1) activeSystemNotifications.splice(idx, 1);
+            };
             n.onclick = () => {
                 window.focus();
                 stopRinging();
@@ -108,7 +112,7 @@ function sendDesktopNotification(title, body, tagId = '') {
                 const bellDrop = document.getElementById('notifDropdown');
                 if (bellDrop) {
                     bellDrop.classList.add('open');
-                    renderBellUI();
+                    renderBellUI(true);
                 }
                 n.close();
             };
@@ -154,20 +158,20 @@ function loadNotifHistory() {
     notifHistory.forEach(n => {
         if (n && n.id) triggeredEventKeys.add(n.id);
     });
-    renderBellUI();
+    renderBellUI(true);
 }
 
 function saveNotifHistory(skipCloudSync = false) {
-    const trimmed = notifHistory.slice(0, 40);
+    notifHistory = notifHistory.slice(0, 40);
     try {
-        localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(trimmed));
+        localStorage.setItem(NOTIF_HISTORY_KEY, JSON.stringify(notifHistory));
     } catch (e) {}
 
     if (!skipCloudSync && typeof dbRef !== 'undefined' && dbRef) {
-        const json = JSON.stringify(trimmed);
+        const json = JSON.stringify(notifHistory);
         if (json !== lastNotifCloudJson) {
             lastNotifCloudJson = json;
-            dbRef.child('notifHistory').set(trimmed).catch(err => {
+            dbRef.child('notifHistory').set(notifHistory).catch(err => {
                 console.warn('待辦雲端同步失敗:', err);
             });
         }
@@ -195,7 +199,7 @@ function initNotifCloudSync() {
         try {
             localStorage.setItem(NOTIF_HISTORY_KEY, json);
         } catch (e) {}
-        renderBellUI();
+        renderBellUI(false);
         if (notifHistory.filter(n => n.unread).length === 0) {
             stopRinging();
         }
@@ -218,7 +222,7 @@ function pushNotificationEvent(eventObj, shouldAlert = true) {
     });
 
     saveNotifHistory(false);
-    renderBellUI();
+    renderBellUI(false);
 
     if (shouldAlert) {
         startRinging();
@@ -237,7 +241,7 @@ function toggleBellDropdown(event) {
         drop.classList.toggle('open');
         if (drop.classList.contains('open')) {
             stopRinging();
-            renderBellUI();
+            renderBellUI(true);
         }
     }
 }
@@ -247,21 +251,21 @@ function toggleTodoDone(notifId) {
     if (!item) return;
     item.unread = !item.unread;
     saveNotifHistory(false);
-    renderBellUI();
+    renderBellUI(true);
     if (notifHistory.filter(n => n.unread).length === 0) stopRinging();
 }
 
 function markAllNotifsRead() {
     notifHistory.forEach(n => { n.unread = false; });
     saveNotifHistory(false);
-    renderBellUI();
+    renderBellUI(true);
     stopRinging();
 }
 
 function clearAllNotifs() {
     notifHistory = notifHistory.filter(n => n.unread);
     saveNotifHistory(false);
-    renderBellUI();
+    renderBellUI(true);
 }
 
 function formatRelativeAgo(timestampMs) {
@@ -300,10 +304,24 @@ function getDefaultDurationForCategory(accId, category, itemId) {
     return { d: 0, h: 0, m: 0 };
 }
 
-function autoJumpTodoInput(event, inputEl, nextIdStr) {
+function parseTodoNumber(rawVal) {
+    if (rawVal === null || rawVal === undefined) return 0;
+    const halfWidth = String(rawVal).replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+    const digits = halfWidth.replace(/\D/g, '');
+    return Math.max(0, parseInt(digits, 10) || 0);
+}
+
+function handleTodoNumberInput(event, inputEl, field, nextIdStr) {
+    const halfWidth = String(inputEl.value).replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+    let clean = halfWidth.replace(/\D/g, '').slice(0, 2);
+    if (field === 'h' && Number(clean) > 23) clean = '23';
+    if (field === 'm' && Number(clean) > 59) clean = '59';
+    if (inputEl.value !== clean) {
+        inputEl.value = clean;
+    }
+
     if (!nextIdStr) return;
     if (event && ['Tab', 'Shift', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Delete', 'Enter'].includes(event.key)) return;
-    const clean = inputEl.value.replace(/\D/g, '');
     if (clean.length >= 2) {
         const nextEl = document.getElementById(nextIdStr);
         if (nextEl) {
@@ -329,26 +347,51 @@ function handleTodoArrowNav(event, prevIdStr, nextIdStr, idx, notifId, accId, ca
 }
 
 function startNewRoundFromTodo(notifId, accId, category, itemId, d, h, m) {
-    const totalMs = ((d * 24 + h) * 60 + m) * 60 * 1000;
+    ensureAudioContextUnlocked();
+    const safeD = Math.max(0, parseInt(d, 10) || 0);
+    const safeH = Math.min(23, Math.max(0, parseInt(h, 10) || 0));
+    const safeM = Math.min(59, Math.max(0, parseInt(m, 10) || 0));
+
+    const totalMs = ((safeD * 24 + safeH) * 60 + safeM) * 60 * 1000;
     if (totalMs <= 0) {
         alert('請先輸入新一輪的倒數時間！');
         return;
     }
 
-    if (store[accId] && Array.isArray(store[accId][category])) {
-        let target = itemId ? store[accId][category].find(it => it.id === itemId) : null;
-        if (!target) target = store[accId][category][0];
+    if (store[accId] && store[accId][category]) {
+        if (!Array.isArray(store[accId][category])) {
+            store[accId][category] = Object.values(store[accId][category]).filter(Boolean);
+        }
+        const list = store[accId][category];
+        const nowMs = getAccurateNow().getTime();
+
+        // 1. 優先找原本那格；2. 找不到則找第一個空閒（未在倒數）的列隊；3. 再不然抓第 1 格
+        let target = (itemId !== null && itemId !== undefined && itemId !== '')
+            ? list.find(it => String(it.id) === String(itemId))
+            : null;
+        if (!target) {
+            target = list.find(it => !it.endTime || it.endTime.getTime() <= nowMs) || list[0];
+        }
+
         if (target) {
-            target.d = d;
-            target.h = h;
-            target.m = m;
-            const endDate = new Date(getAccurateNow().getTime() + totalMs);
-            target.endTime = endDate;
-            if (category === 'soldiers' && typeof autoSyncJobFromTimer === 'function') {
-                autoSyncJobFromTimer(accId, 'soldier', endDate);
-            }
-            if (category === 'tech' && typeof autoSyncJobFromTimer === 'function') {
-                autoSyncJobFromTimer(accId, 'tech', endDate);
+            target.d = safeD;
+            target.h = safeH;
+            target.m = safeM;
+
+            if (typeof startTimer === 'function') {
+                startTimer(accId, category, target.id);
+            } else {
+                const endDate = new Date(nowMs + totalMs);
+                target.endTime = endDate;
+                if (category === 'soldiers' && typeof autoSyncJobFromTimer === 'function') {
+                    autoSyncJobFromTimer(accId, 'soldier', endDate);
+                }
+                if (category === 'tech' && typeof autoSyncJobFromTimer === 'function') {
+                    autoSyncJobFromTimer(accId, 'tech', endDate);
+                }
+                if (typeof renderGrid === 'function') renderGrid();
+                if (typeof updateTimeline === 'function') updateTimeline(true);
+                saveState();
             }
         }
     }
@@ -357,18 +400,14 @@ function startNewRoundFromTodo(notifId, accId, category, itemId, d, h, m) {
     if (notifItem) notifItem.unread = false;
 
     saveNotifHistory(false);
-    renderBellUI();
+    renderBellUI(true);
     if (notifHistory.filter(n => n.unread).length === 0) stopRinging();
-
-    if (typeof renderGrid === 'function') renderGrid();
-    if (typeof updateTimeline === 'function') updateTimeline(true);
-    saveState();
 }
 
 function submitTodoCustomRound(idx, notifId, accId, category, itemId) {
-    const d = parseInt(document.getElementById(`todo_d_${idx}`)?.value, 10) || 0;
-    const h = parseInt(document.getElementById(`todo_h_${idx}`)?.value, 10) || 0;
-    const m = parseInt(document.getElementById(`todo_m_${idx}`)?.value, 10) || 0;
+    const d = parseTodoNumber(document.getElementById(`todo_d_${idx}`)?.value);
+    const h = parseTodoNumber(document.getElementById(`todo_h_${idx}`)?.value);
+    const m = parseTodoNumber(document.getElementById(`todo_m_${idx}`)?.value);
     startNewRoundFromTodo(notifId, accId, category, itemId, d, h, m);
 }
 
@@ -384,7 +423,7 @@ function confirmJobFromTodo(notifId, accId, jType, timeStr) {
     if (notifItem) notifItem.unread = false;
 
     saveNotifHistory(false);
-    renderBellUI();
+    renderBellUI(true);
     if (notifHistory.filter(n => n.unread).length === 0) stopRinging();
 }
 
@@ -393,7 +432,7 @@ function submitTodoJobConfirm(idx, notifId, accId, jType) {
     confirmJobFromTodo(notifId, accId, jType, sel ? sel.value : '');
 }
 
-function renderBellUI() {
+function renderBellUI(forceRebuild = false) {
     const unreadCount = notifHistory.filter(n => n.unread).length;
     const badge = document.getElementById('bellCountBadge');
     const bellBtn = document.getElementById('bellBtn');
@@ -417,6 +456,12 @@ function renderBellUI() {
 
     if (!listEl) return;
 
+    // 若使用者正在鈴鐺輸入框打字或選時段，非強制重繪時不覆蓋 DOM，避免輸入到一半被洗掉
+    const activeEl = document.activeElement;
+    if (!forceRebuild && activeEl && listEl.contains(activeEl) && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT')) {
+        return;
+    }
+
     if (notifHistory.length === 0) {
         listEl.innerHTML = `<div style="text-align:center; color:#A38E7D; padding:24px 10px; font-size:14px;">待辦清單已全部完成 🎉</div>`;
         return;
@@ -425,6 +470,9 @@ function renderBellUI() {
     listEl.innerHTML = notifHistory.map((item, idx) => {
         const safeId = escapeAttr(item.id);
         const accId = item.accId || inferAccIdFromMessage(item.message);
+        const itemIdArg = (item.itemId !== null && item.itemId !== undefined && item.itemId !== '')
+            ? `'${escapeAttr(String(item.itemId))}'`
+            : 'null';
         const bigEmoji = getCategoryEmoji(item.category, item.message);
         const cleanMessage = String(item.message).replace(/\s*(⚔️|🔬|📖|☀️|🏛️)\s*/g, ' ').replace(/\s+/g, ' ').trim();
         let renewControlHtml = '';
@@ -439,18 +487,18 @@ function renderBellUI() {
             if (item.category === 'master') {
                 presetBtns = `
                     <div class="todo-presets">
-                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 0, 10)">10分</button>
-                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 2, 0)">2時</button>
-                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 10, 0)">10時</button>
-                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 0, 23, 0)">23時</button>
-                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 3, 0, 0)">3天</button>
-                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${item.itemId || 'null'}, 5, 0, 0)">5天</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${itemIdArg}, 0, 0, 10)">10分</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${itemIdArg}, 0, 2, 0)">2時</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${itemIdArg}, 0, 10, 0)">10時</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${itemIdArg}, 0, 23, 0)">23時</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${itemIdArg}, 3, 0, 0)">3天</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'master', ${itemIdArg}, 5, 0, 0)">5天</button>
                     </div>
                 `;
             } else if (item.category === 'sunlight') {
                 presetBtns = `
                     <div class="todo-presets">
-                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'sunlight', ${item.itemId || 'null'}, 0, 8, 0)">▶ 8小時整</button>
+                        <button class="btn-todo-preset" onclick="startNewRoundFromTodo('${safeId}', '${accId}', 'sunlight', ${itemIdArg}, 0, 8, 0)">▶ 8小時整</button>
                     </div>
                 `;
             }
@@ -461,16 +509,17 @@ function renderBellUI() {
                         <span style="font-weight:700;">🔄 下一輪：</span>
                         <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_d_${idx}" value="${defD}" maxlength="2"
                             onfocus="this.select()"
-                            onkeydown="handleTodoArrowNav(event, null, 'todo_h_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
-                            oninput="autoJumpTodoInput(event, this, 'todo_h_${idx}')">天
+                            onkeydown="handleTodoArrowNav(event, null, 'todo_h_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${itemIdArg})"
+                            oninput="handleTodoNumberInput(event, this, 'd', 'todo_h_${idx}')">天
                         <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_h_${idx}" value="${formatPad(defH)}" maxlength="2"
                             onfocus="this.select()"
-                            onkeydown="handleTodoArrowNav(event, 'todo_d_${idx}', 'todo_m_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})"
-                            oninput="autoJumpTodoInput(event, this, 'todo_m_${idx}')">時
+                            onkeydown="handleTodoArrowNav(event, 'todo_d_${idx}', 'todo_m_${idx}', ${idx}, '${safeId}', '${accId}', '${item.category}', ${itemIdArg})"
+                            oninput="handleTodoNumberInput(event, this, 'h', 'todo_m_${idx}')">時
                         <input type="text" inputmode="numeric" pattern="[0-9]*" class="todo-mini-input" id="todo_m_${idx}" value="${formatPad(defM)}" maxlength="2"
                             onfocus="this.select()"
-                            onkeydown="handleTodoArrowNav(event, 'todo_h_${idx}', null, ${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">分
-                        <button class="btn-todo-start" onclick="submitTodoCustomRound(${idx}, '${safeId}', '${accId}', '${item.category}', ${item.itemId || 'null'})">▶ 開始</button>
+                            onkeydown="handleTodoArrowNav(event, 'todo_h_${idx}', null, ${idx}, '${safeId}', '${accId}', '${item.category}', ${itemIdArg})"
+                            oninput="handleTodoNumberInput(event, this, 'm', null)">分
+                        <button class="btn-todo-start" onclick="submitTodoCustomRound(${idx}, '${safeId}', '${accId}', '${item.category}', ${itemIdArg})">▶ 開始</button>
                     </div>
                     ${presetBtns}
                 </div>
@@ -495,7 +544,7 @@ function renderBellUI() {
                 <div class="todo-renew-box" id="todo_box_${idx}">
                     <div class="todo-renew-row">
                         <span style="font-weight:700;">預約時段：</span>
-                        <select class="todo-time-select" id="todo_job_sel_${idx}" onchange="confirmJobFromTodo('${safeId}', '${accId}', '${jType}', this.value)">
+                        <select class="todo-time-select" id="todo_job_sel_${idx}">
                             ${optionsHtml}
                         </select>
                         <button class="btn-todo-confirm" onclick="submitTodoJobConfirm(${idx}, '${safeId}', '${accId}', '${jType}')">✔ 確認</button>
